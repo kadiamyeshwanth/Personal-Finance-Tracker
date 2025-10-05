@@ -42,36 +42,7 @@ You need to have **Node.js** and **npm** (or Yarn/pnpm) installed on your machin
 
 ### 2. Execution
 
-**⚠️ Important Backend Note:**
-This application is designed to communicate with a backend API running at `http://localhost:5000/api` for transaction persistence (CRUD operations). While the application provides mock data as a fallback, to ensure **full functionality and persistent storage**, you must run the corresponding backend server.
-
-The expected backend endpoints for transactions are:
-* `GET /api/transactions/`
-* `POST /api/transactions/add`
-* `POST /api/transactions/update/:id`
-* `DELETE /api/transactions/:id`
-
-1.  **Start the Frontend Development Server:**
-    Run the Vite development script from the project root:
-    ```bash
-    npm run dev
-    # or
-    # yarn dev
-    ```
-
-2.  **Access the Application:**
-    The application will typically be served on `http://localhost:5173/` or another available port. The console output will provide the exact address.
-
-3.  **Login:**
-    Upon opening the application, you will be directed to a login screen. Use the default mock credentials for immediate access to the dashboard:
-    * **Username:** `user`
-    * **Password:** `password`
-
-### 3. Build for Production
-
-To create a production-ready build of the frontend, run:
+**To run react app use this commands**
 
 ```bash
-npm run build
-# or
-# yarn build
+cd personal-finance-tracker && npm run start-all

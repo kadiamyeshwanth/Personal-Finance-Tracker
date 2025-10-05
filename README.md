@@ -45,4 +45,4 @@ You need to have **Node.js** and **npm** (or Yarn/pnpm) installed on your machin
 **To run react app use this commands**
 
 ```bash
-cd finance-tracker && npm run start-all
+cd finance-tracker ; npm run start-all

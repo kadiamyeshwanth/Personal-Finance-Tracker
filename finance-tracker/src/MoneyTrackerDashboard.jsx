@@ -25,7 +25,9 @@ ChartJS.register(
 );
 
 // Define the base URL for your API
-const API_BASE_URL = 'http://localhost:5000/api'; 
+const API_URL = import.meta.env.VITE_APP_API_URL;
+// ...
+axios.get(`${API_URL}/api/transactions`); 
 // Note: In a production environment, this should be configured dynamically.
 
 

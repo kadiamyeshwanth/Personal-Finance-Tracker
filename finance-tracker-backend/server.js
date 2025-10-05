@@ -14,7 +14,7 @@ const port = process.env.PORT || 5000;
 
 // --- Middleware ---
 // Allows CORS for frontend connection
-app.use(cors());
+	app.use(cors({ origin: process.env.CORS_ORIGIN }));
 // Parses incoming JSON requests
 app.use(express.json());
 

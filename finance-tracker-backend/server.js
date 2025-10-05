@@ -1,34 +1,39 @@
-// server.js (The main entry point for your backend)
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config(); // To load environment variables from .env
+const path = require('path'); // ADDED for reliable .env file pathing
+
+// --- Configuration ---
+// Tells dotenv to find the .env file in the same directory as server.js, 
+// regardless of where the npm script was executed from.
+require('dotenv').config({ path: path.resolve(__dirname, '.env') }); 
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // --- Middleware ---
-// Allows CORS for frontend connection (replace with your React URL in production)
+// Allows CORS for frontend connection
 app.use(cors());
 // Parses incoming JSON requests
 app.use(express.json());
 
 // --- MongoDB Connection ---
 const uri = process.env.MONGODB_URI;
-mongoose.connect(uri, { 
-    // These options are for MongoDB compatibility in newer versions
-    useNewUrlParser: true, 
-    useUnifiedTopology: true,
-})
+// REMOVED deprecated options: useNewUrlParser and useUnifiedTopology
+mongoose.connect(uri)
 .then(() => console.log("MongoDB database connection established successfully"))
 .catch(err => console.error("MongoDB connection error:", err));
 
-// --- Import Routes (to be defined in Step 3) ---
+// --- Import Routes ---
+// Note: These route files must exist in the ./routes directory
 const transactionRouter = require('./routes/transactions');
 const goalRouter = require('./routes/goals');
 const budgetRouter = require('./routes/budgets');
 
-app.use('/api/transactions', transactionRouter);
+// Use the routers for their respective paths
+// The transaction route now expects a username parameter for user-specific data fetching
+app.use('/api/transactions', transactionRouter); 
 app.use('/api/goals', goalRouter);
 app.use('/api/budgets', budgetRouter);
 

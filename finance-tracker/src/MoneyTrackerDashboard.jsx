@@ -474,7 +474,7 @@ const MoneyTrackerDashboard = () => {
   // --- DATA FETCHING AND PROCESSING (THE MAIN CHANGE) ---
   // -------------------------------------------------------------------
   
-  // MOCK fallback data (used if API fails)
+  // MOCK fallback data (used if ALL API calls fail - e.g. backend is down)
   const loadMockData = () => {
     setTransactions([
       { id: 'm1', type: 'income', category: 'Salary', amount: 30000, date: '2025-10-01', description: 'Mock Monthly paycheck', isRecurring: false },
@@ -482,44 +482,70 @@ const MoneyTrackerDashboard = () => {
       { id: 'm3', type: 'expense', category: 'Food', amount: 2000, date: '2025-10-03', description: 'Mock Groceries', isRecurring: false },
     ]);
     setSavingsGoals([
-      { id: 1, name: 'Emergency Fund', targetAmount: 50000, currentAmount: 15000, deadline: '2025-12-31' },
+      { _id: 'm_g1', id: 'm_g1', name: 'Emergency Fund', targetAmount: 50000, currentAmount: 15000, deadline: '2025-12-31' },
     ]);
     setBudgets([
-      { id: 1, category: 'Food', limit: 5000 },
+      { _id: 'm_b1', id: 'm_b1', category: 'Food', limit: 5000 },
     ]);
   };
 
+  // Fetch all transactions from the API
   const fetchTransactions = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/transactions/`);
-      
       const fetchedTxns = res.data.map(t => ({
           ...t,
-          // Convert MongoDB date string to YYYY-MM-DD format for React input consistency
-          date: new Date(t.date).toISOString().split('T')[0], 
-          id: t._id // Use MongoDB's unique ID as the React key
+          date: new Date(t.date).toISOString().split('T')[0],
+          id: t._id
       }));
-      
-      // Separate regular and recurring template transactions
       setTransactions(fetchedTxns.filter(t => !t.isRecurring));
       setRecurringTransactions(fetchedTxns.filter(t => t.isRecurring));
-      
-      // Keep mock goals/budgets for now until you create those APIs
-      // In a real app, you'd fetch /api/goals and /api/budgets here
-      setSavingsGoals(prev => prev.length ? prev : [{ id: 1, name: 'Emergency Fund', targetAmount: 50000, currentAmount: 15000, deadline: '2025-12-31' }]);
-      setBudgets(prev => prev.length ? prev : [{ id: 1, category: 'Food', limit: 5000 }]);
-
     } catch (err) {
-      console.error("Error fetching data. Using mock data:", err);
+      console.error('Error fetching transactions:', err);
+    }
+  }, []);
+
+  // Fetch all goals from the API
+  const fetchGoals = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/goals/`);
+      const fetchedGoals = res.data.map(g => ({ ...g, id: g._id }));
+      setSavingsGoals(fetchedGoals);
+    } catch (err) {
+      console.error('Error fetching goals:', err);
+    }
+  }, []);
+
+  // Fetch all budgets from the API
+  const fetchBudgets = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/budgets/`);
+      const fetchedBudgets = res.data.map(b => ({ ...b, id: b._id }));
+      setBudgets(fetchedBudgets);
+    } catch (err) {
+      console.error('Error fetching budgets:', err);
+    }
+  }, []);
+
+  // Fetch all data on login
+  const fetchAllData = useCallback(async () => {
+    try {
+      await Promise.all([
+        fetchTransactions(),
+        fetchGoals(),
+        fetchBudgets(),
+      ]);
+    } catch (err) {
+      console.error('Error fetching all data. Using mock data:', err);
       loadMockData();
     }
-  }, []); // Empty dependency array as it only depends on external API_BASE_URL
+  }, [fetchTransactions, fetchGoals, fetchBudgets]);
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchTransactions();
+      fetchAllData();
     }
-  }, [isLoggedIn, fetchTransactions]);
+  }, [isLoggedIn, fetchAllData]);
 
 
   // --- Auto-process recurring transactions on load/update ---
@@ -676,67 +702,92 @@ const MoneyTrackerDashboard = () => {
 
 
   // -------------------------------------------------------------------
-  // --- GOAL & BUDGET HANDLERS (STILL MOCK) ---
+  // --- GOAL HANDLERS (NOW CONNECTED TO API) ---
   // -------------------------------------------------------------------
 
-  // (Goal and Budget handlers remain unchanged, as they still rely on client-side state 
-  // until you implement their specific API endpoints.)
-  
-  const handleGoalSubmit = (e) => {
+  const handleGoalSubmit = async (e) => {
     e.preventDefault();
     if (goalForm.name && goalForm.targetAmount && parseFloat(goalForm.targetAmount) > 0) {
-      const newGoal = {
-        id: Date.now(),
-        name: goalForm.name,
-        targetAmount: parseFloat(goalForm.targetAmount),
-        currentAmount: 0,
-        deadline: goalForm.deadline,
-      };
-      setSavingsGoals(prev => [...prev, newGoal]);
-      setGoalForm({ name: '', targetAmount: '', deadline: '' });
+      try {
+        await axios.post(`${API_BASE_URL}/goals/add`, {
+          username: currentUser.username,
+          name: goalForm.name,
+          targetAmount: parseFloat(goalForm.targetAmount),
+          currentAmount: 0,
+          deadline: goalForm.deadline || undefined,
+        });
+        setGoalForm({ name: '', targetAmount: '', deadline: '' });
+        fetchGoals(); // Refresh from server
+      } catch (err) {
+        console.error('Failed to add goal:', err);
+        alert('Failed to add goal. Check your backend server console.');
+      }
     }
   };
 
-  const handleDeleteGoal = (id) => {
+  const handleDeleteGoal = async (id) => {
     if (window.confirm('Delete this goal?')) {
-      setSavingsGoals(prev => prev.filter(g => g.id !== id));
+      try {
+        await axios.delete(`${API_BASE_URL}/goals/${id}`);
+        fetchGoals();
+      } catch (err) {
+        console.error('Failed to delete goal:', err);
+        alert('Failed to delete goal. Check your backend server console.');
+      }
     }
   };
 
-  const handleContributeToGoal = (goalId) => {
+  const handleContributeToGoal = async (goalId) => {
     const amountStr = prompt('Enter contribution amount:');
     const amount = parseFloat(amountStr);
     if (amountStr && amount > 0) {
-      setSavingsGoals(prev => prev.map(g =>
-        g.id === goalId
-          ? { ...g, currentAmount: g.currentAmount + amount }
-          : g
-      ));
+      const goal = savingsGoals.find(g => g.id === goalId);
+      if (goal) {
+        try {
+          await axios.post(`${API_BASE_URL}/goals/update/${goalId}`, {
+            ...goal,
+            currentAmount: goal.currentAmount + amount,
+          });
+          fetchGoals();
+        } catch (err) {
+          console.error('Failed to contribute to goal:', err);
+          alert('Failed to update goal. Check your backend server console.');
+        }
+      }
     }
   };
 
-  const handleBudgetSubmit = (e) => {
+  // -------------------------------------------------------------------
+  // --- BUDGET HANDLERS (NOW CONNECTED TO API) ---
+  // -------------------------------------------------------------------
+
+  const handleBudgetSubmit = async (e) => {
     e.preventDefault();
     if (budgetForm.category && budgetForm.limit && parseFloat(budgetForm.limit) > 0) {
-      const existing = budgets.find(b => b.category === budgetForm.category);
-      const newBudget = {
-        id: existing ? existing.id : Date.now(),
-        category: budgetForm.category,
-        limit: parseFloat(budgetForm.limit),
-      };
-
-      if (existing) {
-        setBudgets(prev => prev.map(b => b.id === existing.id ? newBudget : b));
-      } else {
-        setBudgets(prev => [...prev, newBudget]);
+      try {
+        await axios.post(`${API_BASE_URL}/budgets/add`, {
+          username: currentUser.username,
+          category: budgetForm.category,
+          limit: parseFloat(budgetForm.limit),
+        });
+        setBudgetForm({ category: EXPENSE_CATEGORIES[0], limit: '' });
+        fetchBudgets();
+      } catch (err) {
+        console.error('Failed to save budget:', err);
+        alert('Failed to save budget. Check your backend server console.');
       }
-      setBudgetForm({ category: EXPENSE_CATEGORIES[0], limit: '' });
     }
   };
 
-  const handleDeleteBudget = (id) => {
+  const handleDeleteBudget = async (id) => {
     if (window.confirm('Delete this budget?')) {
-      setBudgets(prev => prev.filter(b => b.id !== id));
+      try {
+        await axios.delete(`${API_BASE_URL}/budgets/${id}`);
+        fetchBudgets();
+      } catch (err) {
+        console.error('Failed to delete budget:', err);
+        alert('Failed to delete budget. Check your backend server console.');
+      }
     }
   };
 
@@ -789,16 +840,8 @@ const MoneyTrackerDashboard = () => {
     };
   }, [transactions, filters, budgets]);
 
-  // Update goal progress based on net savings (still client-side for now)
-  useEffect(() => {
-    // Basic auto-distribution: If you have net savings, distribute 1% of it to each goal.
-    if (savingsGoals.length > 0 && netSavings > 0) {
-      setSavingsGoals(prev => prev.map(goal => ({
-        ...goal,
-        currentAmount: Math.min(goal.targetAmount, goal.currentAmount + (netSavings / 100) / savingsGoals.length)
-      })));
-    }
-  }, [netSavings, savingsGoals.length]);
+  // NOTE: Removed client-side goal auto-distribution effect.
+  // Goals are now persisted in MongoDB. Use the "Contribute" button to add funds to a goal.
 
 
   // -------------------------------------------------------------------

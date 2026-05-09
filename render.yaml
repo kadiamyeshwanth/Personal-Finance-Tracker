@@ -1,0 +1,48 @@
+services:
+  # ── Backend API (Node.js) ─────────────────────────────────────
+  - type: web
+    name: finance-tracker-backend
+    runtime: node
+    rootDir: finance-tracker-backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false        # Set manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false        # Set after frontend URL is known
+      - key: BACKEND_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+
+  # ── Frontend (React/Vite Static Site) ────────────────────────
+  - type: web
+    name: finance-tracker-frontend
+    runtime: static
+    rootDir: finance-tracker
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false        # Set to https://finance-tracker-backend.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

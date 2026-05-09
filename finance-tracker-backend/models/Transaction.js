@@ -3,16 +3,15 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const transactionSchema = new Schema({
-    // User ID is crucial for authentication (will be added in a real app)
-    // For now, we'll store basic fields
-    username: { type: String, required: true }, 
-    type: { type: String, required: true, enum: ['income', 'expense'] },
+    userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    username: { type: String, required: true },
+    type:     { type: String, required: true, enum: ['income', 'expense'] },
     category: { type: String, required: true, trim: true },
-    amount: { type: Number, required: true },
-    date: { type: Date, required: true },
+    amount:   { type: Number, required: true, min: [0.01, 'Amount must be positive'] },
+    date:     { type: Date, required: true },
     description: { type: String, trim: true },
     isRecurring: { type: Boolean, default: false },
-    frequency: { type: String, enum: ['daily', 'weekly', 'monthly', 'once'], default: 'once' },
+    frequency:   { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly', 'once'], default: 'once' },
 }, {
     timestamps: true,
 });

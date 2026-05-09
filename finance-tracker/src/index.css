@@ -1,68 +1,533 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ════════════════════════════════════════════════════════════════
+   NOTION-EXACT DESIGN TOKENS
+   ════════════════════════════════════════════════════════════════ */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --text:          rgb(55, 53, 47);
+  --text-2:        rgba(55, 53, 47, 0.65);
+  --text-3:        rgba(55, 53, 47, 0.45);
+  --text-ph:       rgba(55, 53, 47, 0.25);
+
+  --bg:            #ffffff;
+  --bg-sidebar:    #fbfbfa;
+  --bg-hover:      rgba(55, 53, 47, 0.08);
+  --bg-active:     rgba(55, 53, 47, 0.12);
+  --bg-secondary:  #f7f6f3;
+  --bg-tooltip:    rgb(47, 47, 47);
+
+  --border:        rgba(55, 53, 47, 0.09);
+  --border-strong: rgba(55, 53, 47, 0.18);
+  --border-hover:  rgba(55, 53, 47, 0.30);  /* NEW: input hover */
+
+  --accent:        #2383e2;
+  --accent-bg:     rgba(35, 131, 226, 0.1);
+
+  --green:         #0f7b6c;
+  --green-bg:      rgba(15, 123, 108, 0.08);
+  --red:           #c4554d;
+  --red-bg:        rgba(196, 85, 77, 0.08);
+  --yellow:        #d9730d;
+  --yellow-bg:     rgba(217, 115, 13, 0.08);
+  --purple:        #9065b0;
+  --purple-bg:     rgba(144, 101, 176, 0.08);
+  --blue:          #2383e2;
+  --blue-bg:       rgba(35, 131, 226, 0.08);
+  --gray:          rgba(55, 53, 47, 0.5);
+  --gray-bg:       rgba(55, 53, 47, 0.06);
+
+  /* Progress track background */
+  --progress-track: rgba(55, 53, 47, 0.09);
+  /* Skeleton shimmer middle color */
+  --skeleton-shine: rgba(55, 53, 47, 0.04);
+
+  --shadow-sm:     0 1px 2px rgba(0,0,0,0.04);
+  --shadow:        0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-md:     0 2px 8px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
+  --shadow-float:  rgba(15,15,15,.05) 0 0 0 1px, rgba(15,15,15,.1) 0 3px 6px, rgba(15,15,15,.2) 0 9px 24px;
+
+  --r:    6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+
+  --sidebar-w: 240px;
+  --topbar-h:  45px;
+}
+
+/* ── Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+html, body, #root { height: 100%; }
+
+body {
+  font-family: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
   line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 6px; height: 6px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: var(--border-hover); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--border-strong); }
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY SCALE
+   ═══════════════════════════════════════════════════════════════ */
+.text-xs    { font-size: 11px; }
+.text-sm    { font-size: 12px; }
+.text-base  { font-size: 14px; }
+.text-md    { font-size: 16px; }
+.text-lg    { font-size: 20px; }
+.text-xl    { font-size: 28px; }
+.text-2xl   { font-size: 40px; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold  { font-weight: 700; }
+.text-muted   { color: var(--text-3); }
+.text-secondary { color: var(--text-2); }
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTION INPUT SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+.n-input {
+  display: block; width: 100%;
+  padding: 8px 10px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  font-size: 14px;
+  outline: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  color-scheme: light dark;
 }
-a:hover {
-  color: #535bf2;
+.n-input::placeholder { color: var(--text-ph); }
+.n-input:hover  { border-color: var(--border-hover); }
+.n-input:focus  { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+
+/* date/month/time inputs — fix browser calendar picker to match theme */
+input[type="date"], input[type="month"], input[type="time"] {
+  color-scheme: light dark;
+}
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="month"],
+[data-theme="dark"] input[type="time"] {
+  color-scheme: dark;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+/* .n-select — standalone select class (used across all pages) */
+.n-select {
+  display: block; width: 100%;
+  padding: 7px 30px 7px 10px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  font-size: 14px;
+  outline: none; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23777' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.n-select:hover  { border-color: var(--border-hover); }
+.n-select:focus  { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+.n-select option { background: var(--bg); color: var(--text); }
+
+/* Dark mode: n-select */
+[data-theme="dark"] .n-select {
+  background: var(--bg-secondary);
+  color: var(--text);
+  border-color: var(--border-strong);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+[data-theme="dark"] .n-select option { background: #252525; color: rgba(255,255,255,0.9); }
+
+/* Dark mode: n-input */
+[data-theme="dark"] .n-input {
+  background: var(--bg-secondary);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+[data-theme="dark"] select.n-input { background: var(--bg-secondary); }
+[data-theme="dark"] select.n-input option { background: #252525; color: rgba(255,255,255,0.9); }
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTION BUTTON SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+.n-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--r);
+  font-size: 14px; font-weight: 500; border: none;
+  transition: background 0.12s, opacity 0.12s, color 0.12s; white-space: nowrap;
+  user-select: none;
+}
+.n-btn:active { opacity: 0.85; transform: scale(0.99); }
+
+/* Primary: dark fill */
+.n-btn-primary {
+  background: var(--text);
+  color: var(--bg);
+}
+.n-btn-primary:hover { opacity: 0.85; }
+
+/* Default: subtle border */
+.n-btn-default {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-strong);
+}
+.n-btn-default:hover { background: var(--bg-hover); color: var(--text); }
+
+/* Ghost */
+.n-btn-ghost {
+  background: transparent; color: var(--text-2); border: none;
+}
+.n-btn-ghost:hover { background: var(--bg-hover); color: var(--text); }
+
+/* Danger */
+.n-btn-danger {
+  background: transparent; color: var(--red); border: 1px solid transparent;
+}
+.n-btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+
+/* Blue */
+.n-btn-blue {
+  background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(35,131,226,0.2);
+}
+.n-btn-blue:hover { background: var(--accent); color: #fff; }
+
+/* Danger solid */
+.n-btn-danger-solid {
+  background: var(--red); color: #fff; border: none;
+}
+.n-btn-danger-solid:hover { opacity: 0.88; }
+
+/* Sizes */
+.n-btn-sm { padding: 4px 9px; font-size: 13px; gap: 4px; }
+.n-btn-lg { padding: 10px 18px; font-size: 15px; }
+.n-btn-full { width: 100%; justify-content: center; }
+.n-btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTION LABEL
+   ═══════════════════════════════════════════════════════════════ */
+.n-label {
+  display: block;
+  font-size: 11px; font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  margin-bottom: 6px;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* ═══════════════════════════════════════════════════════════════
+   NOTION TABLE
+   ═══════════════════════════════════════════════════════════════ */
+.n-table { width: 100%; border-collapse: collapse; }
+.n-table th {
+  padding: 0 12px 8px;
+  text-align: left;
+  font-size: 11px; font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.n-table td {
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  background: var(--bg);
+}
+.n-table tr:last-child td { border-bottom: none; }
+.n-table tbody tr { transition: background 0.1s; }
+.n-table tbody tr:hover td { background: var(--bg-hover); }
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTION PROPERTY TAGS
+   ═══════════════════════════════════════════════════════════════ */
+.n-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 4px;
+  font-size: 12px; font-weight: 500;
+  white-space: nowrap;
+}
+.n-tag-green  { background: var(--green-bg);  color: var(--green); }
+.n-tag-red    { background: var(--red-bg);    color: var(--red); }
+.n-tag-blue   { background: var(--blue-bg);   color: var(--blue); }
+.n-tag-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.n-tag-purple { background: var(--purple-bg); color: var(--purple); }
+.n-tag-gray   { background: var(--gray-bg);   color: var(--gray); }
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTION CARD
+   ═══════════════════════════════════════════════════════════════ */
+.n-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.n-card:hover { border-color: var(--border-strong); }
+.n-card-elevated { box-shadow: var(--shadow); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ═══════════════════════════════════════════════════════════════ */
+.n-progress-track {
+  height: 4px; border-radius: 2px;
+  background: var(--progress-track); overflow: hidden;
+}
+.n-progress-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+/* ═══════════════════════════════════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════════════════════════════════ */
+.n-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 80px 24px; gap: 8px;
+  color: var(--text-3); text-align: center;
+}
+.n-empty-icon { opacity: 0.3; margin-bottom: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DIVIDER
+   ═══════════════════════════════════════════════════════════════ */
+.n-divider { border: none; border-top: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes n-spin  { to { transform: rotate(360deg); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes n-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.n-skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-secondary) 25%,
+    var(--skeleton-shine) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 400px 100%;
+  animation: n-shimmer 1.4s ease infinite;
+  border-radius: var(--r);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUT CHIP
+   ═══════════════════════════════════════════════════════════════ */
+.n-kbd {
+  display: inline-flex; align-items: center; gap: 1px;
+  font-size: 11px; color: var(--text-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px; padding: 1px 4px;
   font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE TOKEN OVERRIDES
+   Applied when <html data-theme="dark"> is set by ThemeContext
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Text */
+  --text:          rgba(255, 255, 255, 0.9);
+  --text-2:        rgba(255, 255, 255, 0.6);
+  --text-3:        rgba(255, 255, 255, 0.38);
+  --text-ph:       rgba(255, 255, 255, 0.2);
+
+  /* Backgrounds */
+  --bg:            #191919;
+  --bg-sidebar:    #111111;
+  --bg-hover:      rgba(255, 255, 255, 0.055);
+  --bg-active:     rgba(255, 255, 255, 0.09);
+  --bg-secondary:  #252525;
+  --bg-tooltip:    #2f2f2f;
+
+  /* Borders */
+  --border:        rgba(255, 255, 255, 0.085);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-hover:  rgba(255, 255, 255, 0.28);
+
+  /* Accent */
+  --accent:        #4a9eff;
+  --accent-bg:     rgba(74, 158, 255, 0.12);
+
+  /* Semantic */
+  --green:         #4cc38a;
+  --green-bg:      rgba(76, 195, 138, 0.12);
+  --red:           #e06c75;
+  --red-bg:        rgba(224, 108, 117, 0.12);
+  --yellow:        #e5a445;
+  --yellow-bg:     rgba(229, 164, 69, 0.12);
+  --purple:        #b48eff;
+  --purple-bg:     rgba(180, 142, 255, 0.12);
+  --blue:          #4a9eff;
+  --blue-bg:       rgba(74, 158, 255, 0.12);
+  --gray:          rgba(255, 255, 255, 0.4);
+  --gray-bg:       rgba(255, 255, 255, 0.06);
+
+  /* Functional */
+  --progress-track: rgba(255, 255, 255, 0.1);
+  --skeleton-shine: rgba(255, 255, 255, 0.06);
+
+  /* Shadows */
+  --shadow-sm:     0 1px 2px rgba(0,0,0,0.3);
+  --shadow:        0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.25);
+  --shadow-md:     0 2px 8px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
+  --shadow-float:  rgba(0,0,0,0.3) 0 0 0 1px, rgba(0,0,0,0.5) 0 8px 24px;
+}
+
+/* Dark mode scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-thumb       { background: rgba(255,255,255,0.15); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* Dark mode — fix any leftover hardcoded hover */
+[data-theme="dark"] .n-btn-primary:hover { opacity: 0.82; }
+[data-theme="dark"] .n-table tbody tr:hover td { background: var(--bg-hover); }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Utility classes */
+.n-mobile-only   { display: none !important; }
+.n-mobile-hidden { display: block; }
+
+/* ── Tablet (≤1024px) ─────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .n-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .n-grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ── Mobile (≤768px) ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Utility toggles */
+  .n-mobile-only   { display: block !important; }
+  .n-mobile-hidden { display: none !important; }
+  .n-mobile-flex   { display: flex !important; }
+
+  /* Layout: sidebar becomes fixed overlay, main takes full width */
+  .app-sidebar {
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    z-index: 800;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--shadow-md);
   }
-  a:hover {
-    color: #747bff;
+  .app-sidebar.open {
+    transform: translateX(0);
   }
-  button {
-    background-color: #f9f9f9;
+  .app-sidebar-backdrop {
+    display: block !important;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 799;
+  }
+  .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Topbar: show hamburger, hide desktop-only items */
+  .topbar-hamburger { display: flex !important; }
+  .topbar-palette-hint { display: none !important; }
+
+  /* Page content: reduce padding */
+  .n-page-content {
+    padding: 16px !important;
+  }
+
+  /* Grid layouts: stack to 1 col on mobile */
+  .n-grid-4,
+  .n-grid-3,
+  .n-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables: horizontal scroll */
+  .n-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .n-table th, .n-table td {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+
+  /* Stat/insight cards: full width */
+  .n-stat-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Buttons: larger touch targets */
+  .n-btn { min-height: 36px; }
+  .n-btn-sm { padding: 6px 11px !important; }
+
+  /* Page headers: reduce spacing */
+  .n-page-header { margin-bottom: 16px !important; }
+
+  /* Form grids: single column */
+  .n-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Charts: allow height reduction */
+  .n-chart-card { min-height: 0; }
+  .n-chart-inner { height: 180px !important; }
+
+  /* Notification drawer: full width on mobile */
+  .n-notif-drawer {
+    width: 100% !important;
+    right: 0 !important;
+  }
+
+  /* Reports: stack chart + sidebar */
+  .n-reports-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Analytics: stack chart pairs */
+  .n-analytics-pair {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Command palette: full width */
+  .n-palette-modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
   }
 }
+
+/* ── Small mobile (≤480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+  .n-stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .n-page-content {
+    padding: 12px !important;
+  }
+}
+

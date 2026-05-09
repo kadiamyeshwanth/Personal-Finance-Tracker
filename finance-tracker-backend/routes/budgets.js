@@ -1,34 +1,46 @@
 const router = require('express').Router();
-let Budget = require('../models/Budget');
+const Budget = require('../models/Budget');
+const protect = require('../middleware/protect');
 
-// GET all budgets
-router.route('/').get((req, res) => {
-    Budget.find()
-        .then(budgets => res.json(budgets))
-        .catch(err => res.status(400).json('Error: ' + err));
+// All routes below require a valid JWT
+router.use(protect);
+
+// GET all budgets for the logged-in user
+router.get('/', async (req, res) => {
+  try {
+    const budgets = await Budget.find({ userId: req.user.id });
+    res.json(budgets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ADD/UPDATE a budget
-router.route('/add').post((req, res) => {
-    const { username, category, limit } = req.body;
-    
-    const newBudget = new Budget({
-        username: username || 'mock_user',
-        category,
-        limit,
-    });
-    
-    // Simple logic to find and update, or create new.
-    Budget.findOneAndUpdate({ username: newBudget.username, category: newBudget.category }, newBudget, { upsert: true, new: true })
-        .then(budget => res.json(`Budget for ${budget.category} saved!`))
-        .catch(err => res.status(400).json('Error: ' + err));
+// ADD or UPDATE a budget (upsert by userId + category)
+router.post('/add', async (req, res) => {
+  try {
+    const { category, limit } = req.body;
+
+    const budget = await Budget.findOneAndUpdate(
+      { userId: req.user.id, category },
+      { userId: req.user.id, username: req.user.username, category, limit },
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    res.json({ message: `Budget for ${budget.category} saved!`, budget });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // DELETE budget by ID
-router.route('/:id').delete((req, res) => {
-    Budget.findByIdAndDelete(req.params.id)
-        .then(() => res.json('Budget deleted.'))
-        .catch(err => res.status(400).json('Error: ' + err));
+router.delete('/:id', async (req, res) => {
+  try {
+    const budget = await Budget.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    if (!budget) return res.status(404).json({ error: 'Budget not found.' });
+    res.json({ message: 'Budget deleted.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

@@ -153,7 +153,7 @@ const LoginPage = () => {
 
           {/* Google OAuth Button */}
           <a
-            href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`}
+            href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}/api/auth/google`}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
               width: '100%', padding: '9px 16px', marginBottom: '16px',

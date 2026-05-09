@@ -275,7 +275,7 @@ Distributed under the MIT License.
 
 <div align="center">
 
-**Built with ❤️ by [Kadia Myeshwanth](https://github.com/kadiamyeshwanth)**
+**Built with ❤️ by [Kadiam Myeshwanth](https://github.com/kadiamyeshwanth)**
 
 ⭐ Star this repo if you found it helpful!
 

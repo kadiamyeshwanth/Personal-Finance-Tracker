@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Finance Tracker SMS</string>
+    <string name="channel_name">UPI SMS Tracker</string>
+    <string name="channel_description">Monitors incoming UPI and bank SMS messages</string>
+    <string name="notification_title">Finance Tracker</string>
+    <string name="notification_text">Monitoring UPI &amp; bank SMS…</string>
+</resources>

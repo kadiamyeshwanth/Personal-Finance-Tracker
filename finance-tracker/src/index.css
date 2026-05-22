@@ -1,142 +1,294 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* ═══════════════════════════════════════════════════════════════════════════
+   PERSONAL FINANCE TRACKER — NOTION-EXACT DESIGN SYSTEM
+   Typography: Inter · Colours: Notion's exact palette · Layout: Notion-native
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ════════════════════════════════════════════════════════════════
-   NOTION-EXACT DESIGN TOKENS
-   ════════════════════════════════════════════════════════════════ */
+/* ── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE TOKENS  (Notion exact palette)
+   ══════════════════════════════════════════════════════════════════════════ */
 :root {
+  /* ── Text ───────────────────────────────────────────────────────────────── */
   --text:          rgb(55, 53, 47);
   --text-2:        rgba(55, 53, 47, 0.65);
   --text-3:        rgba(55, 53, 47, 0.45);
   --text-ph:       rgba(55, 53, 47, 0.25);
+  --text-inv:      rgba(255, 255, 255, 0.9);
 
+  /* ── Backgrounds ────────────────────────────────────────────────────────── */
   --bg:            #ffffff;
-  --bg-sidebar:    #fbfbfa;
-  --bg-hover:      rgba(55, 53, 47, 0.08);
-  --bg-active:     rgba(55, 53, 47, 0.12);
+  --bg-sidebar:    #f7f6f3;           /* Notion's exact sidebar colour */
+  --bg-hover:      rgba(55, 53, 47, 0.07);
+  --bg-active:     rgba(55, 53, 47, 0.11);
   --bg-secondary:  #f7f6f3;
+  --bg-tertiary:   #edece9;
   --bg-tooltip:    rgb(47, 47, 47);
+  --bg-code:       rgba(135, 131, 120, 0.12);
 
+  /* ── Borders ────────────────────────────────────────────────────────────── */
   --border:        rgba(55, 53, 47, 0.09);
-  --border-strong: rgba(55, 53, 47, 0.18);
-  --border-hover:  rgba(55, 53, 47, 0.30);  /* NEW: input hover */
+  --border-strong: rgba(55, 53, 47, 0.16);
+  --border-hover:  rgba(55, 53, 47, 0.30);
 
-  --accent:        #2383e2;
-  --accent-bg:     rgba(35, 131, 226, 0.1);
+  /* ── Accent ─────────────────────────────────────────────────────────────── */
+  --accent:        #2383e2;           /* Notion's blue */
+  --accent-bg:     rgba(35, 131, 226, 0.10);
+  --accent-hover:  rgba(35, 131, 226, 0.16);
 
+  /* ── Semantic colours ───────────────────────────────────────────────────── */
   --green:         #0f7b6c;
-  --green-bg:      rgba(15, 123, 108, 0.08);
+  --green-bg:      rgba(15, 123, 108, 0.07);
+  --green-border:  rgba(15, 123, 108, 0.20);
   --red:           #c4554d;
-  --red-bg:        rgba(196, 85, 77, 0.08);
+  --red-bg:        rgba(196, 85, 77, 0.07);
+  --red-border:    rgba(196, 85, 77, 0.20);
   --yellow:        #d9730d;
-  --yellow-bg:     rgba(217, 115, 13, 0.08);
+  --yellow-bg:     rgba(217, 115, 13, 0.07);
+  --yellow-border: rgba(217, 115, 13, 0.20);
   --purple:        #9065b0;
-  --purple-bg:     rgba(144, 101, 176, 0.08);
+  --purple-bg:     rgba(144, 101, 176, 0.07);
   --blue:          #2383e2;
-  --blue-bg:       rgba(35, 131, 226, 0.08);
-  --gray:          rgba(55, 53, 47, 0.5);
-  --gray-bg:       rgba(55, 53, 47, 0.06);
+  --blue-bg:       rgba(35, 131, 226, 0.07);
+  --gray:          rgba(55, 53, 47, 0.50);
+  --gray-bg:       rgba(55, 53, 47, 0.05);
+  --teal:          #0b7285;
+  --teal-bg:       rgba(11, 114, 133, 0.07);
+  --pink:          #c2185b;
+  --pink-bg:       rgba(194, 24, 91, 0.07);
 
-  /* Progress track background */
+  /* ── Shadows ────────────────────────────────────────────────────────────── */
+  --shadow-xs:     0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03);
+  --shadow:        0 2px 6px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.04);
+  --shadow-md:     0 4px 12px rgba(0,0,0,0.08), 0 12px 36px rgba(0,0,0,0.06);
+  /* Notion's exact dropdown shadow */
+  --shadow-float:  rgba(15,15,15,.05) 0 0 0 1px,
+                   rgba(15,15,15,.1)  0 3px 6px,
+                   rgba(15,15,15,.2)  0 9px 24px;
+
+  /* ── Border radii ───────────────────────────────────────────────────────── */
+  --r:    4px;           /* Notion uses 4px for small elements */
+  --r-md: 6px;           /* cards, inputs */
+  --r-lg: 8px;           /* modals, large cards */
+  --r-xl: 12px;          /* big elements */
+
+  /* ── Layout ─────────────────────────────────────────────────────────────── */
+  --sidebar-w:     240px;
+  --topbar-h:      45px;
+  --page-max-w:    900px;
+  --page-pad-x:    96px;
+  --page-pad-y:    48px;
+
+  /* ── Misc ────────────────────────────────────────────────────────────────── */
   --progress-track: rgba(55, 53, 47, 0.09);
-  /* Skeleton shimmer middle color */
   --skeleton-shine: rgba(55, 53, 47, 0.04);
-
-  --shadow-sm:     0 1px 2px rgba(0,0,0,0.04);
-  --shadow:        0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-  --shadow-md:     0 2px 8px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
-  --shadow-float:  rgba(15,15,15,.05) 0 0 0 1px, rgba(15,15,15,.1) 0 3px 6px, rgba(15,15,15,.2) 0 9px 24px;
-
-  --r:    6px;
-  --r-md: 8px;
-  --r-lg: 10px;
-
-  --sidebar-w: 240px;
-  --topbar-h:  45px;
+  --transition-fast: 0.10s ease;
+  --transition:      0.15s ease;
+  --transition-slow: 0.25s ease;
 }
 
-/* ── Reset ───────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   DARK MODE TOKENS  (Notion's dark palette)
+   ══════════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Text */
+  --text:          rgba(255, 255, 255, 0.88);
+  --text-2:        rgba(255, 255, 255, 0.58);
+  --text-3:        rgba(255, 255, 255, 0.36);
+  --text-ph:       rgba(255, 255, 255, 0.20);
+  --text-inv:      rgb(55, 53, 47);
+
+  /* Backgrounds — Notion dark uses near-blacks, NOT pure black */
+  --bg:            #191919;
+  --bg-sidebar:    #111111;
+  --bg-hover:      rgba(255, 255, 255, 0.055);
+  --bg-active:     rgba(255, 255, 255, 0.090);
+  --bg-secondary:  #252525;
+  --bg-tertiary:   #2f2f2f;
+  --bg-tooltip:    #2f2f2f;
+  --bg-code:       rgba(255, 255, 255, 0.07);
+
+  /* Borders */
+  --border:        rgba(255, 255, 255, 0.082);
+  --border-strong: rgba(255, 255, 255, 0.145);
+  --border-hover:  rgba(255, 255, 255, 0.28);
+
+  /* Accent */
+  --accent:        #4a9eff;
+  --accent-bg:     rgba(74, 158, 255, 0.13);
+  --accent-hover:  rgba(74, 158, 255, 0.20);
+
+  /* Semantic */
+  --green:         #4cc38a;
+  --green-bg:      rgba(76, 195, 138, 0.11);
+  --green-border:  rgba(76, 195, 138, 0.25);
+  --red:           #e06c75;
+  --red-bg:        rgba(224, 108, 117, 0.11);
+  --red-border:    rgba(224, 108, 117, 0.25);
+  --yellow:        #e5a445;
+  --yellow-bg:     rgba(229, 164, 69, 0.11);
+  --yellow-border: rgba(229, 164, 69, 0.25);
+  --purple:        #b48eff;
+  --purple-bg:     rgba(180, 142, 255, 0.11);
+  --blue:          #4a9eff;
+  --blue-bg:       rgba(74, 158, 255, 0.11);
+  --gray:          rgba(255, 255, 255, 0.40);
+  --gray-bg:       rgba(255, 255, 255, 0.06);
+  --teal:          #22b8cf;
+  --teal-bg:       rgba(34, 184, 207, 0.11);
+  --pink:          #f06292;
+  --pink-bg:       rgba(240, 98, 146, 0.11);
+
+  /* Shadows */
+  --shadow-xs:     0 1px 2px rgba(0,0,0,0.30);
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.35);
+  --shadow:        0 2px 8px rgba(0,0,0,0.40), 0 6px 20px rgba(0,0,0,0.25);
+  --shadow-md:     0 4px 16px rgba(0,0,0,0.50), 0 12px 40px rgba(0,0,0,0.35);
+  --shadow-float:  rgba(0,0,0,0.3)  0 0 0 1px,
+                   rgba(0,0,0,0.50) 0 8px 24px;
+
+  --progress-track: rgba(255, 255, 255, 0.10);
+  --skeleton-shine: rgba(255, 255, 255, 0.05);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESET
+   ══════════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body, #root { height: 100%; }
 
 body {
-  font-family: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 14px;
+  font-family: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Helvetica, Arial, sans-serif;
+  background:  var(--bg);
+  color:       var(--text);
+  font-size:   14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11'; /* Inter alt digits */
 }
 
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; }
-input, select, textarea { font-family: inherit; }
+a   { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+button, input, select, textarea { font-family: inherit; }
+button { cursor: pointer; }
 
-/* ── Scrollbar ─────────────────────────────────────────────── */
+/* ── Scrollbar (Notion-exact thin rail) ─────────────────────────────────── */
 ::-webkit-scrollbar              { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track        { background: transparent; }
-::-webkit-scrollbar-thumb        { background: var(--border-hover); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover  { background: var(--border-strong); }
+::-webkit-scrollbar-thumb        { background: rgba(55,53,47,0.20); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(55,53,47,0.35); }
 
-/* ═══════════════════════════════════════════════════════════════
-   TYPOGRAPHY SCALE
-   ═══════════════════════════════════════════════════════════════ */
-.text-xs    { font-size: 11px; }
-.text-sm    { font-size: 12px; }
-.text-base  { font-size: 14px; }
-.text-md    { font-size: 16px; }
-.text-lg    { font-size: 20px; }
-.text-xl    { font-size: 28px; }
-.text-2xl   { font-size: 40px; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold  { font-weight: 700; }
-.text-muted   { color: var(--text-3); }
-.text-secondary { color: var(--text-2); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb       { background: rgba(255,255,255,0.15); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.26); }
 
-/* ═══════════════════════════════════════════════════════════════
-   NOTION INPUT SYSTEM
-   ═══════════════════════════════════════════════════════════════ */
-.n-input {
-  display: block; width: 100%;
-  padding: 8px 10px;
-  background: var(--bg);
+/* ══════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY SYSTEM  (Notion's actual type scale)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Page title — Notion uses 40px, weight 700, tight tracking */
+.n-page-title {
+  font-size: 40px;
+  font-weight: 700;
   color: var(--text);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r);
-  font-size: 14px;
-  outline: none;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+/* Section headings */
+.n-heading-1 { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+.n-heading-2 { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.005em; }
+.n-heading-3 { font-size: 14px; font-weight: 600; color: var(--text); }
+
+/* Body text */
+.n-body   { font-size: 14px; color: var(--text-2); line-height: 1.65; }
+.n-body-sm{ font-size: 13px; color: var(--text-2); line-height: 1.55; }
+.n-caption{ font-size: 12px; color: var(--text-3); line-height: 1.45; }
+
+/* Uppercase label (Notion's property labels) */
+.n-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+
+/* Monospace / code */
+.n-mono { font-family: 'SFMono-Regular', 'Consolas', monospace; font-size: 12px; }
+.n-code {
+  background: var(--bg-code);
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  font-size: 85%;
+}
+
+/* Misc text helpers */
+.text-muted     { color: var(--text-3); }
+.text-secondary { color: var(--text-2); }
+.font-mono      { font-family: 'SFMono-Regular', 'Consolas', monospace; }
+.tabular-nums   { font-variant-numeric: tabular-nums; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   INPUT SYSTEM  (Notion's inline-edit inputs)
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-input {
+  display:    block;
+  width:      100%;
+  padding:    7px 10px;
+  background: var(--bg);
+  color:      var(--text);
+  border:     1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  font-size:  14px;
+  line-height: 1.4;
+  outline:    none;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
   color-scheme: light dark;
 }
 .n-input::placeholder { color: var(--text-ph); }
 .n-input:hover  { border-color: var(--border-hover); }
 .n-input:focus  { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+.n-input:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* date/month/time inputs — fix browser calendar picker to match theme */
-input[type="date"], input[type="month"], input[type="time"] {
-  color-scheme: light dark;
-}
+textarea.n-input { resize: vertical; min-height: 80px; }
+
+/* date/number inputs */
+input[type="date"], input[type="month"], input[type="time"],
+input[type="number"] { color-scheme: light dark; }
+
 [data-theme="dark"] input[type="date"],
 [data-theme="dark"] input[type="month"],
-[data-theme="dark"] input[type="time"] {
-  color-scheme: dark;
-}
+[data-theme="dark"] input[type="time"] { color-scheme: dark; }
 
-/* .n-select — standalone select class (used across all pages) */
+/* Dark overrides */
+[data-theme="dark"] .n-input {
+  background: var(--bg-secondary);
+  border-color: var(--border-strong);
+}
+[data-theme="dark"] .n-input:hover  { border-color: var(--border-hover); }
+[data-theme="dark"] .n-input:focus  { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
 .n-select {
   display: block; width: 100%;
   padding: 7px 30px 7px 10px;
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border-strong);
-  border-radius: var(--r);
+  border-radius: var(--r-md);
   font-size: 14px;
   outline: none; cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--transition), box-shadow var(--transition);
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23777' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
@@ -144,106 +296,160 @@ input[type="date"], input[type="month"], input[type="time"] {
 .n-select:focus  { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
 .n-select option { background: var(--bg); color: var(--text); }
 
-/* Dark mode: n-select */
 [data-theme="dark"] .n-select {
   background: var(--bg-secondary);
-  color: var(--text);
   border-color: var(--border-strong);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
 [data-theme="dark"] .n-select option { background: #252525; color: rgba(255,255,255,0.9); }
 
-/* Dark mode: n-input */
-[data-theme="dark"] .n-input {
-  background: var(--bg-secondary);
-  color: var(--text);
-  border-color: var(--border-strong);
-}
-[data-theme="dark"] select.n-input { background: var(--bg-secondary); }
-[data-theme="dark"] select.n-input option { background: #252525; color: rgba(255,255,255,0.9); }
-
-/* ═══════════════════════════════════════════════════════════════
-   NOTION BUTTON SYSTEM
-   ═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   BUTTON SYSTEM  (Notion's exact button tokens)
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: var(--r);
-  font-size: 14px; font-weight: 500; border: none;
-  transition: background 0.12s, opacity 0.12s, color 0.12s; white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  line-height: 1;
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              opacity var(--transition-fast),
+              box-shadow var(--transition-fast);
+  white-space: nowrap;
   user-select: none;
+  cursor: pointer;
 }
-.n-btn:active { opacity: 0.85; transform: scale(0.99); }
+.n-btn:active { transform: scale(0.985); }
+.n-btn:disabled { opacity: 0.42; cursor: not-allowed; pointer-events: none; }
 
-/* Primary: dark fill */
+/* Primary — Notion's dark-fill button */
 .n-btn-primary {
   background: var(--text);
   color: var(--bg);
 }
-.n-btn-primary:hover { opacity: 0.85; }
+.n-btn-primary:hover { opacity: 0.82; }
 
-/* Default: subtle border */
+/* Default — Notion's outlined ghost */
 .n-btn-default {
   background: transparent;
   color: var(--text-2);
   border: 1px solid var(--border-strong);
 }
-.n-btn-default:hover { background: var(--bg-hover); color: var(--text); }
+.n-btn-default:hover { background: var(--bg-hover); color: var(--text); border-color: var(--border-hover); }
 
 /* Ghost */
 .n-btn-ghost {
-  background: transparent; color: var(--text-2); border: none;
+  background: transparent;
+  color: var(--text-2);
+  border: none;
 }
 .n-btn-ghost:hover { background: var(--bg-hover); color: var(--text); }
 
-/* Danger */
-.n-btn-danger {
-  background: transparent; color: var(--red); border: 1px solid transparent;
-}
-.n-btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
-
-/* Blue */
+/* Blue accent */
 .n-btn-blue {
-  background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(35,131,226,0.2);
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid rgba(35,131,226,0.18);
 }
-.n-btn-blue:hover { background: var(--accent); color: #fff; }
+.n-btn-blue:hover { background: var(--accent); color: #fff; border-color: transparent; }
+
+/* Danger ghost (red text, transparent) */
+.n-btn-danger-ghost {
+  background: transparent;
+  color: var(--red);
+  border: none;
+}
+.n-btn-danger-ghost:hover { background: var(--red-bg); }
+
+/* Danger outline */
+.n-btn-danger {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.n-btn-danger:hover { background: var(--red-bg); }
 
 /* Danger solid */
 .n-btn-danger-solid {
-  background: var(--red); color: #fff; border: none;
+  background: var(--red);
+  color: #fff;
+  border: none;
 }
 .n-btn-danger-solid:hover { opacity: 0.88; }
 
-/* Sizes */
-.n-btn-sm { padding: 4px 9px; font-size: 13px; gap: 4px; }
-.n-btn-lg { padding: 10px 18px; font-size: 15px; }
-.n-btn-full { width: 100%; justify-content: center; }
-.n-btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+/* Green */
+.n-btn-green {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-border);
+}
+.n-btn-green:hover { background: var(--green); color: #fff; border-color: transparent; }
 
-/* ═══════════════════════════════════════════════════════════════
-   NOTION LABEL
-   ═══════════════════════════════════════════════════════════════ */
-.n-label {
-  display: block;
-  font-size: 11px; font-weight: 500;
+/* Sizes */
+.n-btn-xs  { padding: 3px 8px;  font-size: 12px; gap: 3px; border-radius: var(--r); }
+.n-btn-sm  { padding: 4px 10px; font-size: 13px; gap: 4px; }
+.n-btn-lg  { padding: 9px 18px; font-size: 15px; }
+.n-btn-xl  { padding: 12px 22px; font-size: 15px; font-weight: 600; }
+.n-btn-full { width: 100%; justify-content: center; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CARD / SURFACE SYSTEM
+   ══════════════════════════════════════════════════════════════════════════ */
+/* Notion's cards have very subtle 1px borders, no shadow by default */
+.n-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.n-card:hover { border-color: var(--border-strong); }
+.n-card-shadow { box-shadow: var(--shadow-sm); }
+
+/* Hover card — used in list items that are clickable */
+.hover-card {
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.hover-card:hover { background: var(--bg-hover) !important; }
+
+/* Notion-style section box */
+.n-section {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.n-section-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-3);
-  text-transform: uppercase; letter-spacing: 0.07em;
-  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   NOTION TABLE
-   ═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   TABLE SYSTEM  (Notion database table)
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-table { width: 100%; border-collapse: collapse; }
 .n-table th {
   padding: 0 12px 8px;
   text-align: left;
-  font-size: 11px; font-weight: 500;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-3);
-  text-transform: uppercase; letter-spacing: 0.07em;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  white-space: nowrap;
 }
 .n-table td {
   padding: 10px 12px;
@@ -251,20 +457,22 @@ input[type="date"], input[type="month"], input[type="time"] {
   font-size: 14px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
-  background: var(--bg);
 }
 .n-table tr:last-child td { border-bottom: none; }
-.n-table tbody tr { transition: background 0.1s; }
+.n-table tbody tr { transition: background var(--transition-fast); }
 .n-table tbody tr:hover td { background: var(--bg-hover); }
+.n-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-/* ═══════════════════════════════════════════════════════════════
-   NOTION PROPERTY TAGS
-   ═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   PROPERTY TAGS  (Notion's coloured property chips)
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-tag {
   display: inline-flex; align-items: center; gap: 3px;
-  padding: 2px 7px; border-radius: 4px;
+  padding: 1px 7px;
+  border-radius: 3px;
   font-size: 12px; font-weight: 500;
   white-space: nowrap;
+  line-height: 20px;
 }
 .n-tag-green  { background: var(--green-bg);  color: var(--green); }
 .n-tag-red    { background: var(--red-bg);    color: var(--red); }
@@ -272,262 +480,603 @@ input[type="date"], input[type="month"], input[type="time"] {
 .n-tag-yellow { background: var(--yellow-bg); color: var(--yellow); }
 .n-tag-purple { background: var(--purple-bg); color: var(--purple); }
 .n-tag-gray   { background: var(--gray-bg);   color: var(--gray); }
+.n-tag-teal   { background: var(--teal-bg);   color: var(--teal); }
+.n-tag-pink   { background: var(--pink-bg);   color: var(--pink); }
 
-/* ═══════════════════════════════════════════════════════════════
-   NOTION CARD
-   ═══════════════════════════════════════════════════════════════ */
-.n-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.n-card:hover { border-color: var(--border-strong); }
-.n-card-elevated { box-shadow: var(--shadow); }
-
-/* ═══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
    PROGRESS BAR
-   ═══════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-progress-track {
   height: 4px; border-radius: 2px;
   background: var(--progress-track); overflow: hidden;
 }
 .n-progress-fill {
   height: 100%; border-radius: 2px;
-  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  transition: width 0.65s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
    EMPTY STATE
-   ═══════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-empty {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 80px 24px; gap: 8px;
   color: var(--text-3); text-align: center;
 }
-.n-empty-icon { opacity: 0.3; margin-bottom: 4px; }
+.n-empty-icon {
+  opacity: 0.28;
+  margin-bottom: 8px;
+}
 
-/* ═══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
    DIVIDER
-   ═══════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-divider { border: none; border-top: 1px solid var(--border); }
 
-/* ═══════════════════════════════════════════════════════════════
-   ANIMATIONS
-   ═══════════════════════════════════════════════════════════════ */
-@keyframes n-spin  { to { transform: rotate(360deg); } }
-@keyframes spin    { to { transform: rotate(360deg); } }
-@keyframes n-shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
-}
-
-.n-skeleton {
-  background: linear-gradient(90deg,
-    var(--bg-secondary) 25%,
-    var(--skeleton-shine) 50%,
-    var(--bg-secondary) 75%
-  );
-  background-size: 400px 100%;
-  animation: n-shimmer 1.4s ease infinite;
-  border-radius: var(--r);
-}
-
-/* ═══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
    KEYBOARD SHORTCUT CHIP
-   ═══════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════════════ */
 .n-kbd {
   display: inline-flex; align-items: center; gap: 1px;
   font-size: 11px; color: var(--text-3);
   border: 1px solid var(--border-strong);
   border-radius: 3px; padding: 1px 4px;
   font-family: inherit;
+  background: var(--bg-secondary);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   DARK MODE TOKEN OVERRIDES
-   Applied when <html data-theme="dark"> is set by ThemeContext
-   ═══════════════════════════════════════════════════════════════ */
-[data-theme="dark"] {
-  /* Text */
-  --text:          rgba(255, 255, 255, 0.9);
-  --text-2:        rgba(255, 255, 255, 0.6);
-  --text-3:        rgba(255, 255, 255, 0.38);
-  --text-ph:       rgba(255, 255, 255, 0.2);
-
-  /* Backgrounds */
-  --bg:            #191919;
-  --bg-sidebar:    #111111;
-  --bg-hover:      rgba(255, 255, 255, 0.055);
-  --bg-active:     rgba(255, 255, 255, 0.09);
-  --bg-secondary:  #252525;
-  --bg-tooltip:    #2f2f2f;
-
-  /* Borders */
-  --border:        rgba(255, 255, 255, 0.085);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --border-hover:  rgba(255, 255, 255, 0.28);
-
-  /* Accent */
-  --accent:        #4a9eff;
-  --accent-bg:     rgba(74, 158, 255, 0.12);
-
-  /* Semantic */
-  --green:         #4cc38a;
-  --green-bg:      rgba(76, 195, 138, 0.12);
-  --red:           #e06c75;
-  --red-bg:        rgba(224, 108, 117, 0.12);
-  --yellow:        #e5a445;
-  --yellow-bg:     rgba(229, 164, 69, 0.12);
-  --purple:        #b48eff;
-  --purple-bg:     rgba(180, 142, 255, 0.12);
-  --blue:          #4a9eff;
-  --blue-bg:       rgba(74, 158, 255, 0.12);
-  --gray:          rgba(255, 255, 255, 0.4);
-  --gray-bg:       rgba(255, 255, 255, 0.06);
-
-  /* Functional */
-  --progress-track: rgba(255, 255, 255, 0.1);
-  --skeleton-shine: rgba(255, 255, 255, 0.06);
-
-  /* Shadows */
-  --shadow-sm:     0 1px 2px rgba(0,0,0,0.3);
-  --shadow:        0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.25);
-  --shadow-md:     0 2px 8px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
-  --shadow-float:  rgba(0,0,0,0.3) 0 0 0 1px, rgba(0,0,0,0.5) 0 8px 24px;
+/* ══════════════════════════════════════════════════════════════════════════
+   SKELETON SHIMMER
+   ══════════════════════════════════════════════════════════════════════════ */
+@keyframes n-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.n-skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-secondary) 25%,
+    var(--skeleton-shine) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 600px 100%;
+  animation: n-shimmer 1.5s ease infinite;
+  border-radius: var(--r);
 }
 
-/* Dark mode scrollbar */
-[data-theme="dark"] ::-webkit-scrollbar-thumb       { background: rgba(255,255,255,0.15); }
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+/* ══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════════════════════════════════ */
+@keyframes n-spin  { to { transform: rotate(360deg); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes n-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes n-scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 
-/* Dark mode — fix any leftover hardcoded hover */
-[data-theme="dark"] .n-btn-primary:hover { opacity: 0.82; }
-[data-theme="dark"] .n-table tbody tr:hover td { background: var(--bg-hover); }
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION SIDEBAR LAYOUT — Exact pixel replication
+   ══════════════════════════════════════════════════════════════════════════ */
 
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE RESPONSIVE SYSTEM
-   ═══════════════════════════════════════════════════════════════ */
+/* The main app wrapper */
+.app-root {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
 
-/* Utility classes */
+/* Sidebar container */
+.app-sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+/* Main content area */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Topbar (Notion's 45px chrome bar) ──────────────────────────────────── */
+.n-topbar {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Topbar icon button (breadcrumb / toggle) */
+.n-topbar-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: var(--r);
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+.n-topbar-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+/* ── Page content wrapper ───────────────────────────────────────────────── */
+.n-page-content {
+  max-width: var(--page-max-w);
+  margin: 0 auto;
+  padding: var(--page-pad-y) var(--page-pad-x) 96px;
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PAGE HEADER  (Notion emoji + title + divider)
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-page-header {
+  margin-bottom: 36px;
+}
+.n-page-header-icon {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-secondary);
+  margin-bottom: 12px;
+}
+.n-page-header h1 {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.n-page-header .subtitle {
+  font-size: 14px;
+  color: var(--text-3);
+  margin-top: 4px;
+  font-weight: 400;
+}
+.n-page-header hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STAT CARDS  (Dashboard metric cards)
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.n-stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 18px 20px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.n-stat-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-xs);
+}
+.n-stat-card .label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.n-stat-card .value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.n-stat-card .subtext {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SIDEBAR NAV (Notion's exact nav item style)
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-nav-section-label {
+  padding: 4px 12px 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.n-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: var(--r);
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  user-select: none;
+  text-decoration: none;
+}
+.n-nav-item:hover  { background: var(--bg-hover); color: var(--text); }
+.n-nav-item.active { background: var(--bg-active); color: var(--text); font-weight: 500; }
+.n-nav-item .icon  { opacity: 0.55; flex-shrink: 0; }
+.n-nav-item.active .icon { opacity: 0.85; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION MODAL / DIALOG
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(15, 15, 15, 0.4);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+  animation: n-fade-in 0.12s ease;
+}
+.n-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
+  animation: n-scale-in 0.14s ease;
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.n-modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.n-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.n-modal-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.n-modal-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FORM SYSTEM
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+.n-form-group:last-child { margin-bottom: 0; }
+.n-form-grid { display: grid; gap: 12px; }
+.n-form-grid-2 { grid-template-columns: 1fr 1fr; }
+.n-form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION TOOLTIP
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-tooltip {
+  position: absolute;
+  z-index: 2000;
+  background: var(--bg-tooltip);
+  color: rgba(255,255,255,0.88);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: var(--r);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION DROPDOWN / MENU
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-dropdown {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-float);
+  padding: 4px;
+  min-width: 160px;
+  z-index: 500;
+}
+.n-dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--r);
+  font-size: 14px; color: var(--text-2);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  user-select: none;
+}
+.n-dropdown-item:hover { background: var(--bg-hover); color: var(--text); }
+.n-dropdown-item.danger { color: var(--red); }
+.n-dropdown-item.danger:hover { background: var(--red-bg); }
+.n-dropdown-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION CALLOUT / BANNER
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-callout {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid;
+}
+.n-callout-info    { background: var(--blue-bg);   border-color: rgba(35,131,226,0.20); color: var(--blue); }
+.n-callout-success { background: var(--green-bg);  border-color: var(--green-border);   color: var(--green); }
+.n-callout-warning { background: var(--yellow-bg); border-color: var(--yellow-border);  color: var(--yellow); }
+.n-callout-danger  { background: var(--red-bg);    border-color: var(--red-border);     color: var(--red); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION AVATAR
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.n-avatar-sm  { width: 24px; height: 24px; font-size: 11px; }
+.n-avatar-md  { width: 32px; height: 32px; font-size: 13px; }
+.n-avatar-lg  { width: 40px; height: 40px; font-size: 16px; }
+.n-avatar-xl  { width: 56px; height: 56px; font-size: 20px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION CHECKBOX  (custom styled)
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-checkbox {
+  appearance: none;
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition);
+  position: relative;
+}
+.n-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.n-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 0px;
+  width: 5px; height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTION TOGGLE / SWITCH
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-toggle {
+  position: relative;
+  display: inline-block;
+  width: 32px; height: 18px;
+  flex-shrink: 0;
+}
+.n-toggle input { opacity: 0; width: 0; height: 0; }
+.n-toggle-slider {
+  position: absolute; cursor: pointer;
+  inset: 0;
+  background: var(--border-strong);
+  border-radius: 9px;
+  transition: background 0.2s;
+}
+.n-toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 2px; top: 2px;
+  width: 14px; height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.n-toggle input:checked + .n-toggle-slider { background: var(--accent); }
+.n-toggle input:checked + .n-toggle-slider::before { transform: translateX(14px); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Notion-accurate breakpoints
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Utility: show/hide by viewport */
 .n-mobile-only   { display: none !important; }
 .n-mobile-hidden { display: block; }
+.topbar-hamburger { display: none; }
 
-/* ── Tablet (≤1024px) ─────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .n-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
-  .n-grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+/* ── Tablet (≤1100px) — reduce padding, compress layout ────────────────── */
+@media (max-width: 1100px) {
+  :root {
+    --page-pad-x: 48px;
+    --page-pad-y: 36px;
+  }
+  .n-stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ── Mobile (≤768px) ──────────────────────────────────────────── */
+/* ── Small tablet (≤900px) — single column most things ─────────────────── */
+@media (max-width: 900px) {
+  :root {
+    --page-pad-x: 32px;
+  }
+  .n-form-grid-2, .n-form-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ── Mobile (≤768px) — sidebar becomes drawer ───────────────────────────── */
 @media (max-width: 768px) {
+  :root {
+    --page-pad-x: 16px;
+    --page-pad-y: 20px;
+  }
+
   /* Utility toggles */
   .n-mobile-only   { display: block !important; }
   .n-mobile-hidden { display: none !important; }
   .n-mobile-flex   { display: flex !important; }
+  .topbar-hamburger { display: flex !important; }
+  .topbar-palette-hint { display: none !important; }
 
-  /* Layout: sidebar becomes fixed overlay, main takes full width */
+  /* Sidebar: becomes fixed overlay drawer */
   .app-sidebar {
     position: fixed !important;
     top: 0; left: 0; bottom: 0;
     z-index: 800;
     transform: translateX(-100%);
-    transition: transform 0.22s ease;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-md);
+    height: 100vh;
   }
-  .app-sidebar.open {
-    transform: translateX(0);
-  }
+  .app-sidebar.open { transform: translateX(0); }
+
   .app-sidebar-backdrop {
     display: block !important;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.25);
+    background: rgba(0,0,0,0.22);
     z-index: 799;
   }
-  .app-main {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
+  .app-main { margin-left: 0 !important; width: 100% !important; }
 
-  /* Topbar: show hamburger, hide desktop-only items */
-  .topbar-hamburger { display: flex !important; }
-  .topbar-palette-hint { display: none !important; }
-
-  /* Page content: reduce padding */
-  .n-page-content {
-    padding: 16px !important;
-  }
-
-  /* Grid layouts: stack to 1 col on mobile */
-  .n-grid-4,
-  .n-grid-3,
-  .n-grid-2 {
+  /* Grids: all become 1 column */
+  .n-stat-grid, .n-form-grid-2, .n-form-grid-3 {
     grid-template-columns: 1fr !important;
   }
 
   /* Tables: horizontal scroll */
-  .n-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  .n-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .n-table th, .n-table td {
     padding: 8px 10px !important;
     font-size: 12px !important;
     white-space: nowrap;
   }
 
-  /* Stat/insight cards: full width */
-  .n-stat-grid {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  /* Buttons: larger touch targets */
+  /* Buttons: slightly larger touch targets */
   .n-btn { min-height: 36px; }
-  .n-btn-sm { padding: 6px 11px !important; }
 
-  /* Page headers: reduce spacing */
-  .n-page-header { margin-bottom: 16px !important; }
+  /* Modal: full-width on mobile */
+  .n-modal { width: 95vw !important; max-width: 95vw !important; }
 
-  /* Form grids: single column */
-  .n-form-grid {
-    grid-template-columns: 1fr !important;
-  }
+  /* Notification panel: full width */
+  .n-notif-drawer { width: 100% !important; right: 0 !important; }
 
-  /* Charts: allow height reduction */
-  .n-chart-card { min-height: 0; }
-  .n-chart-inner { height: 180px !important; }
-
-  /* Notification drawer: full width on mobile */
-  .n-notif-drawer {
-    width: 100% !important;
-    right: 0 !important;
-  }
-
-  /* Reports: stack chart + sidebar */
-  .n-reports-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Analytics: stack chart pairs */
-  .n-analytics-pair {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Command palette: full width */
-  .n-palette-modal {
-    width: 95vw !important;
-    max-width: 95vw !important;
-  }
+  /* Misc overrides */
+  .n-page-header h1 { font-size: 28px !important; }
+  .n-page-header   { margin-bottom: 24px !important; }
 }
 
-/* ── Small mobile (≤480px) ────────────────────────────────────── */
+/* ── Small mobile (≤480px) ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .n-stat-grid {
-    grid-template-columns: 1fr !important;
-  }
-  .n-page-content {
-    padding: 12px !important;
-  }
+  :root { --page-pad-x: 12px; --page-pad-y: 16px; }
+  .n-stat-grid { grid-template-columns: 1fr 1fr !important; }
+  .n-page-header h1 { font-size: 24px !important; }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES  (Tailwind-like helpers)
+   ══════════════════════════════════════════════════════════════════════════ */
+.flex          { display: flex; }
+.flex-col      { display: flex; flex-direction: column; }
+.items-center  { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2  { gap: 8px; }
+.gap-3  { gap: 12px; }
+.gap-4  { gap: 16px; }
+.w-full { width: 100%; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Separator ──────────────────────────────────────────────────────────── */
+.n-separator {
+  width: 100%; height: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DARK MODE — Component-specific dark overrides
+   ══════════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .n-btn-primary { background: rgba(255,255,255,0.9); color: #1a1a1a; }
+[data-theme="dark"] .n-btn-primary:hover { background: rgba(255,255,255,1); opacity: 1; }
+
+[data-theme="dark"] select.n-input { background: var(--bg-secondary); }
+[data-theme="dark"] select.n-input option { background: #252525; color: rgba(255,255,255,0.9); }
+
+[data-theme="dark"] .n-table tbody tr:hover td { background: var(--bg-hover); }
+
+[data-theme="dark"] .hover-card:hover { background: var(--bg-hover) !important; }
+
+/* Notion's "notif-del-btn" hover reveal */
+.notif-del-btn:hover,
+motion.div:hover .notif-del-btn { opacity: 1 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PAGE-SPECIFIC GRID HELPERS
+   ══════════════════════════════════════════════════════════════════════════ */
+.n-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.n-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.n-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+@media (max-width: 1024px) {
+  .n-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .n-grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 768px) {
+  .n-grid-4, .n-grid-3, .n-grid-2 { grid-template-columns: 1fr !important; }
+}
+
+/* Reports / analytics layout pairs */
+.n-reports-grid   { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+.n-analytics-pair { display: grid; grid-template-columns: 1fr 1fr;   gap: 24px; }
+@media (max-width: 900px) {
+  .n-reports-grid, .n-analytics-pair { grid-template-columns: 1fr !important; }
+}

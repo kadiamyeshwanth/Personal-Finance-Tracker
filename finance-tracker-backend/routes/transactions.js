@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const Transaction = require('../models/Transaction');
+const Notification = require('../models/Notification');
 const protect = require('../middleware/protect');
+const { suggestCategory } = require('../utils/categorizer');
+const { detectFlags } = require('../utils/fraudDetector');
 
 // All routes below require a valid JWT
 router.use(protect);
@@ -71,22 +74,36 @@ router.get('/', async (req, res) => {
 // GET summary stats (income, expenses, net) — used by dashboard
 router.get('/summary', async (req, res) => {
   try {
+    const mongoose = require('mongoose');
+    const userId = new mongoose.Types.ObjectId(req.user.id);
     const result = await Transaction.aggregate([
-      { $match: { userId: req.user._id || require('mongoose').Types.ObjectId(req.user.id), isRecurring: false } },
+      { $match: { userId, isRecurring: false } },
       { $group: { _id: '$type', total: { $sum: '$amount' }, count: { $sum: 1 } } },
     ]);
-    const income   = result.find(r => r._id === 'income')   || { total: 0, count: 0 };
-    const expenses = result.find(r => r._id === 'expense')  || { total: 0, count: 0 };
-    res.json({ income: income.total, expenses: expenses.total, net: income.total - expenses.total, incomeCount: income.count, expenseCount: expenses.count });
+    const income   = result.find(r => r._id === 'income')  || { total: 0, count: 0 };
+    const expenses = result.find(r => r._id === 'expense') || { total: 0, count: 0 };
+    res.json({
+      income:       income.total,
+      expenses:     expenses.total,
+      net:          income.total - expenses.total,
+      incomeCount:  income.count,
+      expenseCount: expenses.count,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // ADD a new transaction
 router.post('/add', async (req, res) => {
   try {
-    const { type, category, amount, date, description, isRecurring, frequency } = req.body;
+    const { type, category, amount, date, description, merchant, tags, isRecurring, frequency } = req.body;
+
+    // Auto-detect flags (fraud/impulse detection)
+    const flags = type === 'expense' ? await detectFlags({
+      userId: req.user.id, amount: Number(amount), category, type, date,
+    }) : [];
 
     // Save the template (or plain transaction)
     const newTransaction = new Transaction({
@@ -97,18 +114,34 @@ router.post('/add', async (req, res) => {
       amount,
       date:        Date.parse(date),
       description,
+      merchant:    merchant || '',
+      tags:        Array.isArray(tags) ? tags : (tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : []),
+      flags,
       isRecurring: isRecurring || false,
       frequency:   isRecurring ? (frequency || 'monthly') : 'once',
     });
 
     await newTransaction.save();
 
-    // ── KEY FIX ──────────────────────────────────────────────────────────────
-    // When a recurring TEMPLATE is created, also create an immediate non-recurring
-    // instance for the template's start date. This ensures it shows up in the
-    // Dashboard income/expense totals without waiting for the midnight cron.
-    // The cron uses "[Auto] ..." prefix for its generated copies, so it will
-    // still generate future copies correctly (different description = not skipped).
+    // Notify on flagged transactions (fraud/anomaly alerts)
+    if (flags.includes('abnormal')) {
+      await Notification.create({
+        userId: req.user.id,
+        title:  `Abnormal transaction detected ⚠️`,
+        body:   `A ₹${Number(amount).toLocaleString('en-IN')} ${category} expense is much higher than your usual spending in this category.`,
+        type:   'warning', icon: '⚠️', link: '/transactions',
+      });
+    }
+    if (flags.includes('duplicate')) {
+      await Notification.create({
+        userId: req.user.id,
+        title:  `Possible duplicate transaction`,
+        body:   `A similar ₹${Number(amount).toLocaleString('en-IN')} ${category} transaction was recorded recently. Check for duplicates.`,
+        type:   'warning', icon: '🔁', link: '/transactions',
+      });
+    }
+
+    // When a recurring TEMPLATE is created, also create an immediate non-recurring instance
     if (isRecurring) {
       const immediateInstance = new Transaction({
         userId:      req.user.id,
@@ -117,8 +150,11 @@ router.post('/add', async (req, res) => {
         category,
         amount,
         date:        Date.parse(date),
-        description: description || category,   // plain description, NOT [Auto] prefix
-        isRecurring: false,                     // actual transaction, not a template
+        description: description || category,
+        merchant:    merchant || '',
+        tags:        newTransaction.tags,
+        flags:       [],
+        isRecurring: false,
         frequency:   'once',
       });
       await immediateInstance.save();
@@ -163,6 +199,9 @@ router.post('/update/:id', async (req, res) => {
     transaction.amount      = Number(req.body.amount);
     transaction.date        = Date.parse(req.body.date);
     transaction.description = req.body.description;
+    transaction.merchant    = req.body.merchant || transaction.merchant || '';
+    transaction.tags        = Array.isArray(req.body.tags) ? req.body.tags
+                              : (req.body.tags ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : transaction.tags || []);
     transaction.isRecurring = req.body.isRecurring || false;
     transaction.frequency   = req.body.frequency || 'once';
 
@@ -172,5 +211,6 @@ router.post('/update/:id', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
 
 module.exports = router;

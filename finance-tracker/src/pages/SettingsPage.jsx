@@ -5,12 +5,14 @@ import toast from 'react-hot-toast';
 import {
   Settings, User, Lock, Trash2, AlertTriangle,
   Eye, EyeOff, CheckCircle2, Shield, Database,
-  CreditCard, Target, Wallet, Moon, Sun, X,
+  CreditCard, Target, Wallet, Moon, Sun, X, Sparkles,
+  MessageSquare, Copy, RefreshCw, ExternalLink, CheckCheck, Zap,
 } from 'lucide-react';
 import { getUserStats, updateProfile, changePassword, deleteAccount, clearAllData } from '../api/users';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import PageHeader from '../components/ui/PageHeader';
+import client from '../api/client';
 
 // ── Password Strength Indicator ───────────────────────────────────────────────
 const getStrength = (pw) => {
@@ -114,6 +116,258 @@ const Section = ({ icon: Icon, title, subtitle, children, accentColor }) => (
     <div style={{ padding: '20px' }}>{children}</div>
   </div>
 );
+
+// ── Finance Avatar Section ────────────────────────────────────────────────────
+const AVATARS = {
+  'Silent Saver':     { emoji: '🐢', color: '#4cc38a', desc: 'You save quietly and consistently. Keep it up!' },
+  'Chaos Spender':    { emoji: '🌪️', color: '#e06c75', desc: 'Your spending is unpredictable. Try setting stricter budgets.' },
+  'Budget Ninja':     { emoji: '🥷', color: '#4a9eff', desc: 'You stay within budget like a pro. Impressive discipline!' },
+  'Balanced Spender': { emoji: '⚖️', color: '#e5a445', desc: 'You balance spending and saving well. Great equilibrium!' },
+  'Impulse Buyer':    { emoji: '⚡', color: '#b48eff', desc: 'You love spontaneous purchases. Use the 24-hour rule!' },
+  'Luxury Addict':    { emoji: '💎', color: '#f472b6', desc: 'You enjoy the finer things. Budget for it intentionally!' },
+};
+
+const AvatarSection = () => {
+  const [personality, setPersonality] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    client.get('/insights/personality')
+      .then(r => setPersonality(r.data?.type))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const av = AVATARS[personality];
+  return (
+    <Section icon={Sparkles} title="Finance Personality" subtitle="Your AI-detected financial archetype" accentColor="#6366f1">
+      {loading ? (
+        <div className="n-skeleton" style={{ height: '60px', borderRadius: 'var(--r-md)' }} />
+      ) : personality && av ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: `${av.color}15`, border: `1px solid ${av.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>
+            {av.emoji}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: av.color, marginBottom: '4px' }}>{personality}</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.5 }}>{av.desc}</div>
+          </div>
+          <a href="/ai-insights" style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            Full analysis →
+          </a>
+        </div>
+      ) : (
+        <div style={{ fontSize: '13px', color: 'var(--text-3)', lineHeight: 1.7 }}>
+          Add more transactions to unlock your finance personality type. We need at least 10 transactions to analyze your spending patterns.
+          <a href="/ai-insights" style={{ display: 'inline-flex', marginLeft: '6px', color: 'var(--accent)', fontSize: '13px' }}>Go to AI Insights →</a>
+        </div>
+      )}
+    </Section>
+  );
+};
+
+// ── SMS Auto-Import Setup Section ────────────────────────────────────────────
+const SMSSetupSection = () => {
+  const [setup, setSetup]     = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [copied, setCopied]   = React.useState(false);
+  const [regen, setRegen]     = React.useState(false);
+  const [history, setHistory] = React.useState([]);
+  const [showHistory, setShowHistory] = React.useState(false);
+
+  const fetchSetup = () => {
+    setLoading(true);
+    client.get('/sms/setup')
+      .then(r => setSetup(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  React.useEffect(() => { fetchSetup(); }, []);
+
+  const copyUrl = () => {
+    if (!setup?.webhookUrl) return;
+    navigator.clipboard.writeText(setup.webhookUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const regenerate = async () => {
+    if (!window.confirm('Regenerate token? Your old webhook URL will stop working immediately.')) return;
+    setRegen(true);
+    try {
+      const r = await client.post('/sms/token/regenerate');
+      setSetup(r.data);
+      toast.success('Webhook URL regenerated!');
+    } catch { toast.error('Failed to regenerate'); }
+    finally { setRegen(false); }
+  };
+
+  const loadHistory = () => {
+    client.get('/sms/history').then(r => setHistory(r.data)).catch(() => {});
+    setShowHistory(true);
+  };
+
+  const APPS = [
+    {
+      name: 'SMS Forwarder (Android)',
+      icon: '📱',
+      steps: ['Install "SMS Forwarder" by Bogdan Melnychuk from Play Store', 'Open app → tap "+" → Select "HTTP" filter', 'Set URL to your webhook URL below', 'Set Method to POST, Body format: JSON', 'Add filter: Sender contains "HDFC" OR "SBI" OR "ICICI" OR "GPay" etc.', 'Save and enable the rule'],
+      url: 'https://play.google.com/store/apps/details?id=com.bogdan.sms',
+    },
+    {
+      name: 'MacroDroid (Advanced)',
+      icon: '⚙️',
+      steps: ['Install MacroDroid from Play Store', 'Create new Macro → Trigger: SMS Received', 'Add filter: From number contains bank SMS sender', 'Add Action: HTTP Request', 'Set URL = your webhook URL, Method = POST', 'Set body: {"message": "{sms_body}", "from": "{sms_sender}"}'],
+      url: 'https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid',
+    },
+    {
+      name: 'Tasker (Power Users)',
+      icon: '🔧',
+      steps: ['Install Tasker from Play Store', 'Profile → Event → Phone → SMS → From: bank sender', 'Task: Net → HTTP Request → Method: POST', 'URL = your webhook URL', 'Body: {"message":"%SMSRB","from":"%SMSRF"}', 'Test with a bank OTP or transaction SMS'],
+      url: 'https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm',
+    },
+    {
+      name: 'Auto Forward SMS',
+      icon: '📤',
+      steps: ['Install "Auto Forward SMS" from Play Store', 'Add new rule → HTTP Webhook', 'Paste your webhook URL', 'Set sender filter to your bank names', 'Enable the rule and test it'],
+      url: 'https://play.google.com/store/search?q=auto+forward+sms&c=apps',
+    },
+  ];
+
+  const [activeApp, setActiveApp] = React.useState(0);
+
+  return (
+    <Section icon={MessageSquare} title="SMS Auto-Import" subtitle="Transactions auto-added when you receive a bank/UPI payment SMS" accentColor="#22c55e">
+      {loading ? (
+        <div className="n-skeleton" style={{ height: '80px', borderRadius: 'var(--r-md)' }} />
+      ) : setup ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* Status badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px var(--green)', animation: 'n-pulse 2s infinite' }} />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--green)' }}>WEBHOOK ACTIVE</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-3)', marginLeft: 'auto' }}>
+              Supports GPay · PhonePe · Paytm · HDFC · SBI · ICICI · Axis + more
+            </span>
+          </div>
+
+          {/* Webhook URL box */}
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>
+              Your personal webhook URL
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div style={{
+                flex: 1, padding: '9px 12px', background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-strong)', borderRadius: 'var(--r)',
+                fontSize: '12px', color: 'var(--text-2)', fontFamily: 'monospace',
+                wordBreak: 'break-all', lineHeight: 1.5,
+              }}>
+                {setup.webhookUrl}
+              </div>
+              <button onClick={copyUrl} className={`n-btn n-btn-sm ${copied ? 'n-btn-primary' : 'n-btn-default'}`}
+                style={{ gap: '5px', flexShrink: 0, minWidth: '80px' }}>
+                {copied ? <><CheckCheck size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+              </button>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '5px' }}>
+              ⚠️ Keep this URL private — anyone with it can add transactions to your account
+            </div>
+          </div>
+
+          {/* App Setup Guide */}
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
+              Setup guide — choose your app
+            </div>
+            {/* App tabs */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
+              {APPS.map((app, i) => (
+                <button key={app.name} onClick={() => setActiveApp(i)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 'var(--r)', fontSize: '12px', border: '1px solid',
+                    cursor: 'pointer', fontWeight: activeApp === i ? 600 : 400,
+                    background: activeApp === i ? 'var(--accent-bg)' : 'var(--bg-secondary)',
+                    borderColor: activeApp === i ? 'var(--accent)' : 'var(--border)',
+                    color: activeApp === i ? 'var(--accent)' : 'var(--text-2)',
+                  }}>
+                  {app.icon} {app.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Step list */}
+            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                  {APPS[activeApp].icon} {APPS[activeApp].name}
+                </span>
+                <a href={APPS[activeApp].url} target="_blank" rel="noreferrer"
+                  style={{ fontSize: '12px', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
+                  Play Store <ExternalLink size={10} />
+                </a>
+              </div>
+              <ol style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {APPS[activeApp].steps.map((step, i) => (
+                  <li key={i} style={{ fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.6 }}>
+                    {step.includes('webhook URL') ? (
+                      <>
+                        {step.split('webhook URL')[0]}
+                        <strong style={{ color: 'var(--accent)' }}>webhook URL</strong>
+                        {step.split('webhook URL')[1]}
+                      </>
+                    ) : step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+
+          {/* Test + History row */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button onClick={loadHistory} className="n-btn n-btn-default n-btn-sm" style={{ gap: '5px' }}>
+              <Zap size={12} /> View recent auto-imports
+            </button>
+            <button onClick={regenerate} disabled={regen} className="n-btn n-btn-ghost n-btn-sm" style={{ gap: '5px', marginLeft: 'auto', color: 'var(--red)' }}>
+              {regen ? <><RefreshCw size={12} style={{ animation: 'n-spin 1s linear infinite' }} /> Regenerating…</> : <><RefreshCw size={12} /> Reset URL</>}
+            </button>
+          </div>
+
+          {/* History list */}
+          {showHistory && (
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                Recent SMS Auto-Imports
+              </div>
+              {history.length === 0 ? (
+                <div style={{ fontSize: '13px', color: 'var(--text-3)', padding: '16px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+                  No auto-imports yet. Set up a forwarder app and pay someone via UPI to test it!
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {history.slice(0, 10).map(t => (
+                    <div key={t._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--r)' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: t.type === 'income' ? 'var(--green)' : 'var(--text)', minWidth: '80px', fontVariantNumeric: 'tabular-nums' }}>
+                        {t.type === 'income' ? '+' : '-'}₹{t.amount?.toLocaleString('en-IN')}
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-2)', flex: 1 }}>{t.description}</span>
+                      <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '4px', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>{t.category}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{new Date(t.date).toLocaleDateString('en-IN')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>Failed to load SMS setup. Please refresh.</div>
+      )}
+      <style>{`@keyframes n-pulse { 0%,100%{opacity:1}50%{opacity:0.4} }`}</style>
+    </Section>
+  );
+};
 
 // ── Main SettingsPage ─────────────────────────────────────────────────────────
 const SettingsPage = () => {
@@ -265,6 +519,9 @@ const SettingsPage = () => {
         </form>
       </Section>
 
+      {/* Finance Avatar */}
+      <AvatarSection />
+
       {/* Password */}
       <Section icon={Lock} title="Password" subtitle="Requires your current password">
         <form onSubmit={handlePasswordChange}>
@@ -386,6 +643,8 @@ const SettingsPage = () => {
           </div>
         </div>
       </Section>
+
+      <SMSSetupSection />
 
       {/* Modals */}
       <ConfirmModal

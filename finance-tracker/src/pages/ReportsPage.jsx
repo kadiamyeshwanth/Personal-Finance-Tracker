@@ -58,10 +58,17 @@ const ReportsPage = () => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const { CHART_OPTS, BAR_SCALES } = useChartOptions();
 
-  // Month selector — defaults to current month
+  // ── View mode: monthly or Financial Year ─────────────────────────────────────
   const now = new Date();
+  const [viewMode, setViewMode]           = useState('month'); // 'month' | 'fy'
   const [selectedYear,  setSelectedYear]  = useState(now.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0-indexed
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+
+  // Indian FY: April(3) – March(2). FY 2024-25 = fyYear 2024
+  const currentFY = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const [selectedFY, setSelectedFY] = useState(currentFY);
+  const fyStart = new Date(selectedFY,     3, 1);
+  const fyEnd   = new Date(selectedFY + 1, 2, 31, 23, 59, 59);
 
   const { data: allTxns = [], isLoading } = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions });
   const { data: goals = [] }              = useQuery({ queryKey: ['goals'],        queryFn: fetchGoals });
@@ -70,11 +77,14 @@ const ReportsPage = () => {
   const txns      = allTxns.filter(t => !t.isRecurring);
   const recurring = allTxns.filter(t => t.isRecurring);
 
-  // Filter transactions for selected month
-  const monthTxns = useMemo(() => txns.filter(t => {
-    const d = new Date(t.date);
-    return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
-  }), [txns, selectedYear, selectedMonth]);
+  // Filter transactions for selected period
+  const periodTxns = useMemo(() => {
+    if (viewMode === 'fy') return txns.filter(t => { const d = new Date(t.date); return d >= fyStart && d <= fyEnd; });
+    return txns.filter(t => { const d = new Date(t.date); return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth; });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txns, viewMode, selectedYear, selectedMonth, selectedFY]);
+
+  const monthTxns = periodTxns; // alias used throughout
 
   // All-time summary
   const allTime = useMemo(() => {
@@ -229,24 +239,74 @@ const ReportsPage = () => {
         subtitle="Analytics, insights, and data export for your finances."
       />
 
-      {/* Month selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-        <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Viewing:</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', border: '1px solid var(--border-strong)', borderRadius: 'var(--r)', overflow: 'hidden' }}>
-          <button onClick={prevMonth} className="n-btn n-btn-ghost n-btn-sm" style={{ borderRadius: 0, padding: '4px 8px' }}>
-            <ChevronLeft size={13} />
-          </button>
-          <span style={{ padding: '0 12px', fontSize: '13px', fontWeight: 500, color: 'var(--text)', minWidth: '120px', textAlign: 'center' }}>
-            {MONTH_NAMES[selectedMonth]} {selectedYear}
-          </span>
-          <button onClick={nextMonth} className="n-btn n-btn-ghost n-btn-sm" style={{ borderRadius: 0, padding: '4px 8px', opacity: isCurrentMonth ? 0.3 : 1, cursor: isCurrentMonth ? 'not-allowed' : 'pointer' }}>
-            <ChevronRight size={13} />
-          </button>
+      {/* ── Period selector ──────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        {/* Mode toggle */}
+        <div style={{ display: 'flex', border: '1px solid var(--border-strong)', borderRadius: 'var(--r)', overflow: 'hidden' }}>
+          {[['month', 'Monthly'], ['fy', 'Financial Year']].map(([val, label]) => (
+            <button key={val} onClick={() => setViewMode(val)}
+              style={{ padding: '5px 12px', border: 'none', fontSize: '12px', fontWeight: viewMode === val ? 600 : 400, cursor: 'pointer', background: viewMode === val ? 'var(--text)' : 'var(--bg-secondary)', color: viewMode === val ? 'var(--bg)' : 'var(--text-3)', transition: 'all 0.12s' }}>
+              {label}
+            </button>
+          ))}
         </div>
+
+        {/* Month navigator */}
+        {viewMode === 'month' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', border: '1px solid var(--border-strong)', borderRadius: 'var(--r)', overflow: 'hidden' }}>
+            <button onClick={prevMonth} className="n-btn n-btn-ghost n-btn-sm" style={{ borderRadius: 0, padding: '4px 8px' }}><ChevronLeft size={13} /></button>
+            <span style={{ padding: '0 12px', fontSize: '13px', fontWeight: 500, color: 'var(--text)', minWidth: '120px', textAlign: 'center' }}>
+              {MONTH_NAMES[selectedMonth]} {selectedYear}
+            </span>
+            <button onClick={nextMonth} className="n-btn n-btn-ghost n-btn-sm" style={{ borderRadius: 0, padding: '4px 8px', opacity: isCurrentMonth ? 0.3 : 1, cursor: isCurrentMonth ? 'not-allowed' : 'pointer' }}><ChevronRight size={13} /></button>
+          </div>
+        )}
+
+        {/* FY navigator */}
+        {viewMode === 'fy' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', border: '1px solid var(--border-strong)', borderRadius: 'var(--r)', overflow: 'hidden' }}>
+            <button onClick={() => setSelectedFY(y => y - 1)} className="n-btn n-btn-ghost n-btn-sm" style={{ borderRadius: 0, padding: '4px 8px' }}><ChevronLeft size={13} /></button>
+            <span style={{ padding: '0 12px', fontSize: '13px', fontWeight: 500, color: 'var(--text)', minWidth: '120px', textAlign: 'center' }}>
+              FY {selectedFY}–{String(selectedFY + 1).slice(2)}
+            </span>
+            <button onClick={() => setSelectedFY(y => Math.min(y + 1, currentFY))} className="n-btn n-btn-ghost n-btn-sm" style={{ borderRadius: 0, padding: '4px 8px', opacity: selectedFY >= currentFY ? 0.3 : 1, cursor: selectedFY >= currentFY ? 'not-allowed' : 'pointer' }}><ChevronRight size={13} /></button>
+          </div>
+        )}
+
         <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
-          {monthTxns.length} transaction{monthTxns.length !== 1 ? 's' : ''}
+          {periodTxns.length} transaction{periodTxns.length !== 1 ? 's' : ''}
         </span>
       </div>
+
+      {/* ── Tax Summary (FY mode only) ────────────────────────────────────── */}
+      {viewMode === 'fy' && !isLoading && (
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          style={{ border: '1px solid var(--yellow-border)', background: 'var(--yellow-bg)', borderRadius: 'var(--r-md)', padding: '16px 20px', marginBottom: '24px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--yellow)', marginBottom: '12px' }}>
+            📋 Tax Summary — FY {selectedFY}–{String(selectedFY + 1).slice(2)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+            {[
+              { label: 'Total Income (Gross)', value: periodTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0), color: 'var(--green)' },
+              { label: 'Total Expenses',       value: periodTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--red)'   },
+              { label: 'Medical/Health Spend', value: periodTxns.filter(t => ['Health', 'Medical', 'Insurance'].includes(t.category) && t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--text-2)' },
+              { label: 'Education Spend',      value: periodTxns.filter(t => t.category === 'Education' && t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--text-2)' },
+              { label: 'Investment Income',    value: periodTxns.filter(t => ['Investment', 'Dividend', 'Interest'].includes(t.category) && t.type === 'income').reduce((s, t) => s + t.amount, 0), color: 'var(--accent)' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.5)', borderRadius: 'var(--r-md)', border: '1px solid rgba(217,115,13,0.15)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-3)', marginBottom: '4px' }}>{label}</div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>
+                  ₹{value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--text-3)' }}>
+            ⚠️ This is for reference only. Consult a CA for official tax filings.
+          </div>
+        </motion.div>
+      )}
+
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 228px', gap: '24px', alignItems: 'start' }}>
         {/* Charts area */}

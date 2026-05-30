@@ -10,6 +10,9 @@ const transactionSchema = new Schema({
     amount:   { type: Number, required: true, min: [0.01, 'Amount must be positive'] },
     date:     { type: Date, required: true },
     description: { type: String, trim: true },
+    merchant:    { type: String, trim: true, default: '' },          // merchant/payee name
+    tags:        [{ type: String, trim: true }],                     // user-defined labels
+    flags:       [{ type: String }],                                 // system flags: 'late-night', 'impulse', 'duplicate', 'abnormal'
     isRecurring: { type: Boolean, default: false },
     frequency:   { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly', 'once'], default: 'once' },
 }, {

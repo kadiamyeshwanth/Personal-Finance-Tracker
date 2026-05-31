@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foreground layer of the adaptive launcher icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rupee ₹ symbol centered in a circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,20 C35.2,20 20,35.2 20,54 C20,72.8 35.2,88 54,88
+                          C72.8,88 88,72.8 88,54 C88,35.2 72.8,20 54,20Z
+                          M66,42 L42,42 L42,46 L49,46 C52.3,46 55,48.7 55,52
+                          C55,55.3 52.3,58 49,58 L42,58 L42,62 L50,70 L56,70
+                          L47,62 C51.4,61.4 55,57.6 55,52 C55,51.3 54.9,50.6 54.7,50
+                          L66,50 L66,46 L54,46 C53.6,45.1 53.1,44.3 52.5,43.6
+                          L66,42 Z"/>
+</vector>

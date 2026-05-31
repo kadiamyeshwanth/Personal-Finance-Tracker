@@ -30,7 +30,10 @@ passport.use(
     {
       clientID:     process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:  `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/auth/google/callback`,
+      // Always use localhost for the OAuth callback in local dev.
+      // BACKEND_URL points to the Serveo tunnel (for SMS webhooks only),
+      // but Google Console only has http://localhost:5000 registered.
+      callbackURL:  `http://localhost:5000/api/auth/google/callback`,
       scope:        ['profile', 'email'],
     },
     async (accessToken, refreshToken, profile, done) => {

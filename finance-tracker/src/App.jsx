@@ -22,6 +22,11 @@ import SubscriptionsPage  from './pages/SubscriptionsPage';
 import WalletsPage        from './pages/WalletsPage';
 import AnalyticsPage      from './pages/AnalyticsPage';
 import AIInsightsPage     from './pages/AIInsightsPage';
+import JournalPage        from './pages/JournalPage';
+import InvestmentsPage    from './pages/InvestmentsPage';
+import WrappedPage        from './pages/WrappedPage';
+import SpendingChallengesPage from './pages/SpendingChallengesPage';
+import FamilyPage         from './pages/FamilyPage';
 import NotFoundPage       from './pages/NotFoundPage';
 
 const queryClient = new QueryClient({
@@ -53,6 +58,11 @@ const App = () => (
                 <Route path="/wallets"       element={<WalletsPage />} />
                 <Route path="/ai-insights"   element={<AIInsightsPage />} />
                 <Route path="/reports"       element={<ReportsPage />} />
+                <Route path="/journal"       element={<JournalPage />} />
+                <Route path="/investments"   element={<InvestmentsPage />} />
+                <Route path="/wrapped"       element={<WrappedPage />} />
+                <Route path="/challenges"    element={<SpendingChallengesPage />} />
+                <Route path="/family"        element={<FamilyPage />} />
                 <Route path="/settings"      element={<SettingsPage />} />
               </Route>
 

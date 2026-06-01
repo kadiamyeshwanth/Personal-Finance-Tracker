@@ -59,7 +59,7 @@ const LoginPage = () => {
     try {
       if (isSignup) {
         if (!form.username || !form.email || !form.password || !form.confirm) { setError('All fields are required.'); return; }
-        if (form.password.length < 6)              { setError('Password must be at least 6 characters.'); return; }
+        if (form.password.length < 8)              { setError('Password must be at least 8 characters.'); return; }
         if (form.password !== form.confirm)         { setError('Passwords do not match.'); return; }
         await register(form.username, form.email, form.password);
       } else {
@@ -204,7 +204,7 @@ const LoginPage = () => {
             <Field label="Password">
               <div style={{ position: 'relative' }}>
                 <input className="n-input" type={showPass ? 'text' : 'password'} value={form.password}
-                  onChange={upd('password')} placeholder={isSignup ? 'At least 6 characters' : 'Your password'}
+                  onChange={upd('password')} placeholder={isSignup ? 'At least 8 characters' : 'Your password'}
                   autoComplete={isSignup ? 'new-password' : 'current-password'}
                   style={{ paddingRight: '38px' }} required
                 />

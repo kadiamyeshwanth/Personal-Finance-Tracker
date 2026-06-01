@@ -31,6 +31,9 @@ const userSchema = new Schema({
   resetTokenExpiry: { type: Date,    default: undefined },
   // Google OAuth
   googleId: { type: String, sparse: true },
+  // SMS Webhook Token — unique per-user token for SMS forwarder app authentication
+  // Stored as plain token (not secret like passwords — it's a webhook key, not a password)
+  smsWebhookToken: { type: String, default: undefined, index: true },
 }, { timestamps: true });
 
 // Hash the password BEFORE saving to DB (only if it was changed)

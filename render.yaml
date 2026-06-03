@@ -12,25 +12,29 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        sync: false        # Set manually in Render dashboard
+        sync: false        # Set manually in dashboard — MongoDB Atlas URI
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      # ── URLs ────────────────────────────────────────────────────
       - key: FRONTEND_URL
-        sync: false        # Set after frontend URL is known
+        sync: false        # e.g. https://personal-finance-tracker-jet-delta.vercel.app
       - key: BACKEND_URL
-        sync: false
+        sync: false        # e.g. https://finance-tracker-backend.onrender.com (no trailing slash)
+                           # Required for SMS webhook URL generation in Settings page
       - key: CORS_ORIGIN
-        sync: false
+        sync: false        # Same as FRONTEND_URL
+      # ── Google OAuth ──────────────────────────────────────────
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      # ── Email / Password Reset ────────────────────────────────
       - key: EMAIL_USER
-        sync: false
+        sync: false        # Gmail address for password reset emails
       - key: EMAIL_PASS
-        sync: false
+        sync: false        # Gmail App Password (2FA required)
 
   # ── Frontend (React/Vite Static Site) ────────────────────────
   - type: web
@@ -41,7 +45,8 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false        # Set to https://finance-tracker-backend.onrender.com/api
+        sync: false        # e.g. https://finance-tracker-backend.onrender.com/api
+                           # CRITICAL: Must end with /api — used by all frontend API calls
     routes:
       - type: rewrite
         source: /*

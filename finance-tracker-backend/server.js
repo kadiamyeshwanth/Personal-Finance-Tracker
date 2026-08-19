@@ -180,25 +180,32 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─── Start Server after DB connects ───────────────────────────────────────────
-mongoose.connect(uri)
-  .then(() => {
-    console.log('✅ MongoDB database connection established successfully');
-    // Start all cron jobs
-    startRecurringCron();
-    startStreakCron();
-    // Budget alerts — run at 9 AM IST every day
-    cron.schedule('0 9 * * *', runBudgetAlerts, { timezone: 'Asia/Kolkata' });
-    console.log('⏰ Budget alert cron scheduled (runs daily at 9 AM IST).');
-    app.listen(port, () => {
-      console.log(`🚀 Server running on port ${port}`);
-      console.log(`   Health: http://localhost:${port}/api/health`);
-      console.log(`   Security: Helmet ✓ | Rate Limiting ✓ | Zod Validation ✓`);
-      console.log(`   New routes: categories ✓ | notifications ✓ | insights ✓ | ai ✓ | mood ✓ | journal ✓ | streaks ✓ | investments ✓ | wrapped ✓`);
+// ─── Export app for Vercel serverless ─────────────────────────────────────────
+// When imported by Vercel (api/index.js), just export the configured app.
+// When run directly (`node server.js`), connect to DB and start the server.
+module.exports = app;
+
+if (require.main === module) {
+  // ── Running directly (local dev or Railway/Render) ───────────────────────
+  mongoose.connect(uri)
+    .then(() => {
+      console.log('✅ MongoDB database connection established successfully');
+      // Start all cron jobs
+      startRecurringCron();
+      startStreakCron();
+      // Budget alerts — run at 9 AM IST every day
+      cron.schedule('0 9 * * *', runBudgetAlerts, { timezone: 'Asia/Kolkata' });
+      console.log('⏰ Budget alert cron scheduled (runs daily at 9 AM IST).');
+      app.listen(port, () => {
+        console.log(`🚀 Server running on port ${port}`);
+        console.log(`   Health: http://localhost:${port}/api/health`);
+        console.log(`   Security: Helmet ✓ | Rate Limiting ✓ | Zod Validation ✓`);
+        console.log(`   New routes: categories ✓ | notifications ✓ | insights ✓ | ai ✓ | mood ✓ | journal ✓ | streaks ✓ | investments ✓ | wrapped ✓`);
+      });
+    })
+    .catch(err => {
+      console.error('❌ MongoDB connection error:', err.message);
+      console.error('   → Check your MONGODB_URI in the .env file.');
+      process.exit(1);
     });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.error('   → Check your MONGODB_URI in the .env file.');
-    process.exit(1);
-  });
+}

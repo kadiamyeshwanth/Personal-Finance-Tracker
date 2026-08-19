@@ -4,6 +4,7 @@ services:
     name: finance-tracker-backend
         plan: free
     runtime: node
+    plan: free
     rootDir: finance-tracker-backend
     buildCommand: npm install
     startCommand: node server.js
@@ -41,6 +42,7 @@ services:
   - type: web
     name: finance-tracker-frontend
     runtime: static
+    plan: free
     rootDir: finance-tracker
     buildCommand: npm install && npm run build
     staticPublishPath: dist

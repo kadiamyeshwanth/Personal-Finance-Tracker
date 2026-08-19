@@ -2,6 +2,7 @@ services:
   # ── Backend API (Node.js) ─────────────────────────────────────
   - type: web
     name: finance-tracker-backend
+        plan: free
     runtime: node
     rootDir: finance-tracker-backend
     buildCommand: npm install

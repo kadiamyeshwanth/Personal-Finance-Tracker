@@ -183,10 +183,16 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
   <AnimatePresence>
     {open && (
       <>
+        {/* Same fix as InvestmentsPage's Add/Edit modal — a static `transform`
+            in `style` and Framer Motion's own animated `scale`/`y` on the same
+            element don't compose; FM silently drops the manual centring
+            offset once it owns `transform`. Flexbox centring needs no
+            transform at all, so nothing is left for FM to clash with. */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,15,15,0.5)', backdropFilter: 'blur(4px)' }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
         <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
-          style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '500px', maxWidth: 'calc(100vw - 32px)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '28px', boxShadow: 'var(--shadow-float)' }}>
+          style={{ pointerEvents: 'auto', width: '500px', maxWidth: '100%', maxHeight: '100%', overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '28px', boxShadow: 'var(--shadow-float)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ marginBottom: '10px' }}><Fire size={34} weight="fill" style={{ color: 'var(--brand)' }} /></div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>Roast My Spending</div>
@@ -210,6 +216,7 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
           )}
           <button onClick={onClose} className="n-btn n-btn-default n-btn-sm" style={{ width: '100%' }}>Close</button>
         </motion.div>
+        </div>
       </>
     )}
   </AnimatePresence>

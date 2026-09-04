@@ -81,19 +81,28 @@ const ConfirmModal = ({ open, title, description, confirmText, onConfirm, onClos
   <AnimatePresence>
     {open && (
       <>
+        {/* Same fix as InvestmentsPage's Add/Edit modal — worth being extra
+            careful here specifically, since this dialog guards destructive
+            actions (delete account / delete data). A static `transform` in
+            `style` cannot coexist with Framer Motion's own animated
+            `scale`/`y` on the same element: FM owns `transform` outright once
+            any motion value touches it and silently drops the manual centring
+            offset, which is what left this exact Cancel button unreachable.
+            Flexbox centring needs no transform at all, so there's nothing
+            left for FM to clash with. */}
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
           style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,15,15,0.4)', backdropFilter: 'blur(4px)' }}
         />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: -12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -12 }}
           transition={{ duration: 0.15 }}
           style={{
-            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-            zIndex: 1001, width: '400px', maxWidth: 'calc(100vw - 32px)',
+            pointerEvents: 'auto', width: '400px', maxWidth: '100%', maxHeight: '100%', overflowY: 'auto',
             background: 'var(--bg)', border: '1px solid var(--border)',
             borderRadius: 'var(--r-lg)', padding: '24px', boxShadow: 'var(--shadow-float)',
           }}
@@ -116,6 +125,7 @@ const ConfirmModal = ({ open, title, description, confirmText, onConfirm, onClos
             <button onClick={onConfirm} className={`n-btn n-btn-sm ${danger ? 'n-btn-danger-solid' : 'n-btn-primary'}`}>{confirmText}</button>
           </div>
         </motion.div>
+        </div>
       </>
     )}
   </AnimatePresence>

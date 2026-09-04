@@ -32,6 +32,7 @@ import {
   PencilSimple as Edit3,
   Info as Info,
   Sparkle as Sparkles,
+  Check,
 } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
@@ -280,7 +281,7 @@ const SMSImportModal = ({ onClose, onImported }) => {
                   fontSize: '11px', fontWeight: step > i ? 600 : 400,
                   color: step === i+1 ? 'var(--accent)' : step > i+1 ? 'var(--green)' : 'var(--text-3)',
                 }}>
-                  {step > i+1 ? '✓' : n}. {label}
+                  {step > i+1 ? <Check size={11} weight="bold" style={{ verticalAlign: '-1px' }} /> : n}. {label}
                 </span>
               </React.Fragment>
             ))}
@@ -492,7 +493,7 @@ const SMSImportModal = ({ onClose, onImported }) => {
               </div>
               {result.skipped > 0 && (
                 <div style={{ fontSize: '12px', color: 'var(--text-3)', maxWidth: '340px', lineHeight: 1.6 }}>
-                  ℹ️ Skipped transactions are duplicates already in your database.
+                  <Info size={12} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5 }} />Skipped transactions are duplicates already in your database.
                 </div>
               )}
             </div>
@@ -531,7 +532,7 @@ const SMSImportModal = ({ onClose, onImported }) => {
               <button className="n-btn n-btn-ghost n-btn-sm" onClick={() => { setStep(1); setRaw(''); setParsed([]); }}>
                 Import more
               </button>
-              <button className="n-btn n-btn-primary n-btn-sm" onClick={onClose}>Done ✓</button>
+              <button className="n-btn n-btn-primary n-btn-sm" onClick={onClose}><Check size={12} weight="bold" /> Done</button>
             </>
           )}
         </div>

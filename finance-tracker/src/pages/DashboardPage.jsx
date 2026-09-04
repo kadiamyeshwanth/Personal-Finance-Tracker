@@ -46,9 +46,12 @@ import { fetchWallets } from '../api/wallets';
 import { fetchInvestments } from '../api/investments';
 import { stagger, spring } from '../lib/motion';
 import {
-  PiggyBank, Tornado, ShieldCheck, Scales, Lightning, Diamond, Wallet as WalletIcon, ChartLineUp,
+  // the personality icons now come from lib/personality.js — one map, shared
+  // with Wrapped and Settings, so the three screens can't drift apart again
+  Wallet as WalletIcon, ChartLineUp,
   Smiley, SmileyMeh, SmileyNervous, SmileyBlank, SmileySad, Sparkle, Plus,
 } from '@phosphor-icons/react';
+import { getPersonalityVisual } from '../lib/personality';
 import { useAuth }   from '../context/AuthContext';
 import client        from '../api/client';
 import toast         from 'react-hot-toast';
@@ -61,16 +64,6 @@ const inrShort = (n) => {
   if (v >= 1e5) return `₹${(v / 1e5).toFixed(1)}L`;
   if (v >= 1e3) return `₹${Math.round(v / 1e3)}k`;
   return `₹${Math.round(v)}`;
-};
-
-const AVATARS = {
-  'Silent Saver':      { Icon: PiggyBank,   desc: 'You save quietly and consistently.' },
-  'Chaos Spender':     { Icon: Tornado,     desc: 'Your spending is all over the place.' },
-  'Budget Ninja':      { Icon: ShieldCheck, desc: 'You stay within budget like a pro.' },
-  'Balanced Spender':  { Icon: Scales,      desc: 'You balance spending and saving well.' },
-  'Impulse Buyer':     { Icon: Lightning,   desc: 'You love spontaneous purchases.' },
-  'Luxury Addict':     { Icon: Diamond,     desc: 'You enjoy the finer things in life.' },
-  'unknown':           { Icon: WalletIcon,  desc: 'Keep tracking to discover your type.' },
 };
 
 // ── Mood options ──────────────────────────────────────────────────────────────
@@ -206,7 +199,7 @@ const MoodWidget = () => {
 
 // ── Finance Avatar Card ───────────────────────────────────────────────────────
 const AvatarCard = ({ personality }) => {
-  const av = AVATARS[personality] || AVATARS['unknown'];
+  const av = getPersonalityVisual(personality);
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       style={{ padding: '14px 16px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', borderRadius: 'var(--r-md)' }}>

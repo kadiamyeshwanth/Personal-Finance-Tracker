@@ -15,6 +15,9 @@ import {
   ArrowRight as ArrowRight,
   CircleNotch as Loader2,
   CaretDown as ChevronDown,
+  Lightbulb,
+  SkipForward,
+  XCircle,
 } from '@phosphor-icons/react';
 import Papa from 'papaparse';
 import toast from 'react-hot-toast';
@@ -274,7 +277,7 @@ const CSVImportModal = ({ onClose, onImported }) => {
 
               <div style={{ marginTop: '16px', padding: '12px 14px', background: 'var(--blue-bg)', borderRadius: 'var(--r-md)', border: '1px solid rgba(35,131,226,0.15)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--blue)', lineHeight: 1.6 }}>
-                  💡 <strong>How to download CSV:</strong> Login to your bank's net banking → Statement → Select date range → Download as CSV / Excel (save as CSV)
+                  <Lightbulb size={13} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5, color: 'var(--brand)' }} /><strong>How to download CSV:</strong> Login to your bank's net banking → Statement → Select date range → Download as CSV / Excel (save as CSV)
                 </div>
               </div>
             </div>
@@ -391,7 +394,7 @@ const CSVImportModal = ({ onClose, onImported }) => {
                 </table>
               </div>
               <div style={{ padding: '10px 14px', background: 'var(--yellow-bg)', borderRadius: 'var(--r-md)', border: '1px solid var(--yellow-border)', fontSize: '12px', color: 'var(--yellow)' }}>
-                ⚠️ Duplicate detection is active — transactions with the same date/amount/description won't be imported twice.
+                <AlertTriangle size={12} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5 }} />Duplicate detection is active — transactions with the same date/amount/description won't be imported twice.
               </div>
             </div>
           )}
@@ -409,9 +412,9 @@ const CSVImportModal = ({ onClose, onImported }) => {
                   {result.inserted > 0 ? 'Import complete!' : 'Nothing imported'}
                 </div>
                 <div style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: 1.6 }}>
-                  <div>✅ <strong>{result.inserted}</strong> new transactions imported</div>
-                  {result.skipped > 0 && <div style={{ color: 'var(--text-3)' }}>⏭️ {result.skipped} duplicates skipped</div>}
-                  {result.failed  > 0 && <div style={{ color: 'var(--red)' }}>❌ {result.failed} rows couldn't be read</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><CheckCircle2 size={14} weight="fill" style={{ color: 'var(--green)' }} /><span><strong>{result.inserted}</strong> new transactions imported</span></div>
+                  {result.skipped > 0 && <div style={{ color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><SkipForward size={13} weight="fill" />{result.skipped} duplicates skipped</div>}
+                  {result.failed  > 0 && <div style={{ color: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XCircle size={13} weight="fill" />{result.failed} rows couldn't be read</div>}
                 </div>
               </div>
 

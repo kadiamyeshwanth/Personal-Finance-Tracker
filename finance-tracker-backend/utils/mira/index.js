@@ -15,6 +15,7 @@
  */
 
 const { extract } = require('./entities');
+const { normalizeSlang } = require('./slang');
 const { detect }  = require('./intents');
 const Q           = require('./query');
 const { previousPeriod, describeRange, parseComparisonRanges } = require('./dates');
@@ -283,6 +284,10 @@ const handlers = {
     `· *"Do I spend more at weekends?"*\n` +
     `· *"How am I doing?"*`),
 
+  identity: () => answer(
+    `I'm **${NAME}** — Clario's assistant. I read your transactions and answer questions about them directly; nothing you type here leaves this server.\n\n` +
+    `Ask me something like *"how much did I spend on Food last month?"* or *"can I afford a ₹40,000 laptop?"*`),
+
   greeting: (e, ctx) => {
     const p = Q.projectMonth(ctx.transactions, ctx.now);
     return answer(`Hello — I'm **${NAME}**.\n\n` +
@@ -302,9 +307,16 @@ const handlers = {
  * @param {object} ctx - { transactions, budgets, goals, subscriptions, now, memory }
  * @returns {{ text, data, source, intent, entities }}
  */
-const ask = (message, ctx = {}) => {
+const ask = (rawMessage, ctx = {}) => {
   const now = ctx.now || new Date();
   const transactions = ctx.transactions || [];
+
+  // Expand common texting shorthand ('u' -> 'you', 'ur' -> 'your'...) before
+  // anything else runs, so both Mira's own matching and the legacy engine's
+  // fallback see the same, more matchable text. This is a fixed dictionary,
+  // not language understanding — see slang.js for exactly what it covers and
+  // why it stops there.
+  const message = normalizeSlang(rawMessage);
 
   // Vocabulary comes from the user's own data, so matching is grounded in
   // categories and merchants that actually exist for them.
@@ -354,9 +366,17 @@ const ask = (message, ctx = {}) => {
   // Anything Mira can't answer specifically falls back to the original engine,
   // which still handles open advice (saving, debt, investing) well.
   if (!result) {
+    // Mira's own detector is more capable than the legacy engine's (word
+    // boundaries, scoring, entity-aware) — for the handful of intents she
+    // recognises but has no dedicated handler for (save_more, budget_status,
+    // investment_advice, …), hand the legacy engine her already-correct
+    // intent directly rather than letting it re-guess from scratch with a
+    // narrower pattern set that can easily land on 'general' instead.
+    // Only when Mira herself found nothing ('unknown') does the legacy
+    // engine fall back to detecting on its own.
     const text = legacyResponse(message, {
       transactions, budgets: ctx.budgets || [], goals: ctx.goals || [], subscriptions: ctx.subscriptions || [],
-    });
+    }, intent !== 'unknown' ? intent : undefined);
     result = { text, data: {}, source: 'legacy' };
   }
 

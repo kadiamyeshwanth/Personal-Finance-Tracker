@@ -48,7 +48,14 @@ const INTENTS = [
   },
   {
     name: 'goal_feasibility', weight: 5,
-    pattern: cues('is that realistic', 'can i save', 'will i reach', 'can i reach',
+    // 'can i save' alone used to be a cue here, meant to catch "can I save
+    // 20000 by December" — but it's just as much a natural way to ask "how
+    // CAN I save (more)", a general advice request that has nothing to do
+    // with any specific target. That collision sent "how can I save more
+    // money" to a specific-goal answer instead of savings tips. Requiring a
+    // number, currency symbol, or "enough" right after keeps this cue for
+    // actual target-feasibility questions without swallowing the general one.
+    pattern: cues('is that realistic', 'can i save (?:up )?(?:enough|₹|\\d)', 'will i reach', 'can i reach',
                   'by december', 'in time for', 'how long (?:will|would) it take', 'how long to save'),
   },
   {
@@ -104,7 +111,16 @@ const INTENTS = [
   },
   {
     name: 'save_more', weight: 2,
-    pattern: cues('save more', 'saving more', 'how to save', 'increase savings', 'cut back', 'reduce spending'),
+    pattern: cues(
+      'save more', 'saving more', 'how to save', 'increase savings', 'cut back', 'reduce spending',
+      // "spend less" is the same request as "save more", just phrased from the
+      // other direction — this was reported as unrecognised ("how to spend my
+      // money less"). Allow up to 3 filler words between 'spend' and 'less'
+      // so it still catches the phrase with "my money" (or similar) in the
+      // middle, without loosening it into matching an unrelated sentence that
+      // merely mentions both words far apart.
+      'spend\\w*(?:\\s+\\w+){0,3}\\s+less', 'spending less', 'less money',
+    ),
   },
   {
     name: 'investment_advice', weight: 2,
@@ -138,7 +154,16 @@ const INTENTS = [
   },
   {
     name: 'help', weight: 5,
-    pattern: /^\s*(?:help|what can you do|who are you|what are you|commands)\b[\s?!.]*$/i,
+    pattern: /^\s*(?:help|what can you do|commands)\b[\s?!.]*$/i,
+  },
+  {
+    // Split out from 'help' rather than sharing its pattern — "what's your
+    // name?" deserves an actual introduction, not the bulleted command list.
+    // Anchored to the whole message, same reasoning as greeting/thanks/help:
+    // "name" alone is far too generic a word to use as a cue mid-sentence
+    // (a transaction description can say "merchant name").
+    name: 'identity', weight: 6,
+    pattern: /^\s*(?:what'?s|what is)\s+your\s+name\b[\s?!.]*$|^\s*who\s+are\s+you\b[\s?!.]*$|^\s*what\s+are\s+you\b[\s?!.]*$|^\s*what\s+should\s+i\s+call\s+you\b[\s?!.]*$|^\s*do\s+you\s+have\s+a\s+name\b[\s?!.]*$/i,
   },
 ];
 

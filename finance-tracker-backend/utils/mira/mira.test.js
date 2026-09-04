@@ -174,6 +174,61 @@ test('goal projection returns months and an ETA', () => {
   assert.ok(p.monthsNeeded > 0);
 });
 
+// ─── Chat shorthand, identity, and orphaned intents ─────────────────────────
+// Found live: casual texting shorthand and several intents Mira could
+// correctly DETECT but had no handler for, silently falling through to the
+// legacy engine's own, narrower re-detection and losing the answer entirely.
+section('Chat shorthand, identity, and previously-orphaned intents');
+
+test("REGRESSION: 'whats ur name' gets an actual introduction, not the generic fallback", () => {
+  const r = ask('whats ur name', CTX);
+  assert.strictEqual(r.intent, 'identity');
+  assert.ok(/mira/i.test(r.text), `expected Mira's name in: ${r.text}`);
+  assert.ok(!r.text.startsWith('🤔'), 'fell through to the generic fallback');
+});
+
+test("REGRESSION: 'can u tell me how to spend my money less' is recognised as a savings question", () => {
+  const r = ask('can u tell me how to spend my money less', CTX);
+  assert.strictEqual(r.intent, 'save_more');
+  assert.ok(!r.text.startsWith('🤔'), 'fell through to the generic fallback');
+});
+
+test('a detected intent with no Mira handler still gets answered, not dropped', () => {
+  // These 8 intents score correctly in intents.js but have no entry in
+  // index.js's `handlers` map — without forwarding the detected intent into
+  // the legacy engine, each of these used to silently discard Mira's own
+  // correct detection and fall back to legacy's independent (and narrower)
+  // re-detection, which frequently missed and landed on the generic menu.
+  const cases = [
+    ['whats my budget status', 'budget_status'],
+    ['tell me about my goals', 'goals_status'],
+    ['give me investment advice', 'investment_advice'],
+    ['how do i deal with debt', 'debt_advice'],
+    ['should i build an emergency fund', 'emergency_fund'],
+    ['whats my spending personality', 'personality'],
+    ['any tips for me', 'general_tips'],
+  ];
+  for (const [q, expectedIntent] of cases) {
+    const r = ask(q, CTX);
+    assert.strictEqual(r.intent, expectedIntent, `"${q}" -> expected intent ${expectedIntent}, got ${r.intent}`);
+    assert.ok(!r.text.startsWith('🤔'), `"${q}" fell through to the generic fallback`);
+  }
+});
+
+test("REGRESSION: 'how can I save more money' gives savings tips, not a specific goal's ETA", () => {
+  // goal_feasibility's bare 'can i save' cue collided with this general
+  // advice phrasing and answered with an unrelated specific goal's
+  // feasibility instead. Requiring a number/currency/'enough' right after
+  // 'can i save' keeps the cue for actual target questions only.
+  const r = ask('how can I save more money', CTX);
+  assert.strictEqual(r.intent, 'save_more');
+});
+
+test('a genuine goal-feasibility question is still recognised as one', () => {
+  const r = ask('can I save 20000 by December, is that realistic', CTX);
+  assert.strictEqual(r.intent, 'goal_feasibility');
+});
+
 // ─── End to end ──────────────────────────────────────────────────────────────
 section('End to end');
 

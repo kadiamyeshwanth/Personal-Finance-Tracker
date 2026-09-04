@@ -44,8 +44,19 @@ const fmt = (n) => `₹${Math.abs(n).toLocaleString('en-IN')}`;
 /**
  * Generate a response based on intent and user's financial data.
  */
-const generateResponse = (message, { transactions = [], budgets = [], goals = [], subscriptions = [] }) => {
-  const intent = detectIntent(message);
+/**
+ * @param {string} message
+ * @param {object} ctx
+ * @param {string} [forcedIntent] - skip this engine's own detectIntent() and
+ *   answer as this intent instead. Mira (mira/index.js) uses this for the
+ *   handful of intents she recognises but doesn't have a dedicated handler
+ *   for yet (save_more, budget_status, …): her own word-boundary-aware,
+ *   scored detector is more capable than this engine's original un-anchored
+ *   regex scan, so re-running the weaker detector here would throw away a
+ *   correct answer and could easily land on a different, wrong intent.
+ */
+const generateResponse = (message, { transactions = [], budgets = [], goals = [], subscriptions = [] }, forcedIntent) => {
+  const intent = forcedIntent || detectIntent(message);
 
   const expenses = transactions.filter(t => t.type === 'expense' && !t.isRecurring);
   const income   = transactions.filter(t => t.type === 'income'  && !t.isRecurring);

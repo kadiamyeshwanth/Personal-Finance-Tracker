@@ -39,7 +39,9 @@ Everything runs **without any paid AI API** — all intelligence is local, rule-
 
 <div align="center">
 
-# 🎨 The Clario Redesign
+<img src="finance-tracker/public/clario.svg" width="72" height="72" alt="Clario logo" />
+
+# The Clario Redesign
 
 ### UI/UX &nbsp;·&nbsp; Front‑End &nbsp;·&nbsp; Brand
 

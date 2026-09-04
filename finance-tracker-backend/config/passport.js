@@ -25,7 +25,22 @@ const makeUsername = (displayName = '') => {
   return base || 'user';
 };
 
-passport.use(
+// Google OAuth is optional (the README lists it as such), but GoogleStrategy
+// throws from its constructor when clientID is missing — at require() time,
+// before the server ever listens. That turned an unset optional variable into
+// a crash loop on boot with a message that never mentions Google.
+// Register the strategy only when it is actually configured; `isGoogleEnabled`
+// lets the auth routes answer honestly when it is not.
+const isGoogleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
+if (!isGoogleEnabled) {
+  console.warn(
+    '[auth] Google OAuth is not configured (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET). ' +
+    'Sign-in with Google is disabled; email + password sign-in is unaffected.'
+  );
+}
+
+if (isGoogleEnabled) passport.use(
   new GoogleStrategy(
     {
       clientID:     process.env.GOOGLE_CLIENT_ID,
@@ -91,3 +106,4 @@ passport.deserializeUser(async (id, done) => {
 });
 
 module.exports = passport;
+module.exports.isGoogleEnabled = isGoogleEnabled;

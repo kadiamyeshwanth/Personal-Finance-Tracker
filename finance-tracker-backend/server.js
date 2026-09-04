@@ -49,6 +49,25 @@ const apiLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 
+// ─── CSRF posture ─────────────────────────────────────────────────────────────
+// This API is NOT vulnerable to CSRF, and deliberately ships no CSRF middleware.
+//
+// Why: auth is a bearer JWT read from localStorage and attached by the client in
+// an `Authorization` header (see finance-tracker/src/api/client.js). A browser
+// never attaches that header automatically on a cross-site request, so a forged
+// request from another origin arrives unauthenticated. `credentials: true` below
+// only permits cookies the API does not issue or read.
+//
+// This holds ONLY while the token lives outside cookies. If auth ever moves to
+// HTTP-only cookies (a reasonable hardening against XSS token theft), CSRF
+// protection becomes mandatory at the same time — add double-submit tokens or
+// SameSite=Strict cookies in the same change, never after.
+//
+// The live risk with the current design is XSS, not CSRF: anything that can run
+// script in the page can read the token. That is held off on the frontend by
+// escaping every user-controlled string before it reaches dangerouslySetInnerHTML
+// (see the escapeHtml() guard in pages/AIInsightsPage.jsx).
+
 // ─── CORS ──────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
@@ -98,6 +117,30 @@ const uri = process.env.MONGODB_URI;
 if (!uri) {
   console.error('FATAL: MONGODB_URI is not set in .env file!');
   process.exit(1);
+}
+
+// ─── Production config check ──────────────────────────────────────────────────
+// Catch a misconfigured deploy at boot rather than at the moment a user hits the
+// broken feature. Missing JWT_SECRET is fatal (tokens would be unsignable);
+// the rest degrade specific features, so they warn loudly instead.
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET is not set. Refusing to start in production.');
+    process.exit(1);
+  }
+  const optional = {
+    BACKEND_URL:  'SMS webhook URLs will point at localhost and the Android app will fail',
+    FRONTEND_URL: 'OAuth and password-reset links will point at localhost',
+    CORS_ORIGIN:  'the browser app may be blocked by CORS',
+    EMAIL_USER:   'password reset is disabled (see utils/mailer.js)',
+    EMAIL_PASS:   'password reset is disabled (see utils/mailer.js)',
+  };
+  const missing = Object.keys(optional).filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    console.warn('\n⚠️  Missing production environment variables:');
+    missing.forEach((k) => console.warn(`   • ${k} — ${optional[k]}`));
+    console.warn('');
+  }
 }
 
 // ── Import Routes ─────────────────────────────────────────────────────────────

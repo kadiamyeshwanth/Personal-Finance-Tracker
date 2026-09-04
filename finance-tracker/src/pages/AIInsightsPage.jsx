@@ -213,8 +213,32 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
 );
 
 // ─── Chat message component ───────────────────────────────────────────────────
+
+/**
+ * Neutralise every HTML-significant character before any markup is added.
+ *
+ * This bubble is rendered with dangerouslySetInnerHTML, and the text reaching it
+ * is not trustworthy in either direction:
+ *   • the user's own message is echoed straight back (self-XSS), and
+ *   • assistant replies interpolate stored user data — merchant names, goal
+ *     names, budget categories — some of which arrives from the SMS webhook,
+ *     a public endpoint. A merchant string like `<img src=x onerror=…>` would
+ *     otherwise execute in the victim's session and can read the JWT out of
+ *     localStorage.
+ *
+ * Escaping first, then applying the markdown replacements, means only the
+ * <strong>/<em>/<br/> tags this function itself emits can ever reach the DOM.
+ */
+const escapeHtml = (text) =>
+  String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const parseMarkdown = (text) => {
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br/>');

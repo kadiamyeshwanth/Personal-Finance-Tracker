@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const Goal = require('../models/Goal');
 const protect = require('../middleware/protect');
+const { validate } = require('../middleware/validate');
+const { goalSchema, goalUpdateSchema } = require('../schemas/validation');
 
 // All routes below require a valid JWT
 router.use(protect);
@@ -16,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // ADD a new goal
-router.post('/add', async (req, res) => {
+router.post('/add', validate(goalSchema), async (req, res) => {
   try {
     const { name, targetAmount, deadline } = req.body;
 
@@ -48,7 +50,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // UPDATE goal (used for contributions and edits)
-router.post('/update/:id', async (req, res) => {
+router.post('/update/:id', validate(goalUpdateSchema), async (req, res) => {
   try {
     const goal = await Goal.findOne({ _id: req.params.id, userId: req.user.id });
     if (!goal) return res.status(404).json({ error: 'Goal not found.' });

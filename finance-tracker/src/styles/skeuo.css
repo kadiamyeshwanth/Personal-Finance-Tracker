@@ -4383,3 +4383,137 @@ html .auth-shell .auth-panel .auth-oauth * {
 }
 html .auth-shell .auth-panel .auth-oauth { border: 1px solid rgba(20, 22, 26, 0.10) !important; }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROUND 80 — login card: clipped bottom, nested scrollbar, dark autofill.
+
+   Three faults, all on the auth card, all visible at once on a laptop or at
+   browser zoom (both shrink the effective viewport height):
+
+   1. CLIPPED CARD. r79 capped the card at `calc(100vh - 24px)` while the frame
+      that shows it reserves `clamp(14px, 2.5vh, 32px)` of padding top AND
+      bottom. At 900px tall that let the card grow to 876px inside a frame that
+      can only display 759px — a 117px overshoot silently cut off by the
+      frame's `overflow: hidden`, taking the footer with it.
+      Fix: cap against the frame's own content box (`max-height: 100%`), so the
+      card can never be taller than the area it is displayed in, at any height.
+
+   2. NESTED SCROLLBAR. Because the card was overflowing, `overflow-y: auto`
+      put a scrollbar *inside* the white card — a scroll region in the middle
+      of a form reads as a rendering bug, not an affordance. With (1) fixed the
+      card only scrolls when it genuinely cannot fit, and (3) makes that rare.
+
+   3. DARK AUTOFILL. `color-scheme` was never declared, so Chrome picked its
+      own autofill palette from the dark page theme and painted the saved
+      username as near-black text on a near-black box — unreadable, on a white
+      card. The card is a light surface regardless of app theme, so it must say
+      so, and pin the autofill colours explicitly.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1 + 2 — the card is bounded by the frame that shows it, never the viewport */
+.auth-panel {
+  /* `.auth-right-frame` is a flex container with height:100vh and vertical
+     padding, so 100% here resolves to its *content* box — the visible area —
+     which is exactly the constraint that was missing. */
+  max-height: 100% !important;
+  overscroll-behavior: contain;
+}
+
+/* 3 — the card is a light surface: say so, so the browser's own UI
+   (autofill, spinners, the caret) is drawn light on it too. */
+.auth-panel {
+  color-scheme: light !important;
+}
+
+/* ── The actual root cause of the black autofill box ──────────────────────
+   §21 writes every auth colour as `var(--a-*, <dark fallback>)`, and the LIGHT
+   values for those tokens are only defined under `[data-theme="light"]` or
+   `@media (prefers-color-scheme: light)`.
+
+   But LoginPage pins `data-theme="dark"` for as long as it is mounted — the
+   login screen is dark-only by design. So on the one screen these tokens exist
+   to serve, neither light block can ever match, every `--a-*` stays undefined,
+   and each one silently resolves to its DARK fallback: `--a-field` → #111111,
+   `--a-ink` → #F9F9F9.
+
+   r79 later made the card unconditionally white without giving the tokens
+   matching unconditional values, so a white card ended up drawing black fields.
+   It only became visible on autofill because the normal input state is
+   overridden by higher-specificity `.n-input` rules further down — nothing
+   overrode `:-webkit-autofill`.
+
+   The card is light in every theme, so its tokens must be light in every theme.
+   Scoped to `.auth-panel` only — the shell and the left aside stay dark. */
+.auth-panel,
+.auth-panel * {
+  --a-ink:      #14161A;
+  --a-ink-2:    #5A5C60;
+  --a-ink-3:    #8A8C90;
+  --a-card:     #FFFFFF;
+  --a-card-bd:  rgba(20, 22, 26, 0.10);
+  --a-field:    #F7F6F3;
+  --a-field-bd: rgba(20, 22, 26, 0.14);
+  --a-raised:   #FFFFFF;
+  --a-raised-h: #F1EFEA;
+  --a-hair:     rgba(20, 22, 26, 0.10);
+}
+
+/* Chrome ignores background-color on autofilled inputs and paints its own.
+   The inset shadow trick is the only reliable way to override the fill, and
+   -webkit-text-fill-color the only way to override the text. */
+.auth-panel .n-input:-webkit-autofill,
+.auth-panel .n-input:-webkit-autofill:hover,
+.auth-panel .n-input:-webkit-autofill:focus,
+.auth-panel .n-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #F5F6F8 inset !important;
+  box-shadow: 0 0 0 1000px #F5F6F8 inset !important;
+  -webkit-text-fill-color: #14161A !important;
+  caret-color: #14161A !important;
+  border: 1px solid rgba(20, 22, 26, 0.10) !important;
+  transition: background-color 9999s ease-in-out 0s !important;  /* defeat the yellow flash */
+}
+.auth-panel .n-input:-webkit-autofill:focus {
+  border-color: var(--brand, #E85002) !important;
+}
+
+/* Short viewports (laptops, and any zoom level above 100%) — compact the card
+   so the form keeps fitting instead of falling back to an internal scroll. */
+@media (max-height: 820px) {
+  /* The outer column reserves 48px top AND bottom before the frame even starts,
+     which is most of the shortfall. Claw that back first — it costs nothing
+     visually at these heights and is worth ~56px to the card. */
+  .auth-main { padding-top: 20px !important; padding-bottom: 20px !important; }
+  .auth-right-frame { padding-top: 14px !important; padding-bottom: 14px !important; }
+  .auth-panel { padding: 26px 28px 22px !important; }
+  .auth-panel .auth-head { margin-bottom: 14px !important; }
+  .auth-panel .auth-head h1 { font-size: 21px !important; }
+  .auth-panel .auth-form { gap: 12px !important; }
+  .auth-panel .n-input,
+  .auth-panel .auth-oauth { height: 40px !important; }
+  .auth-panel .auth-submit { height: 42px !important; }
+  .auth-panel .auth-divider { margin: 10px 0 !important; }
+  .auth-panel .auth-foot { margin-top: 12px !important; }
+  .auth-panel .auth-trust-container { margin-top: 12px !important; }
+}
+
+@media (max-height: 680px) {
+  .auth-right-frame { padding: 10px clamp(20px, 5vw, 64px) !important; }
+  .auth-panel { padding: 20px 24px 18px !important; }
+  .auth-panel .auth-head { margin-bottom: 10px !important; }
+  .auth-panel .auth-form { gap: 10px !important; }
+  .auth-panel .n-input,
+  .auth-panel .auth-oauth { height: 38px !important; }
+  .auth-panel .auth-submit { height: 40px !important; }
+  /* the legal line is the first thing worth losing when space runs out */
+  .auth-panel .auth-legal { display: none !important; }
+}
+
+/* The trust pill wrapped to two lines below ~1024px and left the shield icon
+   floating beside centred text. Keep the icon on the first line and let the
+   sentence wrap under itself. */
+.auth-panel .auth-trust {
+  align-items: flex-start !important;
+  text-align: left !important;
+  line-height: 1.45 !important;
+}
+.auth-panel .auth-trust svg { flex: 0 0 auto !important; margin-top: 1px !important; }

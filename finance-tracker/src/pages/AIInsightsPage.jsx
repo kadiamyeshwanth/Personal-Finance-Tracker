@@ -18,6 +18,9 @@ import {
   Brain as Brain,
   ChartBar as BarChart3,
   Lightning as Zap,
+  ChartPie,
+  CalendarCheck,
+  CreditCard,
 } from '@phosphor-icons/react';
 import { fetchTransactions } from '../api/transactions';
 import { fetchGoals }        from '../api/goals';
@@ -185,7 +188,7 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
         <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
           style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '500px', maxWidth: 'calc(100vw - 32px)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '28px', boxShadow: 'var(--shadow-float)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔥</div>
+            <div style={{ marginBottom: '10px' }}><Fire size={34} weight="fill" style={{ color: 'var(--brand)' }} /></div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>Roast My Spending</div>
             <div style={{ fontSize: '13px', color: 'var(--text-3)', marginTop: '4px' }}>AI-generated commentary on your financial life choices</div>
           </div>
@@ -213,8 +216,32 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
 );
 
 // ─── Chat message component ───────────────────────────────────────────────────
+
+/**
+ * Neutralise every HTML-significant character before any markup is added.
+ *
+ * This bubble is rendered with dangerouslySetInnerHTML, and the text reaching it
+ * is not trustworthy in either direction:
+ *   • the user's own message is echoed straight back (self-XSS), and
+ *   • assistant replies interpolate stored user data — merchant names, goal
+ *     names, budget categories — some of which arrives from the SMS webhook,
+ *     a public endpoint. A merchant string like `<img src=x onerror=…>` would
+ *     otherwise execute in the victim's session and can read the JWT out of
+ *     localStorage.
+ *
+ * Escaping first, then applying the markdown replacements, means only the
+ * <strong>/<em>/<br/> tags this function itself emits can ever reach the DOM.
+ */
+const escapeHtml = (text) =>
+  String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const parseMarkdown = (text) => {
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br/>');
@@ -237,12 +264,12 @@ const ChatMessage = ({ msg }) => (
 
 // ─── SMART TIPS (unchanged) ───────────────────────────────────────────────────
 const SMART_TIPS = [
-  { icon: '💡', tip: 'Automate transfers to savings on payday before you can spend it.' },
-  { icon: '📊', tip: 'The 50/30/20 rule: 50% needs, 30% wants, 20% savings.' },
-  { icon: '🎯', tip: 'Create specific goals (Emergency Fund = 6× monthly expenses).' },
-  { icon: '🔄', tip: "Review subscriptions quarterly — cancel what you don't use." },
-  { icon: '📅', tip: 'Set a weekly "money date" to review transactions and adjust.' },
-  { icon: '💳', tip: 'Pay credit cards in full each month to avoid interest charges.' },
+  { Icon: Lightbulb,        tip: 'Automate transfers to savings on payday before you can spend it.' },
+  { Icon: ChartPie,         tip: 'The 50/30/20 rule: 50% needs, 30% wants, 20% savings.' },
+  { Icon: Target,           tip: 'Create specific goals (Emergency Fund = 6× monthly expenses).' },
+  { Icon: RefreshCw,        tip: "Review subscriptions quarterly — cancel what you don't use." },
+  { Icon: CalendarCheck,    tip: 'Set a weekly "money date" to review transactions and adjust.' },
+  { Icon: CreditCard,       tip: 'Pay credit cards in full each month to avoid interest charges.' },
 ];
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
@@ -262,7 +289,7 @@ const AIInsightsPage = () => {
   const [roastLoading, setRoastLoading] = useState(false);
 
   // Chat state
-  const [messages, setMessages] = useState([{ role: 'assistant', content: '👋 Hello! I\'m your AI Finance Assistant. Ask me anything about your money — spending habits, savings tips, budget status, or investment basics!' }]);
+  const [messages, setMessages] = useState([{ role: 'assistant', content: 'Hello! I\'m your AI Finance Assistant. Ask me anything about your money — spending habits, savings tips, budget status, or investment basics!' }]);
   const [input, setInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -346,7 +373,7 @@ const AIInsightsPage = () => {
         <div style={{ flex: 1 }} />
         <button onClick={handleRoast}
           className="ai-roast-btn">
-          <Flame size={13} /> Roast Me 🔥
+          <Flame size={13} /> Roast me
         </button>
       </div>
 
@@ -398,7 +425,9 @@ const AIInsightsPage = () => {
                   <div className="ai-side-label">Smart tips</div>
                   {SMART_TIPS.map((t, i) => (
                     <div key={i} className="ai-tip">
-                      <span>{t.icon}</span>
+                      <span style={{ display: 'inline-flex', color: 'var(--brand)' }}>
+                        <t.Icon size={14} weight="fill" />
+                      </span>
                       <span>{t.tip}</span>
                     </div>
                   ))}

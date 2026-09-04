@@ -15,6 +15,9 @@ import {
   ArrowRight as ArrowRight,
   CircleNotch as Loader2,
   CaretDown as ChevronDown,
+  Lightbulb,
+  SkipForward,
+  XCircle,
 } from '@phosphor-icons/react';
 import Papa from 'papaparse';
 import toast from 'react-hot-toast';
@@ -119,7 +122,18 @@ const CSVImportModal = ({ onClose, onImported }) => {
   // ── Import all rows to backend ──────────────────────────────────────────────
   const doImport = async () => {
     setImporting(true);
-    const transactions = rows.map(row => {
+
+    // Rows the client itself can't turn into a transaction used to be dropped by
+    // a silent .filter() — the user was never told. Collect them instead, with
+    // the spreadsheet line number, and merge them into the result screen next to
+    // whatever the server rejects.
+    const localErrors = [];
+    const transactions = [];
+
+    rows.forEach((row, i) => {
+      const lineNo = i + 2;   // 1-based, plus the header row
+      const label  = String(row[mapping.description] || '').trim().slice(0, 60);
+
       let amount = 0;
       let type = defaultType;
       if (mapping.debitCol && mapping.creditCol) {
@@ -134,14 +148,41 @@ const CSVImportModal = ({ onClose, onImported }) => {
           type = (t.includes('cr') || t.includes('credit') || t.includes('income')) ? 'income' : 'expense';
         }
       }
-      return { date: row[mapping.date], description: row[mapping.description] || '', amount: Math.abs(amount), type };
-    }).filter(r => r.amount > 0 && r.date);
+
+      if (!row[mapping.date]) {
+        localErrors.push({ row: lineNo, reason: 'No date in the mapped date column', description: label });
+        return;
+      }
+      if (!(Math.abs(amount) > 0)) {
+        const raw = String(row[mapping.amount] ?? row[mapping.debitCol] ?? row[mapping.creditCol] ?? '').slice(0, 30);
+        localErrors.push({ row: lineNo, reason: raw ? `Could not read amount "${raw}"` : 'No amount in the mapped column', description: label });
+        return;
+      }
+
+      transactions.push({ date: row[mapping.date], description: row[mapping.description] || '', amount: Math.abs(amount), type });
+    });
+
+    if (transactions.length === 0) {
+      setImporting(false);
+      setResult({ inserted: 0, skipped: 0, failed: localErrors.length, total: rows.length, errors: localErrors.slice(0, 50), skippedRows: [] });
+      setStep('done');
+      toast.error('No rows could be read — check your column mapping.');
+      return;
+    }
 
     try {
-      const res = await client.post('/api/import/csv', { transactions });
-      setResult(res.data);
+      const res = await client.post('/import/csv', { transactions });
+      const data = res.data;
+      // Merge client-side and server-side failures into one list for the user.
+      setResult({
+        ...data,
+        failed: (data.failed || 0) + localErrors.length,
+        total:  rows.length,
+        errors: [...localErrors, ...(data.errors || [])].slice(0, 50),
+      });
       setStep('done');
-      toast.success(`Imported ${res.data.inserted} transactions!`);
+      if (data.inserted > 0) toast.success(`Imported ${data.inserted} transactions!`);
+      else                   toast.error('No new transactions were imported.');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Import failed');
     } finally {
@@ -236,7 +277,7 @@ const CSVImportModal = ({ onClose, onImported }) => {
 
               <div style={{ marginTop: '16px', padding: '12px 14px', background: 'var(--blue-bg)', borderRadius: 'var(--r-md)', border: '1px solid rgba(35,131,226,0.15)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--blue)', lineHeight: 1.6 }}>
-                  💡 <strong>How to download CSV:</strong> Login to your bank's net banking → Statement → Select date range → Download as CSV / Excel (save as CSV)
+                  <Lightbulb size={13} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5, color: 'var(--brand)' }} /><strong>How to download CSV:</strong> Login to your bank's net banking → Statement → Select date range → Download as CSV / Excel (save as CSV)
                 </div>
               </div>
             </div>
@@ -353,25 +394,72 @@ const CSVImportModal = ({ onClose, onImported }) => {
                 </table>
               </div>
               <div style={{ padding: '10px 14px', background: 'var(--yellow-bg)', borderRadius: 'var(--r-md)', border: '1px solid var(--yellow-border)', fontSize: '12px', color: 'var(--yellow)' }}>
-                ⚠️ Duplicate detection is active — transactions with the same date/amount/description won't be imported twice.
+                <AlertTriangle size={12} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5 }} />Duplicate detection is active — transactions with the same date/amount/description won't be imported twice.
               </div>
             </div>
           )}
 
           {/* ── STEP 4: Done ───────────────────────────────────────────────── */}
           {step === 'done' && result && (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 0.5, bounce: 0.35 }}>
-                <CheckCircle2 size={48} style={{ color: 'var(--green)', margin: '0 auto 16px' }} />
-              </motion.div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>
-                Import complete!
+            <div style={{ padding: '20px 0' }}>
+              <div style={{ textAlign: 'center' }}>
+                <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 0.5, bounce: 0.35 }}>
+                  {result.inserted > 0
+                    ? <CheckCircle2 size={48} style={{ color: 'var(--green)', margin: '0 auto 16px' }} />
+                    : <AlertTriangle size={48} style={{ color: 'var(--red)', margin: '0 auto 16px' }} />}
+                </motion.div>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>
+                  {result.inserted > 0 ? 'Import complete!' : 'Nothing imported'}
+                </div>
+                <div style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: 1.6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><CheckCircle2 size={14} weight="fill" style={{ color: 'var(--green)' }} /><span><strong>{result.inserted}</strong> new transactions imported</span></div>
+                  {result.skipped > 0 && <div style={{ color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><SkipForward size={13} weight="fill" />{result.skipped} duplicates skipped</div>}
+                  {result.failed  > 0 && <div style={{ color: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><XCircle size={13} weight="fill" />{result.failed} rows couldn't be read</div>}
+                </div>
               </div>
-              <div style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: 1.6 }}>
-                <div>✅ <strong>{result.inserted}</strong> new transactions imported</div>
-                {result.skipped > 0 && <div style={{ color: 'var(--text-3)' }}>⏭️ {result.skipped} duplicates skipped</div>}
-                {result.failed  > 0 && <div style={{ color: 'var(--red)' }}>❌ {result.failed} rows failed</div>}
-              </div>
+
+              {/* Which rows failed, and why — so the user can fix them in the
+                  spreadsheet and re-upload rather than guessing. */}
+              {result.errors?.length > 0 && (
+                <div style={{ marginTop: '20px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+                  <div style={{
+                    padding: '9px 12px', background: 'var(--bg-secondary)',
+                    borderBottom: '1px solid var(--border)',
+                    fontSize: '12px', fontWeight: 600, color: 'var(--text-2)',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                  }}>
+                    <AlertTriangle size={13} style={{ color: 'var(--red)' }} />
+                    Rows that need attention
+                  </div>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                    {result.errors.map((e, i) => (
+                      <div key={i} style={{
+                        display: 'flex', gap: '10px', alignItems: 'baseline',
+                        padding: '7px 12px', fontSize: '12.5px',
+                        borderBottom: i < result.errors.length - 1 ? '1px solid var(--border)' : 'none',
+                      }}>
+                        <span style={{
+                          flexShrink: 0, minWidth: '52px',
+                          color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums',
+                        }}>
+                          {e.row ? `Row ${e.row}` : '—'}
+                        </span>
+                        <span style={{ flex: 1, color: 'var(--text-2)' }}>
+                          {e.reason}
+                          {e.description && (
+                            <span style={{ color: 'var(--text-3)' }}> · {e.description}</span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {result.truncated && (
+                    <div style={{ padding: '7px 12px', fontSize: '11.5px', color: 'var(--text-3)', background: 'var(--bg-secondary)' }}>
+                      Only the first 50 problem rows are listed.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

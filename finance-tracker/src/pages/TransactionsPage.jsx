@@ -57,10 +57,10 @@ const BLANK = {
 
 // ── Flag badge tooltip ───────────────────────────────────────────────────────
 const FLAG_LABELS = {
-  duplicate:     '⚠️ Possible duplicate transaction',
-  abnormal:      '📈 Unusually high for this category',
-  'late-night':  '🌙 Late-night transaction',
-  impulse:       '⚡ Possible impulse purchase',
+  duplicate:     'Possible duplicate transaction',
+  abnormal:      'Unusually high for this category',
+  'late-night':  'Late-night transaction',
+  impulse:       'Possible impulse purchase',
 };
 
 const FlagBadge = ({ flags = [] }) => {
@@ -180,10 +180,10 @@ const TransactionsPage = () => {
     if (!merchantName?.trim() || form.type !== 'expense') return;
     setSuggesting(true);
     try {
-      const res = await client.post('/api/insights/suggest-category', { merchant: merchantName });
+      const res = await client.post('/insights/suggest-category', { merchant: merchantName });
       if (res.data?.category) {
         setForm(f => ({ ...f, category: res.data.category }));
-        toast.success(`Category auto-set: ${res.data.category}`, { icon: '✨' });
+        toast.success(`Category auto-set: ${res.data.category}`);
       }
     } catch { /* silent fail */ }
     finally { setSuggesting(false); }

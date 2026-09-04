@@ -6,31 +6,80 @@ import {
   CaretLeft as ChevronLeft,
   CaretRight as ChevronRight,
   ShareNetwork as Share2,
-  DownloadSimple as Download,
+  TrendUp,
+  TrendDown,
+  Bank,
+  Warning,
+  Trophy,
+  CurrencyInr,
+  CalendarBlank,
+  Hash,
+  Storefront,
+  Smiley,
+  Confetti,
+  ArrowCounterClockwise,
 } from '@phosphor-icons/react';
 import { fetchWrapped } from '../api/wrapped';
 import PageHeader from '../components/ui/PageHeader';
+import { getPersonalityVisual, stripEmoji } from '../lib/personality';
 import toast from 'react-hot-toast';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const fmt = (n) => `₹${Math.abs(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
+/* ── Slide surfaces ───────────────────────────────────────────────────────────
+   The old slides used stock blues, purples and greens (#16213e, #2d0a4e,
+   #002855…) that belong to no palette in this product. Clario is one warm
+   accent on near-black, and colour is reserved for money — so the slides are
+   now graded along the brand ramp instead, and the only other hues that appear
+   are the income/expense pair, on amounts.
+   ─────────────────────────────────────────────────────────────────────────── */
+const SURFACE = {
+  ink:    'linear-gradient(150deg, #141014 0%, #1C1418 55%, #241608 100%)',
+  ember:  'linear-gradient(150deg, #1A1420 0%, #2A1508 55%, #7A2A02 100%)',
+  brand:  'linear-gradient(150deg, #2A1508 0%, #7A2A02 55%, #E85002 140%)',
+  deep:   'linear-gradient(150deg, #120F12 0%, #1E1410 60%, #35190A 100%)',
+};
+
+/* One consistent way to present a slide's icon: a soft rounded medallion,
+   matching the tile treatment used on the dashboard and the hero card. */
+const Medallion = ({ icon: Icon, size = 64, delay = 0.2, tone = 'rgba(255,255,255,0.10)' }) => (
+  <motion.div
+    initial={{ scale: 0.6, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    transition={{ type: 'spring', delay, stiffness: 180, damping: 18 }}
+    style={{
+      width: size, height: size, borderRadius: size * 0.32,
+      background: tone,
+      border: '1px solid rgba(255,255,255,0.16)',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      marginBottom: '18px',
+      backdropFilter: 'blur(6px)',
+    }}
+  >
+    <Icon size={size * 0.46} weight="fill" color="#fff" />
+  </motion.div>
+);
+
+const KICKER = { fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' };
+
 // ─── Story slides ─────────────────────────────────────────────────────────────
 const buildSlides = (data) => {
   if (!data) return [];
   const slides = [];
+  const persona = getPersonalityVisual(data.personality);
 
   // Slide 1: Big intro
   slides.push({
     id: 'intro',
-    gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+    gradient: SURFACE.ember,
     content: (
       <div style={{ textAlign: 'center' }}>
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}
-          style={{ fontSize: '64px', marginBottom: '16px' }}>{data.personality?.emoji || '✨'}</motion.div>
+        <Medallion icon={persona.Icon} size={72} />
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Your {data.month} {data.year}</div>
-          <div style={{ fontSize: '36px', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: '8px' }}>{data.title}</div>
+          <div style={KICKER}>Your {data.month} {data.year}</div>
+          {/* the API bakes an emoji into the title — the icon above says it better */}
+          <div style={{ fontSize: '36px', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: '8px' }}>{stripEmoji(data.title)}</div>
           <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)' }}>{data.subtitle}</div>
         </motion.div>
       </div>
@@ -40,28 +89,32 @@ const buildSlides = (data) => {
   // Slide 2: Money in vs out
   slides.push({
     id: 'money',
-    gradient: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+    gradient: SURFACE.ink,
     content: (
       <div style={{ textAlign: 'center', width: '100%' }}>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '32px' }}>The Numbers</motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ ...KICKER, marginBottom: '32px' }}>The Numbers</motion.div>
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center' }}>
           {[
-            { label: 'Earned', value: fmt(data.totalIncome), color: 'var(--brand)', arrow: '📈' },
-            { label: 'Spent',  value: fmt(data.totalExpenses), color: '#f87171', arrow: '📉' },
-            { label: 'Saved',  value: fmt(Math.abs(data.netSavings)), color: data.netSavings >= 0 ? 'var(--brand)' : '#fbbf24', arrow: data.netSavings >= 0 ? '🏦' : '⚠️' },
-          ].map(({ label, value, color, arrow }, i) => (
+            { label: 'Earned', value: fmt(data.totalIncome),   color: 'var(--green, #4ade80)', Icon: TrendUp },
+            { label: 'Spent',  value: fmt(data.totalExpenses), color: 'var(--red, #f43f5e)',   Icon: TrendDown },
+            { label: 'Saved',  value: fmt(Math.abs(data.netSavings)),
+              color: data.netSavings >= 0 ? 'var(--green, #4ade80)' : 'var(--red, #f43f5e)',
+              Icon: data.netSavings >= 0 ? Bank : Warning },
+          ].map(({ label, value, color, Icon }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.15 }}
               style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>{arrow}</div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color, marginBottom: '4px' }}>{value}</div>
+              <div style={{ marginBottom: '10px' }}>
+                <Icon size={26} weight="fill" color="rgba(255,255,255,0.75)" />
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: 800, color, marginBottom: '4px', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
               <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
             </motion.div>
           ))}
         </div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-          style={{ marginTop: '32px', padding: '12px 20px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', display: 'inline-block' }}>
+          style={{ marginTop: '32px', padding: '12px 20px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', display: 'inline-block' }}>
           <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>Savings rate: </span>
-          <span style={{ color: data.savingsRate >= 20 ? 'var(--brand)' : data.savingsRate >= 0 ? '#fbbf24' : '#f87171', fontWeight: 700, fontSize: '16px' }}>{data.savingsRate}%</span>
+          <span style={{ color: data.savingsRate >= 20 ? 'var(--green, #4ade80)' : data.savingsRate >= 0 ? '#fff' : 'var(--red, #f43f5e)', fontWeight: 700, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>{data.savingsRate}%</span>
         </motion.div>
       </div>
     ),
@@ -69,25 +122,29 @@ const buildSlides = (data) => {
 
   // Slide 3: Top categories
   if (data.topCategories?.length > 0) {
-    const colors = ['var(--brand)','var(--red)','#FFB866','#C94F00','#34d399'];
+    // one accent, stepped down in opacity — not five unrelated hues
+    const bar = (i) => `rgba(232, 80, 2, ${1 - i * 0.16})`;
     slides.push({
       id: 'categories',
-      gradient: 'linear-gradient(135deg, #1a0533 0%, #2d0a4e 50%, #1a0533 100%)',
+      gradient: SURFACE.deep,
       content: (
         <div style={{ width: '100%' }}>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', textAlign: 'center' }}>Where your money went</motion.div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ ...KICKER, marginBottom: '24px', textAlign: 'center' }}>Where your money went</motion.div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {data.topCategories.slice(0, 5).map(({ name, amount }, i) => {
               const maxAmt = data.topCategories[0].amount;
               const pct    = (amount / maxAmt) * 100;
               return (
                 <motion.div key={name} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: i === 0 ? 700 : 400 }}>{i === 0 ? '🏆 ' : ''}{name}</span>
-                    <span style={{ color: colors[i], fontSize: '14px', fontWeight: 600 }}>{fmt(amount)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: i === 0 ? 700 : 400, display: 'inline-flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                      {i === 0 && <Trophy size={14} weight="fill" color="var(--brand, #E85002)" style={{ flex: '0 0 auto' }} />}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    </span>
+                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600, fontVariantNumeric: 'tabular-nums', flex: '0 0 auto' }}>{fmt(amount)}</span>
                   </div>
                   <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, delay: 0.3 + i * 0.1 }} style={{ height: '100%', background: colors[i], borderRadius: '3px' }} />
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, delay: 0.3 + i * 0.1 }} style={{ height: '100%', background: bar(i), borderRadius: '3px' }} />
                   </div>
                 </motion.div>
               );
@@ -102,13 +159,13 @@ const buildSlides = (data) => {
   if (data.biggestTransaction) {
     slides.push({
       id: 'biggest',
-      gradient: 'linear-gradient(135deg, #1a1a1a 0%, #2d1b00 100%)',
+      gradient: SURFACE.ink,
       content: (
         <div style={{ textAlign: 'center' }}>
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} style={{ fontSize: '56px', marginBottom: '16px' }}>💸</motion.div>
+          <Medallion icon={CurrencyInr} size={60} />
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Biggest purchase</div>
-            <div style={{ fontSize: '48px', fontWeight: 900, color: '#fb923c', marginBottom: '8px' }}>{fmt(data.biggestTransaction.amount)}</div>
+            <div style={KICKER}>Biggest purchase</div>
+            <div style={{ fontSize: '48px', fontWeight: 900, color: 'var(--red, #f43f5e)', marginBottom: '8px', fontVariantNumeric: 'tabular-nums' }}>{fmt(data.biggestTransaction.amount)}</div>
             <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)' }}>
               {data.biggestTransaction.merchant || data.biggestTransaction.category}
             </div>
@@ -122,14 +179,14 @@ const buildSlides = (data) => {
   if (data.worstSpendingDay) {
     slides.push({
       id: 'worstday',
-      gradient: 'linear-gradient(135deg, #1f0000 0%, #3b0000 100%)',
+      gradient: SURFACE.deep,
       content: (
         <div style={{ textAlign: 'center' }}>
-          <motion.div initial={{ rotate: -10 }} animate={{ rotate: 0 }} transition={{ type: 'spring', delay: 0.2 }} style={{ fontSize: '56px', marginBottom: '16px' }}>📅</motion.div>
+          <Medallion icon={CalendarBlank} size={60} />
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Your most expensive day</div>
+            <div style={KICKER}>Your most expensive day</div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>{new Date(data.worstSpendingDay.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
-            <div style={{ fontSize: '40px', fontWeight: 900, color: '#f87171' }}>{fmt(data.worstSpendingDay.amount)}</div>
+            <div style={{ fontSize: '40px', fontWeight: 900, color: 'var(--red, #f43f5e)', fontVariantNumeric: 'tabular-nums' }}>{fmt(data.worstSpendingDay.amount)}</div>
             <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>spent in a single day</div>
           </motion.div>
         </div>
@@ -141,14 +198,14 @@ const buildSlides = (data) => {
   if (data.personality && data.personality.type !== 'unknown') {
     slides.push({
       id: 'personality',
-      gradient: `linear-gradient(135deg, ${data.personality.color}40 0%, ${data.personality.color}15 100%)`,
+      gradient: SURFACE.brand,
       content: (
         <div style={{ textAlign: 'center' }}>
-          <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', delay: 0.2 }} style={{ fontSize: '72px', marginBottom: '16px' }}>{data.personality.emoji}</motion.div>
+          <Medallion icon={persona.Icon} size={76} tone="rgba(255,255,255,0.14)" />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Your financial personality</div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>{data.personality.title}</div>
-            <div style={{ fontSize: '15px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, maxWidth: '360px', margin: '0 auto' }}>{data.personality.description}</div>
+            <div style={KICKER}>Your financial personality</div>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>{stripEmoji(data.personality.title)}</div>
+            <div style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, maxWidth: '360px', margin: '0 auto' }}>{data.personality.description}</div>
           </motion.div>
         </div>
       ),
@@ -158,21 +215,21 @@ const buildSlides = (data) => {
   // Slide 7: Transactions summary
   slides.push({
     id: 'stats',
-    gradient: 'linear-gradient(135deg, #001429 0%, #002855 100%)',
+    gradient: SURFACE.ink,
     content: (
       <div style={{ textAlign: 'center', width: '100%' }}>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '32px' }}>Stats</motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ ...KICKER, marginBottom: '32px' }}>Stats</motion.div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           {[
-            { label: 'Transactions', value: data.transactionCount, emoji: '🔢' },
-            { label: 'Days logged', value: data.transactionCount > 0 ? Math.min(data.transactionCount * 2, 30) : 0, emoji: '📅' },
-            data.topMerchant && { label: 'Favourite spot', value: data.topMerchant.name, emoji: '❤️' },
-            data.dominantMood && { label: 'Most common mood', value: data.dominantMood.mood, emoji: '😊' },
-          ].filter(Boolean).map(({ label, value, emoji }, i) => (
+            { label: 'Transactions', value: data.transactionCount, Icon: Hash },
+            { label: 'Days logged', value: data.transactionCount > 0 ? Math.min(data.transactionCount * 2, 30) : 0, Icon: CalendarBlank },
+            data.topMerchant && { label: 'Favourite spot', value: data.topMerchant.name, Icon: Storefront },
+            data.dominantMood && { label: 'Most common mood', value: data.dominantMood.mood, Icon: Smiley },
+          ].filter(Boolean).map(({ label, value, Icon }, i) => (
             <motion.div key={label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1 }}
               style={{ padding: '20px', background: 'rgba(255,255,255,0.06)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>{emoji}</div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{value}</div>
+              <Icon size={22} weight="fill" color="rgba(255,255,255,0.6)" style={{ marginBottom: '10px' }} />
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff', marginBottom: '4px', textTransform: label === 'Most common mood' ? 'capitalize' : 'none' }}>{value}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
             </motion.div>
           ))}
@@ -184,18 +241,18 @@ const buildSlides = (data) => {
   // Slide 8: Closing
   slides.push({
     id: 'end',
-    gradient: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+    gradient: SURFACE.ember,
     content: (
       <div style={{ textAlign: 'center' }}>
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2, stiffness: 150 }} style={{ fontSize: '56px', marginBottom: '20px' }}>🎉</motion.div>
+        <Medallion icon={Confetti} size={60} />
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>That was {data.month}!</div>
-          <div style={{ fontSize: '15px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: '24px' }}>
+          <div style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '24px' }}>
             {data.netSavings >= 0
-              ? `You saved ${fmt(data.netSavings)} this month. That's ${fmt(data.netSavings * 12)} a year if you keep it up! 🚀`
-              : `You overspent by ${fmt(Math.abs(data.netSavings))} this month. A new month is a fresh start! 💪`}
+              ? `You saved ${fmt(data.netSavings)} this month. That's ${fmt(data.netSavings * 12)} a year if you keep it up.`
+              : `You overspent by ${fmt(Math.abs(data.netSavings))} this month. A new month is a fresh start.`}
           </div>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)' }}>Check AI Insights for personalised advice →</div>
+          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>Check AI Insights for personalised advice →</div>
         </motion.div>
       </div>
     ),
@@ -218,6 +275,12 @@ const WrappedPage = () => {
   });
 
   const slides = buildSlides(data);
+  const persona = getPersonalityVisual(data?.personality);
+  // A month with nothing in it has no story to tell. The API still returns a
+  // default title ('The Balanced One'), which read as a verdict on a month the
+  // user simply hadn't logged yet — so gate the whole recap on real data.
+  const hasData = (data?.transactionCount ?? 0) > 0;
+
   const goNext = () => { if (slide < slides.length - 1) setSlide(s => s + 1); };
   const goPrev = () => { if (slide > 0) setSlide(s => s - 1); };
 
@@ -233,7 +296,12 @@ const WrappedPage = () => {
   };
 
   const handleShare = () => {
-    const text = `My ${MONTHS[month]} ${year} Finance Wrapped:\n💰 Earned: ${fmt(data?.totalIncome)}\n💸 Spent: ${fmt(data?.totalExpenses)}\n🏦 Saved: ${fmt(data?.netSavings)}\n${data?.personality?.emoji} ${data?.personality?.title}\n\nTracked with Personal Finance Tracker`;
+    const text = `My ${MONTHS[month]} ${year} Finance Wrapped\n`
+      + `Earned: ${fmt(data?.totalIncome)}\n`
+      + `Spent: ${fmt(data?.totalExpenses)}\n`
+      + `Saved: ${fmt(data?.netSavings)}\n`
+      + `${stripEmoji(data?.personality?.title)}\n\n`
+      + `Tracked with Clario`;
     if (navigator.share) navigator.share({ title: `My ${MONTHS[month]} Wrapped`, text }).catch(() => {});
     else { navigator.clipboard.writeText(text); toast.success('Summary copied to clipboard!'); }
   };
@@ -262,8 +330,8 @@ const WrappedPage = () => {
           style={{
             position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-lg)',
             padding: 'clamp(28px, 5vw, 48px)', color: '#fff',
-            background: 'linear-gradient(140deg, #1A1420 0%, #2A1508 45%, #E85002 140%)',
-            boxShadow: '0 24px 70px rgba(232,80,2,0.24)',
+            background: hasData ? SURFACE.brand : SURFACE.ink,
+            boxShadow: hasData ? '0 24px 70px rgba(232,80,2,0.24)' : '0 24px 70px rgba(0,0,0,0.35)',
           }}>
           <div style={{ position: 'absolute', top: -80, right: -60, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,138,61,0.45), transparent 70%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0, 300px)', gap: '32px', alignItems: 'center' }}>
@@ -272,41 +340,57 @@ const WrappedPage = () => {
                 {MONTHS[month]} {year} · Wrapped
               </div>
               <div style={{ fontSize: 'clamp(30px, 4.6vw, 46px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '14px' }}>
-                {data?.title || `Your month in ${data?.transactionCount || 0} moves.`}
+                {hasData ? stripEmoji(data?.title) : 'Nothing to wrap up yet.'}
               </div>
               <div style={{ fontSize: '15px', opacity: 0.75, lineHeight: 1.6, maxWidth: '440px', marginBottom: '26px' }}>
-                {data?.subtitle || 'A short, Spotify-style recap of where the money went — built from your own transactions.'}
+                {hasData
+                  ? data?.subtitle
+                  : `No transactions recorded for ${MONTHS[month]} ${year}. Add a few — or import a statement — and your recap will build itself.`}
               </div>
-              <div style={{ display: 'flex', gap: '18px', marginBottom: '28px', flexWrap: 'wrap' }}>
-                {[
-                  { k: 'Transactions', v: data?.transactionCount ?? 0 },
-                  { k: 'Categories', v: data?.topCategories?.length ?? 0 },
-                  { k: 'Slides', v: slides.length },
-                ].map(({ k, v }) => (
-                  <div key={k}>
-                    <div style={{ fontSize: '24px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.6, marginTop: '4px' }}>{k}</div>
-                  </div>
-                ))}
-              </div>
+
+              {hasData && (
+                <div style={{ display: 'flex', gap: '18px', marginBottom: '28px', flexWrap: 'wrap' }}>
+                  {[
+                    { k: 'Transactions', v: data?.transactionCount ?? 0 },
+                    { k: 'Categories', v: data?.topCategories?.length ?? 0 },
+                    { k: 'Slides', v: slides.length },
+                  ].map(({ k, v }) => (
+                    <div key={k}>
+                      <div style={{ fontSize: '24px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                      <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.6, marginTop: '4px' }}>{k}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button onClick={() => setStarted(true)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: 'none', background: '#fff', color: '#1A1420', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
-                  <Sparkles size={15} weight="fill" /> View Wrapped
-                </button>
-                <button onClick={handleShare}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.35)', background: 'transparent', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
-                  <Share2 size={15} weight="fill" /> Share
-                </button>
+                {hasData ? (
+                  <>
+                    <button onClick={() => setStarted(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: 'none', background: '#fff', color: '#1A1420', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
+                      <Sparkles size={15} weight="fill" /> View Wrapped
+                    </button>
+                    <button onClick={handleShare}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.35)', background: 'transparent', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                      <Share2 size={15} weight="fill" /> Share
+                    </button>
+                  </>
+                ) : (
+                  <a href="/transactions"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: 'none', background: '#fff', color: '#1A1420', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
+                    Add a transaction
+                  </a>
+                )}
               </div>
             </div>
+
             <div style={{
               justifySelf: 'center', width: 168, height: 168, borderRadius: '28px',
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '84px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               backdropFilter: 'blur(6px)',
             }}>
-              {data?.personality?.emoji || '✨'}
+              <persona.Icon size={78} weight="fill" color="#fff" />
             </div>
           </div>
         </motion.div>
@@ -315,7 +399,7 @@ const WrappedPage = () => {
           {/* Progress dots */}
           <div style={{ display: 'flex', gap: '6px' }}>
             {slides.map((_, i) => (
-              <button key={i} onClick={() => setSlide(i)}
+              <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}`}
                 style={{ width: slide === i ? '20px' : '6px', height: '6px', borderRadius: '3px', border: 'none', background: slide === i ? 'var(--brand)' : 'var(--border)', cursor: 'pointer', transition: 'all 0.2s' }} />
             ))}
           </div>
@@ -338,12 +422,12 @@ const WrappedPage = () => {
 
             {/* Side nav buttons */}
             {slide > 0 && (
-              <button onClick={goPrev} style={{ position: 'absolute', left: '-50px', top: '50%', transform: 'translateY(-50%)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow-float)', color: 'var(--text-2)' }}>
+              <button onClick={goPrev} aria-label="Previous slide" style={{ position: 'absolute', left: '-50px', top: '50%', transform: 'translateY(-50%)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow-float)', color: 'var(--text-2)' }}>
                 <ChevronLeft size={16} />
               </button>
             )}
             {slide < slides.length - 1 && (
-              <button onClick={goNext} style={{ position: 'absolute', right: '-50px', top: '50%', transform: 'translateY(-50%)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow-float)', color: 'var(--text-2)' }}>
+              <button onClick={goNext} aria-label="Next slide" style={{ position: 'absolute', right: '-50px', top: '50%', transform: 'translateY(-50%)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow-float)', color: 'var(--text-2)' }}>
                 <ChevronRight size={16} />
               </button>
             )}
@@ -351,8 +435,10 @@ const WrappedPage = () => {
 
           {/* Controls */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-3)' }}>{slide + 1} / {slides.length}</span>
-            <button className="n-btn n-btn-default n-btn-sm" onClick={() => { setStarted(false); setSlide(0); }}>↩ Restart</button>
+            <span style={{ fontSize: '13px', color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{slide + 1} / {slides.length}</span>
+            <button className="n-btn n-btn-default n-btn-sm" onClick={() => { setStarted(false); setSlide(0); }}>
+              <ArrowCounterClockwise size={13} /> Restart
+            </button>
             <button className="n-btn n-btn-default n-btn-sm" onClick={handleShare}><Share2 size={13} /> Share</button>
           </div>
         </div>

@@ -134,7 +134,13 @@ characters** (*"One month. One honest picture."*) · a detailed bento section ·
 
 Full screen‑recording of the redesigned app (54 s, 1080p):
 
-<video src="https://github.com/kadiamyeshwanth/Personal-Finance-Tracker/raw/main/docs/redesign/walkthrough.mp4" controls muted width="900"></video>
+
+
+
+
+https://github.com/user-attachments/assets/d2c63226-6c81-4605-9a62-74097fe9f21d
+
+
 
 <sub>Player not loading? Open it directly: [`docs/redesign/walkthrough.mp4`](docs/redesign/walkthrough.mp4)</sub>
 

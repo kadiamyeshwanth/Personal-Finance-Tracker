@@ -29,6 +29,14 @@
 
 ---
 
+## 🧭 Overview
+
+Personal Finance Tracker is a **fully-featured, production-ready finance management platform** designed for the Indian market. It goes far beyond a simple transaction logger — it is an intelligent financial companion that reads your bank SMS messages, learns your spending personality, coaches you through challenges, lets you journal your financial mindset, and delivers Spotify-Wrapped-style monthly reviews.
+
+Everything runs **without any paid AI API** — all intelligence is local, rule-based, and fast.
+
+---
+
 <div align="center">
 
 # 🎨 The Clario Redesign
@@ -288,14 +296,6 @@ Everything respects `prefers-reduced-motion`, `prefers-reduced-transparency` and
 - [Deployment](#-deployment)
 - [Security](#-security)
 - [Contributing](#-contributing)
-
----
-
-## 🧭 Overview
-
-Personal Finance Tracker is a **fully-featured, production-ready finance management platform** designed for the Indian market. It goes far beyond a simple transaction logger — it is an intelligent financial companion that reads your bank SMS messages, learns your spending personality, coaches you through challenges, lets you journal your financial mindset, and delivers Spotify-Wrapped-style monthly reviews.
-
-Everything runs **without any paid AI API** — all intelligence is local, rule-based, and fast.
 
 ---
 
@@ -836,18 +836,6 @@ HDFC · SBI · ICICI · Axis · Kotak · PNB · Bank of India · Canara Bank · 
 
 ---
 
-## 👥 Contributions
-
-| Area | Owner |
-|------|-------|
-| **Product · Backend · API · Database · Auth · SMS pipeline · Deployment** | **[Kadiam Yeshwanth](https://github.com/kadiamyeshwanth)** — built the entire full‑stack platform and shipped it |
-| **UI/UX · Front‑end · Brand ("Clario") · Design system · Motion** | **[Abhinay](https://github.com/Abhinay)** — the redesign documented at the top of this README; UI‑only, backend untouched |
-
-> The backend in this fork is intentionally **identical** to the deployed version —
-> the redesign changed only what you see, never how it works.
-
----
-
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are always welcome!
@@ -874,6 +862,18 @@ Please follow the [Conventional Commits](https://www.conventionalcommits.org/) f
 ## 📄 License
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
+
+---
+
+## 👥 Contributions
+
+| Area | Owner |
+|------|-------|
+| **Product · Backend · API · Database · Auth · SMS pipeline · Deployment** | **[Kadiam Yeshwanth](https://github.com/kadiamyeshwanth)** — built the entire full‑stack platform and shipped it |
+| **UI/UX · Front‑end · Brand ("Clario") · Design system · Motion** | **[Abhinay](https://github.com/Abhinay)** — the redesign documented earlier in this README ("🎨 The Clario Redesign"); UI‑only, backend untouched |
+
+> The backend in this fork is intentionally **identical** to the deployed version —
+> the redesign changed only what you see, never how it works.
 
 ---
 

@@ -3,7 +3,10 @@
  * Use as a wrapper around the entire app or individual pages.
  */
 import React from 'react';
-import { AlertTriangle, RefreshCcw } from 'lucide-react';
+import {
+  Warning as AlertTriangle,
+  ArrowsClockwise as RefreshCcw,
+} from '@phosphor-icons/react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {

@@ -1,156 +1,280 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   PERSONAL FINANCE TRACKER — NOTION-EXACT DESIGN SYSTEM
-   Typography: Inter · Colours: Notion's exact palette · Layout: Notion-native
+   CLARIO — "PRIVATE LEDGER" DESIGN SYSTEM
+   A calm, precise financial instrument. Ink-dark glass chrome; warm paper light.
+
+   THE ONE RULE: colour is reserved exclusively for money.
+   All chrome is monochrome ink. Income is jade, expense is ember.
+   Nothing else on screen carries chroma — so the only coloured things you
+   see are your money. That is what makes the numbers legible at a glance.
+
+   Type   Fraunces (display, optical sizing) · Geist (UI) · Geist Mono (figures)
+   Motion Springs, not durations. Critically damped by default.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Google Fonts ─────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* ── Type ─────────────────────────────────────────────────────────────────
+   Nunito — genuinely rounded terminals, the closest free relative of
+   SF Pro Rounded. One family across the whole product; Geist Mono is kept
+   only for ledger figures, where fixed-width digits are load-bearing.
+   ────────────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&family=Unbounded:wght@600;700;800&display=swap');
+/* Display face - Satoshi (Fontshare). The Meridian reference uses Formular;
+   Satoshi is its closest free twin - same geometric grotesque skeleton, and
+   it carries the tight-tracking display setting the design leans on. */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+
+/* Tailwind v4 — additive. Every legacy .n-* rule below keeps working. */
+@import 'tailwindcss';
+
+/* This app switches themes with [data-theme="dark"] on <html>, not a .dark
+   class. Without this, every `dark:` utility would silently never match. */
+@custom-variant dark ([data-theme="dark"] &);
+
+/* Expose the design tokens to Tailwind so utilities and the .n-* system
+   read from ONE palette and can never drift apart. */
+@theme inline {
+  --color-ink:      var(--bg);
+  --color-surface:  var(--bg-secondary);
+  --color-line:     var(--border);
+  --color-ink-1:    var(--text);
+  --color-ink-2:    var(--text-2);
+  --color-ink-3:    var(--text-3);
+  --color-income:   var(--green);
+  --color-expense:  var(--red);
+  --radius-card:    var(--r-lg);
+
+  /* shadcn / Magic UI token names, mapped onto the Clario palette so any
+     component installed from a registry inherits this design system instead
+     of shipping its own greys. */
+  --color-background:          var(--bg);
+  --color-foreground:          var(--text);
+  --color-card:                var(--bg-secondary);
+  --color-card-foreground:     var(--text);
+  --color-popover:             var(--bg-tertiary);
+  --color-popover-foreground:  var(--text);
+  --color-primary:             var(--brand);
+  --color-primary-foreground:  #ffffff;
+  --color-secondary:           var(--bg-tertiary);
+  --color-secondary-foreground:var(--text);
+  --color-muted:               var(--bg-secondary);
+  --color-muted-foreground:    var(--text-3);
+  --color-accent:              var(--bg-hover);
+  --color-accent-foreground:   var(--text);
+  --color-destructive:         var(--red);
+  --color-border:              var(--border);
+  --color-input:               var(--border-strong);
+  --color-ring:                var(--brand);
+
+  --font-display:   'Nunito', ui-rounded, 'SF Pro Rounded', sans-serif;
+  --font-sans:      'Nunito', ui-rounded, system-ui, sans-serif;
+  --font-mono:      'Geist Mono', ui-monospace, monospace;
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    LIGHT MODE TOKENS  (Notion exact palette)
    ══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* ── Text ───────────────────────────────────────────────────────────────── */
-  --text:          rgb(55, 53, 47);
-  --text-2:        rgba(55, 53, 47, 0.65);
-  --text-3:        rgba(55, 53, 47, 0.45);
-  --text-ph:       rgba(55, 53, 47, 0.25);
-  --text-inv:      rgba(255, 255, 255, 0.9);
+  /* ── Text — warm ink on paper ───────────────────────────────────────────── */
+  --text:          #101216;
+  --text-2:        rgba(16, 18, 22, 0.88);
+  --text-3:        rgba(16, 18, 22, 0.70);
+  --text-ph:       rgba(16, 18, 22, 0.44);
+  --text-inv:      rgba(255, 255, 255, 0.95);
 
-  /* ── Backgrounds ────────────────────────────────────────────────────────── */
-  --bg:            #ffffff;
-  --bg-sidebar:    #f7f6f3;           /* Notion's exact sidebar colour */
-  --bg-hover:      rgba(55, 53, 47, 0.07);
-  --bg-active:     rgba(55, 53, 47, 0.11);
-  --bg-secondary:  #f7f6f3;
-  --bg-tertiary:   #edece9;
-  --bg-tooltip:    rgb(47, 47, 47);
-  --bg-code:       rgba(135, 131, 120, 0.12);
+  /* ── Backgrounds — warm paper, white cards ─────────────────────────────── */
+  --bg:            #FFFFFF;
+  --bg-sidebar:    rgba(255, 255, 255, 0.78);   /* glass — see --glass-* */
+  --bg-hover:      rgba(28, 24, 18, 0.045);
+  --bg-active:     rgba(28, 24, 18, 0.075);
+  --bg-secondary:  #F4F2ED;
+  --bg-tertiary:   #ECE9E2;
+  --bg-tooltip:    #1B1815;
+  --bg-code:       rgba(28, 24, 18, 0.055);
 
-  /* ── Borders ────────────────────────────────────────────────────────────── */
-  --border:        rgba(55, 53, 47, 0.09);
-  --border-strong: rgba(55, 53, 47, 0.16);
-  --border-hover:  rgba(55, 53, 47, 0.30);
+  /* ── Borders — hairlines, never heavy ───────────────────────────────────── */
+  --border:        rgba(28, 24, 18, 0.12);
+  --border-strong: rgba(28, 24, 18, 0.22);
+  --border-hover:  rgba(28, 24, 18, 0.30);
 
-  /* ── Accent ─────────────────────────────────────────────────────────────── */
-  --accent:        #2383e2;           /* Notion's blue */
-  --accent-bg:     rgba(35, 131, 226, 0.10);
-  --accent-hover:  rgba(35, 131, 226, 0.16);
+  /* ── Brand — Clario blue. Identity and primary action only. ─────────────── */
+  /* On paper the gradient must not start at white or the mark disappears. */
+  --brand:         #D64802;
+  --brand-from:    #F16001;
+  --brand-to:      #C10801;
+  --brand-bg:      rgba(232, 80, 2, 0.10);
 
-  /* ── Semantic colours ───────────────────────────────────────────────────── */
-  --green:         #0f7b6c;
-  --green-bg:      rgba(15, 123, 108, 0.07);
-  --green-border:  rgba(15, 123, 108, 0.20);
-  --red:           #c4554d;
-  --red-bg:        rgba(196, 85, 77, 0.07);
-  --red-border:    rgba(196, 85, 77, 0.20);
-  --yellow:        #d9730d;
-  --yellow-bg:     rgba(217, 115, 13, 0.07);
-  --yellow-border: rgba(217, 115, 13, 0.20);
-  --purple:        #9065b0;
-  --purple-bg:     rgba(144, 101, 176, 0.07);
-  --blue:          #2383e2;
-  --blue-bg:       rgba(35, 131, 226, 0.07);
-  --gray:          rgba(55, 53, 47, 0.50);
-  --gray-bg:       rgba(55, 53, 47, 0.05);
-  --teal:          #0b7285;
-  --teal-bg:       rgba(11, 114, 133, 0.07);
-  --pink:          #c2185b;
-  --pink-bg:       rgba(194, 24, 91, 0.07);
+  /* ── Accent — the brand, used sparingly ─────────────────────────────────── */
+  --accent:        var(--brand);
+  --accent-bg:     rgba(232, 80, 2, 0.11);
+  --accent-hover:  rgba(232, 80, 2, 0.18);
 
-  /* ── Shadows ────────────────────────────────────────────────────────────── */
-  --shadow-xs:     0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm:     0 1px 3px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03);
-  --shadow:        0 2px 6px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.04);
-  --shadow-md:     0 4px 12px rgba(0,0,0,0.08), 0 12px 36px rgba(0,0,0,0.06);
-  /* Notion's exact dropdown shadow */
-  --shadow-float:  rgba(15,15,15,.05) 0 0 0 1px,
-                   rgba(15,15,15,.1)  0 3px 6px,
-                   rgba(15,15,15,.2)  0 9px 24px;
+  /* ── MONEY — the only true colour in the product ────────────────────────── */
+  --green:         #0d7a55;                     /* income  · jade  */
+  --green-bg:      rgba(13, 122, 85, 0.07);
+  --green-border:  rgba(13, 122, 85, 0.22);
+  --red:           #b8443a;                     /* expense · ember */
+  --red-bg:        rgba(184, 68, 58, 0.07);
+  --red-border:    rgba(184, 68, 58, 0.22);
 
-  /* ── Border radii ───────────────────────────────────────────────────────── */
-  --r:    4px;           /* Notion uses 4px for small elements */
-  --r-md: 6px;           /* cards, inputs */
-  --r-lg: 8px;           /* modals, large cards */
-  --r-xl: 12px;          /* big elements */
+  /* ── Status — muted, never competing with money ─────────────────────────── */
+  --yellow:        #9a6a15;
+  --yellow-bg:     rgba(154, 106, 21, 0.07);
+  --yellow-border: rgba(154, 106, 21, 0.22);
+  --purple:        #5d5570;
+  --purple-bg:     rgba(93, 85, 112, 0.07);
+  --blue:          #3f4a5c;
+  --blue-bg:       rgba(63, 74, 92, 0.07);
+  --gray:          rgba(20, 22, 26, 0.48);
+  --gray-bg:       rgba(20, 22, 26, 0.05);
+  --teal:          #1f6b70;
+  --teal-bg:       rgba(31, 107, 112, 0.07);
+  --pink:          #9c4368;
+  --pink-bg:       rgba(156, 67, 104, 0.07);
+
+  /* ── Shadows — soft, layered, physical ──────────────────────────────────── */
+  --shadow-xs:     0 1px 2px rgba(20,22,26,0.045);
+  --shadow-sm:     0 1px 2px rgba(20,22,26,0.05), 0 3px 10px rgba(20,22,26,0.035);
+  --shadow:        0 2px 6px rgba(20,22,26,0.05), 0 10px 30px rgba(20,22,26,0.05);
+  --shadow-md:     0 6px 18px rgba(20,22,26,0.07), 0 22px 60px rgba(20,22,26,0.08);
+  --shadow-float:  0 0 0 1px rgba(20,22,26,0.05),
+                   0 8px 20px rgba(20,22,26,0.09),
+                   0 28px 70px rgba(20,22,26,0.13);
+
+  /* ── Glass — the floating material layer ────────────────────────────────── */
+  --glass-bg:      rgba(251, 250, 247, 0.86);
+  --glass-blur:    22px;
+  --glass-border:  rgba(255, 255, 255, 0.65);   /* bright top edge */
+  --glass-shadow:  0 1px 0 rgba(255,255,255,0.5) inset,
+                   0 10px 34px rgba(20,22,26,0.09);
+
+  /* Atmosphere — one soft bloom so glass has something to refract */
+  --bloom-a:       rgba(63, 74, 92, 0.10);
+  --bloom-b:       rgba(13, 122, 85, 0.07);
+  --grain-opacity: 0.030;
+
+  /* ── Border radii — larger, softer, Apple-adjacent ──────────────────────── */
+  --r:    8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
 
   /* ── Layout ─────────────────────────────────────────────────────────────── */
-  --sidebar-w:     240px;
-  --topbar-h:      45px;
-  --page-max-w:    900px;
-  --page-pad-x:    96px;
-  --page-pad-y:    48px;
+  --sidebar-w:     84px;         /* floating icon rail */
+  --topbar-h:      58px;
+  /* Use the whole screen — the old narrow column left desktops half empty. */
+  --page-max-w:    1640px;
+  --page-pad-x:    30px;
+  --page-pad-y:    18px;
 
-  /* ── Misc ────────────────────────────────────────────────────────────────── */
-  --progress-track: rgba(55, 53, 47, 0.09);
-  --skeleton-shine: rgba(55, 53, 47, 0.04);
-  --transition-fast: 0.10s ease;
-  --transition:      0.15s ease;
-  --transition-slow: 0.25s ease;
+  /* ── Motion — springs, not durations ────────────────────────────────────── */
+  /* Critically damped default; the bounce curve is reserved for momentum. */
+  --ease-out:      cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.36, 0.64, 1);
+  --transition-fast: 0.12s var(--ease-out);
+  --transition:      0.2s  var(--ease-out);
+  --transition-slow: 0.36s var(--ease-out);
+
+  /* ── Misc ───────────────────────────────────────────────────────────────── */
+  --progress-track: rgba(20, 22, 26, 0.08);
+  --skeleton-shine: rgba(20, 22, 26, 0.045);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    DARK MODE TOKENS  (Notion's dark palette)
    ══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
-  /* Text */
-  --text:          rgba(255, 255, 255, 0.88);
-  --text-2:        rgba(255, 255, 255, 0.58);
-  --text-3:        rgba(255, 255, 255, 0.36);
-  --text-ph:       rgba(255, 255, 255, 0.20);
-  --text-inv:      rgb(55, 53, 47);
+  /* Text — vibrancy: slightly heavier and brighter over glass, never flat grey */
+  --text:          #F9F9F9;
+  --text-2:        #A7A7A7;
+  --text-3:        #646464;
+  --text-ph:       rgba(247, 249, 252, 0.24);
+  --text-inv:      #0a0b0d;
 
-  /* Backgrounds — Notion dark uses near-blacks, NOT pure black */
-  --bg:            #191919;
-  --bg-sidebar:    #111111;
-  --bg-hover:      rgba(255, 255, 255, 0.055);
-  --bg-active:     rgba(255, 255, 255, 0.090);
-  --bg-secondary:  #252525;
-  --bg-tertiary:   #2f2f2f;
-  --bg-tooltip:    #2f2f2f;
-  --bg-code:       rgba(255, 255, 255, 0.07);
+  /* Backgrounds — near-black ink, matching the reference. */
+  --bg:            #0E0E0E;
+  --bg-sidebar:    #141414;
+  --bg-hover:      rgba(255, 255, 255, 0.05);
+  --bg-active:     rgba(255, 255, 255, 0.09);
+  --bg-secondary:  #1C1C1C;
+  --bg-tertiary:   #222222;
+  --bg-tooltip:    #222222;
+  --bg-code:       rgba(255, 255, 255, 0.065);
 
   /* Borders */
-  --border:        rgba(255, 255, 255, 0.082);
-  --border-strong: rgba(255, 255, 255, 0.145);
-  --border-hover:  rgba(255, 255, 255, 0.28);
+  --border:        rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-hover:  rgba(255, 255, 255, 0.30);
 
-  /* Accent */
-  --accent:        #4a9eff;
-  --accent-bg:     rgba(74, 158, 255, 0.13);
-  --accent-hover:  rgba(74, 158, 255, 0.20);
+  /* Brand — on ink the mark runs white → blue, exactly as supplied. */
+  /* Violet accent, extracted from the reference dashboard. The Clario logo
+     keeps its own blue via --logo-* so the brand mark is unchanged. */
+  --brand:         #E85002;
+  --brand-from:    #F16001;
+  --brand-to:      #C10801;
+  --brand-bg:      rgba(232, 80, 2, 0.14);
+  --logo-from:     #F16001;
+  --logo-to:       #C10801;
+  --logo-mark:     #FF5F00;
 
-  /* Semantic */
-  --green:         #4cc38a;
-  --green-bg:      rgba(76, 195, 138, 0.11);
-  --green-border:  rgba(76, 195, 138, 0.25);
-  --red:           #e06c75;
-  --red-bg:        rgba(224, 108, 117, 0.11);
-  --red-border:    rgba(224, 108, 117, 0.25);
-  --yellow:        #e5a445;
-  --yellow-bg:     rgba(229, 164, 69, 0.11);
-  --yellow-border: rgba(229, 164, 69, 0.25);
-  --purple:        #b48eff;
-  --purple-bg:     rgba(180, 142, 255, 0.11);
-  --blue:          #4a9eff;
-  --blue-bg:       rgba(74, 158, 255, 0.11);
-  --gray:          rgba(255, 255, 255, 0.40);
-  --gray-bg:       rgba(255, 255, 255, 0.06);
-  --teal:          #22b8cf;
-  --teal-bg:       rgba(34, 184, 207, 0.11);
-  --pink:          #f06292;
-  --pink-bg:       rgba(240, 98, 146, 0.11);
+  --accent:        var(--brand);
+  --accent-bg:     rgba(232, 80, 2, 0.14);
+  --accent-hover:  rgba(232, 80, 2, 0.24);
 
-  /* Shadows */
-  --shadow-xs:     0 1px 2px rgba(0,0,0,0.30);
-  --shadow-sm:     0 1px 3px rgba(0,0,0,0.35);
-  --shadow:        0 2px 8px rgba(0,0,0,0.40), 0 6px 20px rgba(0,0,0,0.25);
-  --shadow-md:     0 4px 16px rgba(0,0,0,0.50), 0 12px 40px rgba(0,0,0,0.35);
-  --shadow-float:  rgba(0,0,0,0.3)  0 0 0 1px,
-                   rgba(0,0,0,0.50) 0 8px 24px;
+  /* ── ONE COLOUR SYSTEM ───────────────────────────────────────────────────
+     Ink + a single blue + a single red. Nothing else carries hue.
 
-  --progress-track: rgba(255, 255, 255, 0.10);
-  --skeleton-shine: rgba(255, 255, 255, 0.05);
+     · Income is BLUE — the brand colour, the only "good" accent.
+     · Expenses are INK, not red. Most rows in a finance app are expenses;
+       colouring them all red turned every list into a wall of alarm and was
+       the main reason the UI read as noisy.
+     · Red is reserved for genuine alerts — over budget, destructive actions.
+     Purple/teal/pink/amber are all aliased onto this system so no page can
+     reintroduce a stray hue.
+     ─────────────────────────────────────────────────────────────────────── */
+  --green:         #4ade80;                     /* positive delta */
+  --green-bg:      rgba(74, 222, 128, 0.12);
+  --green-border:  rgba(74, 222, 128, 0.28);
+  --red:           #f43f5e;                     /* negative delta / alerts */
+  --red-bg:        rgba(244, 63, 94, 0.12);
+  --red-border:    rgba(244, 63, 94, 0.28);
+
+  /* Aliases — every legacy hue folds into the system */
+  --yellow:        #F16001;
+  --yellow-bg:     rgba(242, 86, 77, 0.10);
+  --yellow-border: rgba(242, 86, 77, 0.26);
+  --purple:        var(--brand);
+  --purple-bg:     rgba(255, 122, 24, 0.10);
+  --blue:          var(--brand);
+  --blue-bg:       rgba(255, 122, 24, 0.10);
+  --gray:          #A7A7A7;
+  --gray-bg:       rgba(255, 255, 255, 0.055);
+  --teal:          var(--brand);
+  --teal-bg:       rgba(255, 122, 24, 0.10);
+  --pink:          var(--brand);
+  --pink-bg:       rgba(255, 122, 24, 0.10);
+
+  /* Shadows — deeper, since the ground is darker */
+  --shadow-xs:     0 1px 2px rgba(0,0,0,0.40);
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.45), 0 3px 12px rgba(0,0,0,0.30);
+  --shadow:        0 2px 8px rgba(0,0,0,0.50), 0 10px 30px rgba(0,0,0,0.36);
+  --shadow-md:     0 6px 20px rgba(0,0,0,0.55), 0 24px 64px rgba(0,0,0,0.46);
+  --shadow-float:  0 0 0 1px rgba(255,255,255,0.06),
+                   0 10px 26px rgba(0,0,0,0.55),
+                   0 30px 74px rgba(0,0,0,0.5);
+
+  /* Glass */
+  --glass-bg:      rgba(18, 20, 25, 0.62);
+  --glass-blur:    24px;
+  --glass-border:  rgba(255, 255, 255, 0.10);
+  --glass-shadow:  0 1px 0 rgba(255,255,255,0.07) inset,
+                   0 12px 40px rgba(0,0,0,0.5);
+
+  --bloom-a:       rgba(232, 80, 2, 0.12);
+  --bloom-b:       rgba(193, 8, 1, 0.07);
+  --grain-opacity: 0.042;
+
+  --progress-track: rgba(255, 255, 255, 0.09);
+  --skeleton-shine: rgba(255, 255, 255, 0.055);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -158,19 +282,60 @@
    ══════════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-html, body, #root { height: 100%; }
+html, body { height: 100%; }
+/* #root grows with page content (the prelanding page scrolls the body); the
+   dashboard shell is position:fixed so it never makes #root grow. */
+#root { min-height: 100%; }
+
+/* idle-hide the pointer after a few seconds of no input (see lib/cursorIdle) */
+html.cursor-idle, html.cursor-idle * { cursor: none !important; }
 
 body {
-  font-family: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont,
-               'Segoe UI', Helvetica, Arial, sans-serif;
+  /* Rounded throughout. On Apple hardware the real SF Pro Rounded wins. */
+  font-family: 'Nunito', ui-rounded, -apple-system, 'SF Pro Rounded',
+               'Segoe UI Variable', 'Segoe UI', Helvetica, Arial, sans-serif;
   background:  var(--bg);
   color:       var(--text);
-  font-size:   14px;
-  line-height: 1.5;
+  font-size:   15px;
+  line-height: 1.55;
+  letter-spacing: -0.002em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11'; /* Inter alt digits */
+  /* Money must never reflow while it animates */
+  font-variant-numeric: tabular-nums;
+  position: relative;
 }
+
+/* ── Atmosphere ───────────────────────────────────────────────────────────
+   One soft bloom + a fine grain. This is what the glass chrome refracts —
+   without it, "liquid glass" has nothing to bend and reads as flat blur.
+   Both layers are inert: fixed, non-interactive, behind everything.
+   ──────────────────────────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vmax;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(48vmax 40vmax at 14% -6%,  var(--bloom-a), transparent 62%),
+    radial-gradient(42vmax 38vmax at 92% 108%, var(--bloom-b), transparent 64%);
+  filter: blur(28px);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  /* Self-contained SVG grain — no network request, no asset to ship */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Every real surface sits above the atmosphere */
+#root { position: relative; z-index: 1; }
 
 a   { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
@@ -207,7 +372,7 @@ button { cursor: pointer; }
 /* Body text */
 .n-body   { font-size: 14px; color: var(--text-2); line-height: 1.65; }
 .n-body-sm{ font-size: 13px; color: var(--text-2); line-height: 1.55; }
-.n-caption{ font-size: 12px; color: var(--text-3); line-height: 1.45; }
+.n-caption{ font-size: 12.5px; color: var(--text-3); line-height: 1.5; }
 
 /* Uppercase label (Notion's property labels) */
 .n-label {
@@ -1080,3 +1245,20 @@ motion.div:hover .notif-del-btn { opacity: 1 !important; }
 @media (max-width: 900px) {
   .n-reports-grid, .n-analytics-pair { grid-template-columns: 1fr !important; }
 }
+::view-transition-old(root), ::view-transition-new(root) {
+    animation:      none;
+    mix-blend-mode:      normal;
+}
+/* old theme stays put underneath; new theme clip-reveals cleanly on top */
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 9999; }
+/* Scoped to AnimatedThemeToggler — it sets the data-attribute and the variable
+   only while a toggle is in flight, so this cannot affect other transitions. */
+html[data-magicui-theme-vt="active"]::view-transition-group(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration);
+}
+html[data-magicui-theme-vt="active"]::view-transition-new(root) {
+  clip-path: var(--magicui-theme-vt-clip-from);
+}
+
+body:has(.app-shell) { overflow: hidden; }

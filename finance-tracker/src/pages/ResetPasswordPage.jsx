@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Loader2, TrendingUp, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Eye as Eye,
+  EyeSlash as EyeOff,
+  CircleNotch as Loader2,
+  TrendUp as TrendingUp,
+  CheckCircle as CheckCircle2,
+  XCircle as XCircle,
+} from '@phosphor-icons/react';
 import apiClient from '../api/client';
 
 const ResetPasswordPage = () => {

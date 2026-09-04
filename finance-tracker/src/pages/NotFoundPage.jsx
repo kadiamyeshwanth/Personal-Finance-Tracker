@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ArrowLeft } from 'lucide-react';
+import {
+  House as Home,
+  ArrowLeft as ArrowLeft,
+} from '@phosphor-icons/react';
 
 const NotFoundPage = () => (
   <div style={{

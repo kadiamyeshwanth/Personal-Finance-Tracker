@@ -7,40 +7,40 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
-import { Download, FileJson, BarChart3, TrendingUp, FileText, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  DownloadSimple as Download,
+  FileCode as FileJson,
+  ChartBar as BarChart3,
+  TrendUp as TrendingUp,
+  FileText as FileText,
+  CircleNotch as Loader2,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  Receipt, WarningCircle,
+} from '@phosphor-icons/react';
 import { fetchTransactions } from '../api/transactions';
 import { fetchGoals } from '../api/goals';
 import { fetchBudgets } from '../api/budgets';
 import PageHeader from '../components/ui/PageHeader';
 import { useTheme } from '../context/ThemeContext';
+import { chartTheme, SERIES, areaFill, INCOME_COLOR, SPEND_COLOR } from '../lib/chartTheme';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, PointElement, LineElement, Filler);
 
-const PALETTE = ['#2383e2', '#0f7b6c', '#9065b0', '#d9730d', '#c4554d', '#6366f1', '#14b8a6', '#84cc16', '#f59e0b', '#ec4899'];
+const PALETTE = SERIES;
+// A varied set so doughnut segments are actually distinguishable (SERIES is a
+// near-monochrome orange ramp).
+const DONUT_COLORS = ['#E85002', '#F0A65A', '#B5533A', '#7C8B5A', '#4C8C8C', '#8A6D9E', '#C98A3C', '#6E6E6E', '#8C4A2F', '#A9A29B'];
 
 /** Reads CSS variable colors at runtime so charts adapt to dark/light mode */
 const useChartOptions = () => {
   const { theme } = useTheme();
   return useMemo(() => {
-    const s = getComputedStyle(document.documentElement);
-    const text3  = s.getPropertyValue('--text-3').trim();
-    const text   = s.getPropertyValue('--text').trim();
-    const text2  = s.getPropertyValue('--text-2').trim();
-    const border = s.getPropertyValue('--border').trim();
-    const bgTip  = theme === 'dark' ? '#2a2a2a' : '#ffffff';
-    const CHART_OPTS = {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: text3, font: { family: 'Inter', size: 12 }, boxWidth: 10, padding: 16, usePointStyle: true } },
-        tooltip: { backgroundColor: bgTip, borderColor: border, borderWidth: 1, titleColor: text, bodyColor: text2, titleFont: { family: 'Inter', size: 13, weight: '600' }, bodyFont: { family: 'Inter', size: 12 }, padding: 12 },
-      },
-    };
-    const BAR_SCALES = {
-      x: { grid: { color: border }, ticks: { color: text3, font: { family: 'Inter', size: 12 } }, border: { display: false } },
-      y: { grid: { color: border }, ticks: { color: text3, font: { family: 'Inter', size: 12 }, callback: v => `₹${Number(v).toLocaleString('en-IN')}` }, border: { display: false } },
-    };
-    return { CHART_OPTS, BAR_SCALES };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const { base, scales } = chartTheme();
+    const dark = document.documentElement.getAttribute('data-theme') !== 'light'
+      && (document.documentElement.getAttribute('data-theme') === 'dark'
+        || window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return { CHART_OPTS: base, BAR_SCALES: scales, cardBg: dark ? '#161618' : '#FFFFFF' };
   }, [theme]);
 };
 
@@ -56,7 +56,7 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const ReportsPage = () => {
   const reportRef = useRef(null);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const { CHART_OPTS, BAR_SCALES } = useChartOptions();
+  const { CHART_OPTS, BAR_SCALES, cardBg } = useChartOptions();
 
   // ── View mode: monthly or Financial Year ─────────────────────────────────────
   const now = new Date();
@@ -73,6 +73,21 @@ const ReportsPage = () => {
   const { data: allTxns = [], isLoading } = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions });
   const { data: goals = [] }              = useQuery({ queryKey: ['goals'],        queryFn: fetchGoals });
   const { data: budgets = [] }            = useQuery({ queryKey: ['budgets'],      queryFn: fetchBudgets });
+
+  // On first load, land on the most recent month that actually has data.
+  const pickedRef = useRef(false);
+  React.useEffect(() => {
+    if (pickedRef.current || !allTxns.length) return;
+    pickedRef.current = true;
+    const latest = allTxns
+      .filter(t => !t.isRecurring)
+      .map(t => new Date(t.date))
+      .sort((a, b) => b - a)[0];
+    if (latest && (latest.getFullYear() !== selectedYear || latest.getMonth() !== selectedMonth)) {
+      setSelectedYear(latest.getFullYear());
+      setSelectedMonth(latest.getMonth());
+    }
+  }, [allTxns]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const txns      = allTxns.filter(t => !t.isRecurring);
   const recurring = allTxns.filter(t => t.isRecurring);
@@ -134,25 +149,26 @@ const ReportsPage = () => {
 
   // Chart datasets
   const overviewBarData = {
-    labels: ['Income', 'Expenses', 'Net Savings'],
+    labels: ['Income', 'Expenses', 'Net'],
     datasets: [{
-      label: 'Amount (₹)', borderRadius: 6, borderSkipped: false,
-      data: [monthly.income, monthly.expenses, Math.max(0, monthly.net)],
-      backgroundColor: ['rgba(15,123,108,0.12)', 'rgba(196,85,77,0.12)', 'rgba(35,131,226,0.12)'],
-      borderColor: ['#0f7b6c', '#c4554d', '#2383e2'], borderWidth: 1.5,
+      label: 'Amount (₹)', borderSkipped: false,
+      data: [monthly.income, monthly.expenses, monthly.net],
+      backgroundColor: [INCOME_COLOR, SPEND_COLOR, monthly.net >= 0 ? '#16A34A' : '#E5484D'],
+      borderWidth: 0, borderRadius: 6, maxBarThickness: 52,
     }],
   };
 
   const doughnutData = {
     labels: Object.keys(monthly.catMap),
-    datasets: [{ data: Object.values(monthly.catMap), backgroundColor: PALETTE.map(c => c + '22'), borderColor: PALETTE, borderWidth: 2, hoverOffset: 4 }],
+    datasets: [{ data: Object.values(monthly.catMap), backgroundColor: DONUT_COLORS, borderColor: cardBg, borderWidth: 2, spacing: 1, hoverOffset: 6 }],
   };
+  const doughnutOpts = { ...CHART_OPTS, cutout: '66%', plugins: { ...CHART_OPTS.plugins, legend: { display: false } } };
 
   const lineData = {
     labels: trendData.map(m => m.label),
     datasets: [
-      { label: 'Income', data: trendData.map(m => m.income), borderColor: '#0f7b6c', backgroundColor: 'rgba(15,123,108,0.06)', fill: true, tension: 0.4, pointRadius: 3 },
-      { label: 'Expenses', data: trendData.map(m => m.expenses), borderColor: '#c4554d', backgroundColor: 'rgba(196,85,77,0.06)', fill: true, tension: 0.4, pointRadius: 3 },
+      { label: 'Income', data: trendData.map(m => m.income), borderColor: INCOME_COLOR, backgroundColor: (ctx) => areaFill(ctx, INCOME_COLOR, 0.5), fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5 },
+      { label: 'Expenses', data: trendData.map(m => m.expenses), borderColor: SPEND_COLOR, backgroundColor: (ctx) => areaFill(ctx, 'rgba(247,249,252,0.20)'), fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 1.75 },
     ],
   };
 
@@ -280,20 +296,21 @@ const ReportsPage = () => {
 
       {/* ── Tax Summary (FY mode only) ────────────────────────────────────── */}
       {viewMode === 'fy' && !isLoading && (
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-          style={{ border: '1px solid var(--yellow-border)', background: 'var(--yellow-bg)', borderRadius: 'var(--r-md)', padding: '16px 20px', marginBottom: '24px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--yellow)', marginBottom: '12px' }}>
-            📋 Tax Summary — FY {selectedFY}–{String(selectedFY + 1).slice(2)}
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="n-card"
+          style={{ padding: '18px 20px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text)', marginBottom: '14px' }}>
+            <Receipt size={15} weight="fill" style={{ color: 'var(--brand)' }} />
+            Tax summary — FY {selectedFY}–{String(selectedFY + 1).slice(2)}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
             {[
               { label: 'Total Income (Gross)', value: periodTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0), color: 'var(--green)' },
               { label: 'Total Expenses',       value: periodTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--red)'   },
-              { label: 'Medical/Health Spend', value: periodTxns.filter(t => ['Health', 'Medical', 'Insurance'].includes(t.category) && t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--text-2)' },
-              { label: 'Education Spend',      value: periodTxns.filter(t => t.category === 'Education' && t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--text-2)' },
-              { label: 'Investment Income',    value: periodTxns.filter(t => ['Investment', 'Dividend', 'Interest'].includes(t.category) && t.type === 'income').reduce((s, t) => s + t.amount, 0), color: 'var(--accent)' },
+              { label: 'Medical / Health',     value: periodTxns.filter(t => ['Health', 'Medical', 'Insurance'].includes(t.category) && t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--text)' },
+              { label: 'Education',            value: periodTxns.filter(t => t.category === 'Education' && t.type === 'expense').reduce((s, t) => s + t.amount, 0), color: 'var(--text)' },
+              { label: 'Investment Income',    value: periodTxns.filter(t => ['Investment', 'Dividend', 'Interest'].includes(t.category) && t.type === 'income').reduce((s, t) => s + t.amount, 0), color: 'var(--brand)' },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.5)', borderRadius: 'var(--r-md)', border: '1px solid rgba(217,115,13,0.15)' }}>
+              <div key={label} style={{ padding: '11px 13px', background: 'var(--bg-secondary)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-3)', marginBottom: '4px' }}>{label}</div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>
                   ₹{value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
@@ -301,8 +318,8 @@ const ReportsPage = () => {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--text-3)' }}>
-            ⚠️ This is for reference only. Consult a CA for official tax filings.
+          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--text-3)' }}>
+            <WarningCircle size={13} weight="fill" /> For reference only — consult a CA for official filings.
           </div>
         </motion.div>
       )}
@@ -313,45 +330,48 @@ const ReportsPage = () => {
         <div ref={reportRef} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
           {/* Monthly overview bar */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '16px' }}>
-              {MONTH_NAMES[selectedMonth]} {selectedYear} — Overview
-            </div>
-            {isLoading ? <div className="n-skeleton" style={{ height: '200px' }} /> : (
-              <div style={{ height: '200px' }}><Bar data={overviewBarData} options={{ ...CHART_OPTS, scales: BAR_SCALES }} /></div>
+          <div className="n-card" style={{ padding: '20px' }}>
+            <div className="rp-card-label">{MONTH_NAMES[selectedMonth]} {selectedYear} — income, spending & what's left</div>
+            {isLoading ? <div className="n-skeleton" style={{ height: '220px' }} /> : (
+              <div style={{ height: '220px' }}><Bar data={overviewBarData} options={{ ...CHART_OPTS, scales: BAR_SCALES }} /></div>
             )}
           </div>
 
           {/* 12-month trend line */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '16px' }}>
-              12-month Income vs Expenses Trend
-            </div>
-            {isLoading ? <div className="n-skeleton" style={{ height: '200px' }} /> : (
-              <div style={{ height: '200px' }}><Line data={lineData} options={{ ...CHART_OPTS, scales: BAR_SCALES }} /></div>
+          <div className="n-card" style={{ padding: '20px' }}>
+            <div className="rp-card-label">Income vs expenses — trailing 12 months</div>
+            {isLoading ? <div className="n-skeleton" style={{ height: '220px' }} /> : (
+              <div style={{ height: '220px' }}><Line data={lineData} options={{ ...CHART_OPTS, scales: BAR_SCALES }} /></div>
             )}
           </div>
 
           {/* Category doughnut */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '16px' }}>
-              Expenses by Category — {MONTH_NAMES[selectedMonth]}
-            </div>
-            {isLoading ? <div className="n-skeleton" style={{ height: '200px' }} /> : Object.keys(monthly.catMap).length === 0 ? (
+          <div className="n-card" style={{ padding: '20px' }}>
+            <div className="rp-card-label">Where {MONTH_NAMES[selectedMonth]}'s spending went</div>
+            {isLoading ? <div className="n-skeleton" style={{ height: '220px' }} /> : Object.keys(monthly.catMap).length === 0 ? (
               <div className="n-empty" style={{ height: '200px', padding: '24px' }}>
                 <div className="n-empty-icon"><BarChart3 size={24} strokeWidth={1.2} /></div>
                 <p style={{ fontSize: '13px' }}>No expenses this month</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'center' }}>
-                <div style={{ height: '200px' }}><Doughnut data={doughnutData} options={{ ...CHART_OPTS, cutout: '68%' }} /></div>
-                <div>
+              <div style={{ display: 'grid', gridTemplateColumns: '190px 1fr', gap: '24px', alignItems: 'center' }}>
+                <div style={{ height: '190px', position: 'relative' }}>
+                  <Doughnut data={doughnutData} options={doughnutOpts} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>₹{Math.round(monthly.expenses).toLocaleString('en-IN')}</span>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>total spent</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
                   {Object.entries(monthly.catMap).sort((a, b) => b[1] - a[1]).map(([cat, amt], i) => (
-                    <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: PALETTE[i % PALETTE.length], flexShrink: 0 }} />
-                      <span style={{ fontSize: '12px', color: 'var(--text-2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat}</span>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
-                        ₹{amt.toLocaleString('en-IN')}
+                    <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                      <span style={{ width: '9px', height: '9px', borderRadius: '3px', background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
+                      <span style={{ fontSize: '12.5px', color: 'var(--text-2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>
+                        {monthly.expenses > 0 ? Math.round((amt / monthly.expenses) * 100) : 0}%
+                      </span>
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', minWidth: '70px', textAlign: 'right' }}>
+                        ₹{Math.round(amt).toLocaleString('en-IN')}
                       </span>
                     </div>
                   ))}
@@ -362,11 +382,9 @@ const ReportsPage = () => {
 
           {/* Top categories table (all-time) */}
           {topCategories.length > 0 && (
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                  Top Expense Categories — All Time
-                </div>
+            <div className="n-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div className="rp-card-label" style={{ marginBottom: 0 }}>Biggest spending categories — all time</div>
               </div>
               <table className="n-table">
                 <thead><tr><th>#</th><th>Category</th><th style={{ textAlign: 'right' }}>Total Spent</th><th style={{ textAlign: 'right' }}>% of Expenses</th></tr></thead>
@@ -376,7 +394,7 @@ const ReportsPage = () => {
                       <td style={{ color: 'var(--text-3)', fontSize: '12px', width: '32px' }}>{i + 1}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: PALETTE[i % PALETTE.length], flexShrink: 0 }} />
+                          <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
                           <span style={{ fontSize: '13px', color: 'var(--text)' }}>{cat}</span>
                         </div>
                       </td>
@@ -386,7 +404,7 @@ const ReportsPage = () => {
                       <td style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-3)' }}>
                         {allTime.expenses > 0 ? ((amt / allTime.expenses) * 100).toFixed(1) : 0}%
                         <div style={{ marginTop: '4px', height: '2px', borderRadius: '1px', background: 'var(--border-strong)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${allTime.expenses > 0 ? (amt / allTime.expenses) * 100 : 0}%`, background: PALETTE[i % PALETTE.length] }} />
+                          <div style={{ height: '100%', width: `${allTime.expenses > 0 ? (amt / allTime.expenses) * 100 : 0}%`, background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
                         </div>
                       </td>
                     </tr>
@@ -400,7 +418,7 @@ const ReportsPage = () => {
         {/* Sidebar: summary + export */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Monthly summary */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '16px 18px' }}>
+          <div className="n-card" style={{ padding: '16px 18px' }}>
             <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
               {MONTH_NAMES[selectedMonth]} Summary
             </div>
@@ -411,7 +429,7 @@ const ReportsPage = () => {
           </div>
 
           {/* All-time summary */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '16px 18px' }}>
+          <div className="n-card" style={{ padding: '16px 18px' }}>
             <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
               All-time Summary
             </div>
@@ -425,7 +443,7 @@ const ReportsPage = () => {
           </div>
 
           {/* Export panel */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '16px 18px' }}>
+          <div className="n-card" style={{ padding: '16px 18px' }}>
             <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '12px' }}>
               Export Data
             </div>

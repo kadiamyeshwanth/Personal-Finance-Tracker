@@ -21,9 +21,18 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MessageSquare, X, Upload, CheckCircle2, AlertTriangle,
-  Loader2, ChevronRight, Trash2, Edit3, Info, Sparkles,
-} from 'lucide-react';
+  ChatText as MessageSquare,
+  X as X,
+  UploadSimple as Upload,
+  CheckCircle as CheckCircle2,
+  Warning as AlertTriangle,
+  CircleNotch as Loader2,
+  CaretRight as ChevronRight,
+  Trash as Trash2,
+  PencilSimple as Edit3,
+  Info as Info,
+  Sparkle as Sparkles,
+} from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../constants/categories';
@@ -161,8 +170,8 @@ const splitMessages = (blob) => {
 
 // ── Category colour map ────────────────────────────────────────────────────────
 const CAT_COLOR = {
-  Food: '#f97316', Travel: '#3b82f6', Shopping: '#8b5cf6', Entertainment: '#ec4899',
-  Bills: '#64748b', Investment: '#0ea5e9', Health: '#22c55e', Education: '#f59e0b',
+  Food: 'var(--red)', Travel: '#3b82f6', Shopping: '#8b5cf6', Entertainment: 'var(--red)',
+  Bills: '#64748b', Investment: '#0ea5e9', Health: '#22c55e', Education: 'var(--red)',
   Personal: '#a855f7', Salary: '#10b981', Freelance: '#06b6d4', Other: '#6b7280',
 };
 
@@ -241,9 +250,10 @@ const SMSImportModal = ({ onClose, onImported }) => {
       zIndex: 1200, backdropFilter: 'blur(4px)', padding: '16px',
     }}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        initial={{ opacity: 0, scale: 0.96, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         style={{
           background: 'var(--bg)', border: '1px solid var(--border)',
           borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-float)',
@@ -459,7 +469,7 @@ const SMSImportModal = ({ onClose, onImported }) => {
           {/* ── STEP 3: Done ── */}
           {step === 3 && result && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 0', gap: '16px', textAlign: 'center' }}>
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300 }}>
+              <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 0.5, bounce: 0.35 }}>
                 <CheckCircle2 size={52} style={{ color: 'var(--green)' }} strokeWidth={1.5} />
               </motion.div>
               <div>

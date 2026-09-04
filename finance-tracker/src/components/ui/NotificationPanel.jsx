@@ -9,9 +9,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  X, Bell, AlertTriangle, CheckCircle2, Target,
-  RefreshCcw, TrendingUp, Info, Wallet, Trash2, CheckCheck,
-} from 'lucide-react';
+  X as X,
+  Bell as Bell,
+  Warning as AlertTriangle,
+  CheckCircle as CheckCircle2,
+  Target as Target,
+  ArrowsClockwise as RefreshCcw,
+  TrendUp as TrendingUp,
+  Info as Info,
+  Wallet as Wallet,
+  Trash as Trash2,
+  Checks as CheckCheck,
+} from '@phosphor-icons/react';
 import { fetchTransactions } from '../../api/transactions';
 import { fetchBudgets }      from '../../api/budgets';
 import { fetchGoals }        from '../../api/goals';
@@ -138,106 +147,71 @@ const NotificationPanel = ({ open, onClose }) => {
     <AnimatePresence>
       {open && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }} onClick={onClose}
-            style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.2)' }}
-          />
+          <div className="notif-scrim" onClick={onClose} />
 
           <motion.div
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-            style={{
-              position: 'fixed', top: 0, right: 0, bottom: 0,
-              width: '360px', zIndex: 901,
-              background: 'var(--bg)', borderLeft: '1px solid var(--border)',
-              boxShadow: 'var(--shadow-float)',
-              display: 'flex', flexDirection: 'column',
-            }}
+            className="notif-pop"
+            role="dialog" aria-label="Notifications"
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Bell size={16} style={{ color: 'var(--text-2)' }} strokeWidth={1.5} />
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Notifications</span>
-                {totalCount > 0 && (
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#fff', background: 'var(--red)', borderRadius: '10px', padding: '1px 7px' }}>
-                    {totalCount}
-                  </span>
-                )}
+            <div className="notif-head">
+              <div className="notif-head-title">
+                <Bell size={15} weight="fill" />
+                <span>Notifications</span>
+                {totalCount > 0 && <b>{totalCount}</b>}
               </div>
-              <div style={{ display: 'flex', gap: '4px' }}>
+              <div className="notif-head-actions">
                 {unreadCount > 0 && (
-                  <button onClick={() => markAllMut.mutate()} title="Mark all read"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', padding: '4px', borderRadius: 'var(--r)' }}>
-                    <CheckCheck size={15} />
-                  </button>
+                  <button onClick={() => markAllMut.mutate()} title="Mark all read"><CheckCheck size={14} /></button>
                 )}
                 {serverNotes.length > 0 && (
-                  <button onClick={() => clearMut.mutate()} title="Clear all"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', padding: '4px', borderRadius: 'var(--r)' }}>
-                    <Trash2 size={15} />
-                  </button>
+                  <button onClick={() => clearMut.mutate()} title="Clear all"><Trash2 size={14} /></button>
                 )}
-                <button onClick={onClose}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', padding: '4px' }}>
-                  <X size={16} />
-                </button>
+                <button onClick={onClose} title="Close"><X size={15} /></button>
               </div>
             </div>
 
-            {/* List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+            <div className="notif-list">
               {allNotifications.length === 0 ? (
-                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                    <Bell size={20} strokeWidth={1.2} style={{ color: 'var(--text-3)' }} />
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-2)', marginBottom: '4px' }}>All clear!</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>No alerts right now. Keep up the great work.</div>
+                <div className="notif-empty">
+                  <span className="notif-empty-icon"><Bell size={18} weight="fill" /></span>
+                  <b>You're all caught up</b>
+                  <p>Budget, payment and goal alerts appear here.</p>
                 </div>
               ) : (
                 allNotifications.map((n, i) => {
                   const Icon = n.icon;
                   const s    = STYLES[n.type] || STYLES.info;
+                  const cls = 'notif-row'
+                    + (n.isServer && !n.isRead ? ' is-unread' : '')
+                    + (n.isRead ? ' is-read' : '')
+                    + (n.link ? ' is-link' : '');
                   return (
                     <motion.div
                       key={n.id}
-                      initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04 }}
+                      className={cls}
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1], delay: Math.min(i, 6) * 0.03 }}
                       onClick={() => { if (n.link) { navigate(n.link); onClose(); } }}
-                      style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '12px',
-                        padding: '12px 14px', borderRadius: 'var(--r-md)', marginBottom: '4px',
-                        border: '1px solid var(--border)',
-                        background: n.isServer && !n.isRead ? 'var(--bg-secondary)' : 'var(--bg)',
-                        cursor: n.link ? 'pointer' : 'default',
-                        opacity: n.isRead ? 0.6 : 1,
-                        position: 'relative',
-                      }}
                     >
-                      {n.isServer && !n.isRead && (
-                        <div style={{ position: 'absolute', top: '10px', right: '10px', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }} />
-                      )}
-                      <div style={{ width: '32px', height: '32px', borderRadius: 'var(--r)', background: s.bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon size={15} style={{ color: s.color }} strokeWidth={1.5} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '2px', lineHeight: 1.4 }}>{n.title}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.4 }}>{n.desc}</div>
+                      <span className="notif-row-icon" style={{ background: s.bg, color: s.color }}>
+                        <Icon size={14} weight="fill" />
+                      </span>
+                      <div className="notif-row-body">
+                        <div className="notif-row-title">{n.title}</div>
+                        <div className="notif-row-desc">{n.desc}</div>
                         {n.time && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '4px', opacity: 0.7 }}>
+                          <div className="notif-row-time">
                             {n.time.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                           </div>
                         )}
                       </div>
                       {n.isServer && (
-                        <button onClick={(e) => { e.stopPropagation(); deleteMut.mutate(n.serverId); }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', opacity: 0, padding: '2px', transition: 'opacity 0.15s', flexShrink: 0 }}
-                          className="notif-del-btn">
+                        <button className="notif-del-btn" title="Dismiss"
+                          onClick={(e) => { e.stopPropagation(); deleteMut.mutate(n.serverId); }}>
                           <X size={12} />
                         </button>
                       )}
@@ -247,9 +221,11 @@ const NotificationPanel = ({ open, onClose }) => {
               )}
             </div>
 
-            <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--text-3)', textAlign: 'center', flexShrink: 0 }}>
-              {serverNotes.length > 0 ? `${unreadCount} unread · Click alerts to navigate` : 'Real-time alerts from your data'}
-            </div>
+            {allNotifications.length > 0 && (
+              <div className="notif-foot">
+                {serverNotes.length > 0 ? (unreadCount + ' unread · tap an alert to open it') : 'Live alerts from your data'}
+              </div>
+            )}
           </motion.div>
         </>
       )}

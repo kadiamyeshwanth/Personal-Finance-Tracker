@@ -2,10 +2,23 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, TrendingUp, TrendingDown, AlertTriangle, Lightbulb,
-  CheckCircle2, ArrowUpRight, Loader2, MessageSquare, Send,
-  Flame, Target, RefreshCw, Brain, BarChart3, Zap,
-} from 'lucide-react';
+  Sparkle as Sparkles,
+  TrendUp as TrendingUp,
+  TrendDown as TrendingDown,
+  Warning as AlertTriangle,
+  Lightbulb as Lightbulb,
+  CheckCircle as CheckCircle2,
+  ArrowUpRight as ArrowUpRight,
+  CircleNotch as Loader2,
+  ChatText as MessageSquare,
+  PaperPlaneTilt as Send,
+  Flame as Flame,
+  Target as Target,
+  ArrowsClockwise as RefreshCw,
+  Brain as Brain,
+  ChartBar as BarChart3,
+  Lightning as Zap,
+} from '@phosphor-icons/react';
 import { fetchTransactions } from '../api/transactions';
 import { fetchGoals }        from '../api/goals';
 import { fetchBudgets }      from '../api/budgets';
@@ -76,7 +89,7 @@ const InsightCard = ({ insight, index }) => {
   const Icon = insight.icon;
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.3 }}
-      style={{ border: `1px solid ${cfg.border}`, borderRadius: 'var(--r-md)', padding: '16px 18px', background: cfg.bg }}>
+      className="ai-card" style={{ borderColor: cfg.border, background: cfg.bg }}>
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         <div style={{ width: '32px', height: '32px', borderRadius: 'var(--r)', flexShrink: 0, background: cfg.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={15} style={{ color: cfg.color }} strokeWidth={1.5} />
@@ -95,7 +108,7 @@ const InsightCard = ({ insight, index }) => {
 const ScoreRing = ({ score }) => {
   const r = 44, c = 2 * Math.PI * r;
   const offset = c - (score / 100) * c;
-  const color = score >= 75 ? '#0f7b6c' : score >= 50 ? '#2383e2' : score >= 30 ? '#d9730d' : '#c4554d';
+  const color = score >= 75 ? 'var(--brand)' : score >= 50 ? 'var(--brand)' : score >= 30 ? 'var(--red)' : 'var(--red)';
   return (
     <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
       <circle cx="55" cy="55" r={r} fill="none" stroke="var(--border)" strokeWidth="7" />
@@ -208,20 +221,17 @@ const parseMarkdown = (text) => {
 };
 
 const ChatMessage = ({ msg }) => (
-  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-    style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '12px' }}>
+  <motion.div
+    className={`ai-row ai-row--${msg.role}`}
+    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+  >
     {msg.role === 'assistant' && (
-      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #2383e2, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: '8px', marginTop: '2px' }}>
-        <Sparkles size={12} color="#fff" />
-      </div>
+      <span className="ai-avatar"><Sparkles size={12} weight="fill" color="#fff" /></span>
     )}
-    <div style={{
-      maxWidth: '80%', padding: '10px 14px', borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
-      background: msg.role === 'user' ? 'linear-gradient(135deg, #2383e2, #6366f1)' : 'var(--bg-secondary)',
-      border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
-      color: msg.role === 'user' ? '#fff' : 'var(--text-2)',
-      fontSize: '13px', lineHeight: 1.6,
-    }} dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }} />
+    <div
+      className={`ai-bubble ai-bubble--${msg.role}`}
+      dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}
+    />
   </motion.div>
 );
 
@@ -326,16 +336,16 @@ const AIInsightsPage = () => {
       <PageHeader icon={Sparkles} title="AI Insights" subtitle="Intelligent analysis of your financial behaviour and habits." />
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '0' }}>
+      <div className="ai-tabs">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: activeTab === id ? 600 : 400, color: activeTab === id ? 'var(--text)' : 'var(--text-3)', borderBottom: activeTab === id ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-1px', transition: 'all 0.15s' }}>
+            className={`ai-tab${activeTab === id ? ' is-on' : ''}`}>
             <Icon size={13} /> {label}
           </button>
         ))}
         <div style={{ flex: 1 }} />
         <button onClick={handleRoast}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(196,85,77,0.1)', border: '1px solid rgba(196,85,77,0.25)', borderRadius: 'var(--r)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: 500, color: 'var(--red)', marginBottom: '4px' }}>
+          className="ai-roast-btn">
           <Flame size={13} /> Roast Me 🔥
         </button>
       </div>
@@ -352,7 +362,7 @@ const AIInsightsPage = () => {
         ) : (
           <>
             {/* Score row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '24px', alignItems: 'center', padding: '24px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', marginBottom: '24px' }}>
+            <div className="ai-score">
               <ScoreRing score={score} />
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '4px' }}>Financial Health Score</div>
@@ -366,7 +376,7 @@ const AIInsightsPage = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '24px', alignItems: 'start' }}>
+            <div className="ai-insights-grid">
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '14px' }}>
                   {insights.length} insight{insights.length !== 1 ? 's' : ''} found
@@ -383,23 +393,17 @@ const AIInsightsPage = () => {
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>💡 Smart Tips</div>
-                  </div>
-                  <div style={{ padding: '4px' }}>
-                    {SMART_TIPS.map((t, i) => (
-                      <div key={i} style={{ padding: '10px 12px', borderRadius: 'var(--r)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: '16px', flexShrink: 0 }}>{t.icon}</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.5 }}>{t.tip}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div className="ai-side">
+                <div className="ai-tips">
+                  <div className="ai-side-label">Smart tips</div>
+                  {SMART_TIPS.map((t, i) => (
+                    <div key={i} className="ai-tip">
+                      <span>{t.icon}</span>
+                      <span>{t.tip}</span>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg-secondary)' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.6 }}>Insights generated from your transaction data. Not financial advice.</div>
-                </div>
+                <div className="ai-note">Insights generated from your transaction data. Not financial advice.</div>
               </div>
             </div>
           </>
@@ -408,18 +412,18 @@ const AIInsightsPage = () => {
 
       {/* ── CHAT TAB ── */}
       {activeTab === 'chat' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: '24px', alignItems: 'start' }}>
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '520px' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--green)' }} />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>AI Finance Assistant</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>· Powered by your own data</span>
+        <div className="ai-chat-grid">
+          <div className="ai-chat">
+            <div className="ai-chat-head">
+              <span className="ai-dot" />
+              <span className="ai-chat-name">AI Finance Assistant</span>
+              <span className="ai-chat-meta">&nbsp;·&nbsp;reads your own data</span>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+            <div className="ai-chat-body">
               {messages.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
               {chatLoading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #2383e2, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--brand), var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Sparkles size={12} color="#fff" />
                   </div>
                   <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
@@ -431,25 +435,23 @@ const AIInsightsPage = () => {
               )}
               <div ref={messagesEndRef} />
             </div>
-            <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
+            <div className="ai-chat-input">
               <input className="n-input" value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                placeholder="Ask about your finances…" style={{ flex: 1, fontSize: '13px' }} />
-              <button onClick={handleSendMessage} disabled={chatLoading || !input.trim()} className="n-btn n-btn-primary n-btn-sm" style={{ flexShrink: 0 }}>
-                <Send size={13} />
+                placeholder="Ask about your finances…" />
+              <button onClick={handleSendMessage} disabled={chatLoading || !input.trim()}
+                className="n-btn n-btn-primary" aria-label="Send">
+                <Send size={14} />
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-3)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Suggested questions</div>
+          <div className="ai-side">
+            <div className="ai-side-label">Suggested questions</div>
             {SUGGESTED_QUESTIONS.map((q, i) => (
-              <motion.button key={i} whileHover={{ backgroundColor: 'var(--bg-hover)' }} onClick={() => { setInput(q); }}
-                style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--r)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', color: 'var(--text-2)', textAlign: 'left', lineHeight: 1.4 }}>
-                {q}
-              </motion.button>
+              <button key={i} className="ai-suggest" onClick={() => { setInput(q); }}>{q}</button>
             ))}
-            <div style={{ marginTop: '8px', padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--r)', fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.6 }}>
-              💡 This AI reads your actual transaction data to give personalised answers. No data leaves your account.
+            <div className="ai-note">
+              This assistant reads your transaction data to answer. Nothing leaves your account.
             </div>
           </div>
         </div>
@@ -463,8 +465,8 @@ const AIInsightsPage = () => {
           ) : (
             <>
               <PersonalityCard personality={personality} />
-              <div style={{ padding: '16px 18px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', marginTop: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>How is this determined?</div>
+              <div className="ai-explain">
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>How is this determined?</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.6 }}>
                   Your financial personality is calculated from: your savings rate, impulse purchase frequency, late-night spending patterns, budget adherence, and spending category diversity. It updates automatically as you add more transactions.
                 </div>
@@ -482,8 +484,8 @@ const AIInsightsPage = () => {
           ) : (
             <>
               <PredictionsCard pred={predictions} />
-              <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.6 }}>
-                ⚠️ Predictions are based on your current daily spending rate. They assume your income and spending behaviour remains the same for the rest of the month.
+              <div className="ai-note" style={{ fontSize: '12px' }}>
+                Predictions are based on your current daily spending rate. They assume your income and spending behaviour remains the same for the rest of the month.
               </div>
             </>
           )}

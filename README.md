@@ -29,6 +29,245 @@
 
 ---
 
+<div align="center">
+
+# 🎨 The Clario Redesign
+
+### UI/UX &nbsp;·&nbsp; Front‑End &nbsp;·&nbsp; Brand
+
+**by [Abhinay](https://github.com/Abhinay) — the design & front‑end half of this project**
+
+<img src="https://img.shields.io/badge/Design_System-Clario-E85002?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Motion-Framer_Motion_+_Lenis-0055FF?style=for-the-badge&logo=framer&logoColor=white" />
+<img src="https://img.shields.io/badge/Build_time-~1_week-111111?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Backend-untouched-2E9E63?style=for-the-badge" />
+
+</div>
+
+> This half of the repo is a **UI‑only redesign**. Every route, API call, hook and
+> feature is byte‑for‑byte the same as what [@kadiamyeshwanth](https://github.com/kadiamyeshwanth)
+> shipped — only the pixels, the motion and the affordances changed. The product
+> went from **"Money Tracker"** to **Clario**.
+
+---
+
+## 1 · The problem statement
+
+Most people **bounce off finance apps in the first week.** Two reasons, every time:
+
+1. **"Connect your bank"** — a login wall that feels like handing a stranger your keys.
+2. **Manual data entry** — a chore that dies the moment life gets busy.
+
+So the tracker that could have helped never gets used, and the person goes back to
+guessing where the month went.
+
+**Clario's answer:** you never connect a bank. You forward one bank **SMS**, drop a
+**CSV** statement, or snap a **receipt** — the amount, merchant and date are parsed
+for you. The whole ritual is *"forty seconds on a Sunday,"* and the month is just
+there. The redesign's job was to make the product **look and feel** like that promise:
+calm, fast, honest, and never demanding.
+
+---
+
+## 2 · The brand
+
+|  |  |
+|---|---|
+| **Name** | **Clario** — *clarity*, with a soft, human `‑o`. Short, sayable, own‑able. |
+| **Mark** | A rounded four‑blade pinwheel ([`finance-tracker/public/clario.svg`](finance-tracker/public/clario.svg)) — motion + focus, drawn on the same corner radius as the UI. |
+| **Wordmark** | Set in **Unbounded** — geometric, confident, a little editorial. |
+| **Voice** | Plain sentences. No jargon, no lectures. *"Know where it went. Without handing over your bank."* |
+
+### Why orange?
+
+Every bank app is **blue or green** — trust‑by‑cliché, and cold. Clario is about a
+warmer relationship with your own money, so the brand is a single **warm orange**,
+used with discipline:
+
+- it reads as **energy and optimism**, not alarm (red) or institution (blue);
+- one accent on a mostly **monochrome** UI means the **money figures pop** — colour is reserved for amounts and the primary action, nothing else;
+- the exact tone (`#E85002`) stays legible on **both** near‑black and off‑white, so light/dark mode need one variable, not two palettes.
+
+---
+
+## 3 · Before → After
+
+> Old build ("Money Tracker") is still live: **https://personal-finance-tracker-jet-delta.vercel.app**
+> Captures live in [`docs/redesign/`](docs/redesign).
+
+### Login
+
+| Before | After |
+|---|---|
+| ![before login](docs/redesign/before-login.png) | ![after login](docs/redesign/after-login.png) |
+| A single dark card floating in a black void. Generic blue links, a grey button, a Lucide line‑chart glyph for a logo. | A split screen: the promise on the left, a flat white card on the right, floating on a rounded **ShaderGradient** orange water‑plane. Dark‑only, viewport‑locked, one accent colour. |
+
+### Dashboard
+
+| Before | After (light) | After (dark) |
+|---|---|---|
+| ![before dashboard](docs/redesign/before-dashboard.png) | ![after dashboard light](docs/redesign/after-dashboard-light.png) | ![after dashboard dark](docs/redesign/after-dashboard-dark.png) |
+| Flat dark grid, a 💰 emoji as the section icon, blue "View all" links, every figure the same weight. | A **bento** of surfaces — the balance tile carries the brand fill and a subtle shader, "Monthly income" a flowing line texture, an **Ask Clario** assistant card. One switchable charts panel, a **Financial Health** ring, colour only on money. Same layout light or dark. |
+
+### The landing page (all new)
+
+A bleed‑edge silk **sphere hero** that shrinks on scroll · a logo marquee · a
+scroll‑driven case slider · a **pinned headline that assembles from scattered
+characters** (*"One month. One honest picture."*) · a detailed bento section · a
+3‑step "see it move" sequence · big testimonials · a footer globe cresting the edge.
+
+### Walkthrough
+
+A full screen‑recording of the redesigned app (54 s, 1080p):
+
+https://github.com/kadiamyeshwanth/Personal-Finance-Tracker/raw/abhinay-frontend-uiux/docs/redesign/walkthrough.mp4
+
+<sub>If the player doesn't load, download it directly: [`docs/redesign/walkthrough.mp4`](docs/redesign/walkthrough.mp4)</sub>
+
+---
+
+## 4 · Design system
+
+### Type
+
+| Role | Family | Why |
+|------|--------|-----|
+| UI + headings | **Nunito** | Rounded terminals — friendly, never sterile; excellent at small sizes |
+| Display / wordmark | **Unbounded** | Geometric character for the brand and big landing type |
+| Numbers | **Geist Mono** | Tabular figures so amounts line up and don't jitter while animating |
+
+### Colour — the Clario palette
+
+**Brand**
+
+| | Token | Hex | Use |
+|---|---|---|---|
+| ![brand](https://img.shields.io/badge/-E85002-E85002?style=flat-square) | `--brand` | `#E85002` | primary action, links, focus (dark) |
+| ![brand light](https://img.shields.io/badge/-D64802-D64802?style=flat-square) | `--brand` (light) | `#D64802` | same, one shade deeper for light‑mode contrast |
+| ![from](https://img.shields.io/badge/-F16001-F16001?style=flat-square) | `--brand-from` | `#F16001` | gradient / hover start |
+| ![to](https://img.shields.io/badge/-C10801-C10801?style=flat-square) | `--brand-to` | `#C10801` | gradient end (the login shader, CTA sheen) |
+
+**Surfaces (dark — the primary look)**
+
+| | Hex | Use |
+|---|---|---|
+| ![bg](https://img.shields.io/badge/-0E0E0E-0E0E0E?style=flat-square) | `#0E0E0E` | app background |
+| ![card](https://img.shields.io/badge/-1C1C1C-1C1C1C?style=flat-square) | `#1C1C1C` | cards / panels |
+| ![elev](https://img.shields.io/badge/-141416-141416?style=flat-square) | `#141416` | recessed wells, sidebar rail |
+| ![ink](https://img.shields.io/badge/-F9F9F9-F9F9F9?style=flat-square) | `#F9F9F9` | primary text |
+| ![ink2](https://img.shields.io/badge/-A7A7A7-A7A7A7?style=flat-square) | `#A7A7A7` | secondary text |
+| ![ink3](https://img.shields.io/badge/-646464-646464?style=flat-square) | `#646464` | tertiary / captions |
+
+**Surfaces (light)**
+
+| | Hex | Use |
+|---|---|---|
+| ![w](https://img.shields.io/badge/-FFFFFF-FFFFFF?style=flat-square) | `#FFFFFF` | background / cards |
+| ![paper](https://img.shields.io/badge/-F4F2ED-F4F2ED?style=flat-square) | `#F4F2ED` | secondary surface (warm paper, not grey) |
+| ![text](https://img.shields.io/badge/-101216-101216?style=flat-square) | `#101216` | primary text |
+
+**Money — the only other colour, and only on amounts**
+
+| | Hex | Meaning |
+|---|---|---|
+| ![green](https://img.shields.io/badge/-4ADE80-4ADE80?style=flat-square) | `#4ade80` / `#0d7a55` | income · positive delta |
+| ![red](https://img.shields.io/badge/-F43F5E-F43F5E?style=flat-square) | `#f43f5e` / `#b8443a` | expense · alert · negative delta |
+
+### Shape & depth
+
+- **Mac‑like radii** — `~16–22px` on cards, full pills on chips and buttons.
+- A **skeuomorphic depth pass** (`skeuo.css`): soft inset highlights + layered shadows so panels read as physical objects, not flat rectangles — dialled *just* far enough to feel tactile, not 2010.
+- Translucent, blurred chrome (topbar, toasts, the login shader panel) with content sliding underneath.
+
+---
+
+## 5 · Front‑end architecture
+
+**Stack:** React 19 · Vite 7 · plain JSX. No CSS‑in‑JS.
+
+### The CSS cascade (loaded in this order from `main.jsx`)
+
+```
+index.css      → design tokens (:root / [data-theme]) + resets + primitives
+   ↓
+clario.css     → the app: dashboard, tables, forms, charts, nav
+   ↓
+skeuo.css      → the depth/skeuomorph pass — loads LAST, wins with !important,
+                 appended in dated "ROUND N" blocks so changes are auditable
+   ↓
+prelanding.css → landing-page scaffolding
+   ↓
+meridian.css   → the marketing page's self-contained `.mr-*` world
+```
+
+Plus **Tailwind v4** (`@import 'tailwindcss'` + `@theme inline` mapping shadcn‑style
+tokens onto the Clario palette) and **HeroUI** for a handful of headless primitives.
+Everything themable through **CSS custom properties** — one `[data-theme]` attribute
+on `<html>` flips the whole app; the marketing page pins its own look.
+
+### Notable engineering
+
+- **`useScrollProgress(ref, mode)`** — a scroller‑agnostic scroll hook (`through` / `exit` / `cover`) built on `getBoundingClientRect` + `IntersectionObserver`, because the page uses window scroll and framer's `useScroll` reads 0.
+- **View Transitions API** — the light/dark toggle is a circular `clip-path` wipe from the button.
+- **Off‑screen pausing** — the WebGL globe and shader canvases stop drawing once scrolled away (IntersectionObserver‑gated) to keep the long landing page smooth.
+- Login is **dark‑only, fixed to the viewport**, with a theme‑aware `ShaderGradient` water‑plane behind a flat white card.
+
+---
+
+## 6 · Motion
+
+The brief was **"butter smooth."** Reaches for:
+
+| Library | Where |
+|---|---|
+| **Framer Motion 12** | every reveal (`whileInView` + variants), scroll‑driven parallax (`useTransform`), spring physics on drags/toasts, `AnimatePresence` exits, layout animations |
+| **Lenis 1.3** | page smooth‑scroll — normal wheel speed, position eased every frame (easeOutExpo, timing matched to `trymeridian.com`) so every scroll‑driven transform glides instead of stepping between wheel notches |
+| **@shadergradient/react** | WebGL water‑plane behind the login card and accent tiles |
+| **cobe** | the interactive globe on the hero and footer |
+| **GSAP** | the walking‑crowd canvas on the "who it's for" section |
+
+Signature moments: the **scroll‑gathered headline** (characters thrown out from
+centre, converging as you scroll a pinned section, then holding), the
+**shrink‑on‑scroll hero + bracket nav**, the **scroll‑driven Work index**, and small
+**notification pop‑toasts** that spring from the top and auto‑dismiss.
+
+Everything respects `prefers-reduced-motion`, `prefers-reduced-transparency` and
+`prefers-contrast`.
+
+---
+
+## 7 · How the design answers the problem
+
+| The problem | The design move |
+|---|---|
+| "Connect your bank" feels unsafe | Every surface repeats it, calmly: *"No bank login · No spreadsheet · No lecture."* The login screen itself says *"You never have to connect a bank account."* |
+| Data entry is a chore | The four inputs (SMS / CSV / receipt / by hand) are the **hero of the capture section**, each with a live mini‑preview — the effort looks tiny because it is. |
+| Trackers overwhelm | The dashboard is **one screen**: three headline figures, one switchable charts panel, recent transactions, a right rail. Colour only on money. |
+| People forget to check | The "ten‑second Sunday check" is stated as the *whole* ritual, and the monthly **Wrapped** recap is framed as the one finance email worth opening. |
+| It has to feel trustworthy | Craft: real typographic hierarchy, tactile depth, motion that starts from the current value and can be interrupted — nothing janky, because jank reads as carelessness. |
+
+---
+
+## 8 · Timeline — ~1 week
+
+| Days | Work |
+|---|---|
+| 1 | Research, competitor teardown, brand direction, palette + type, token layer |
+| 2–3 | Dashboard rebuild — bento tiles, charts panel, sidebar/topbar, health score, wallets |
+| 3–4 | Auth screens, settings, the long‑tail pages (analytics, budgets, goals, journal…) |
+| 4–6 | The marketing landing page — hero, silk sphere, scroll sections, bento, testimonials, footer |
+| 6–7 | Motion polish, `prefers-*` passes, responsive breakpoints, performance (off‑screen pausing, cascade cleanup), bug‑fix rounds |
+
+---
+
+<div align="center">
+
+*Everything below this line is the original project & backend, by **[Kadiam Yeshwanth](https://github.com/kadiamyeshwanth)** — unchanged.*
+
+</div>
+
+---
+
 ## 📖 Table of Contents
 
 - [Overview](#-overview)
@@ -588,6 +827,18 @@ HDFC · SBI · ICICI · Axis · Kotak · PNB · Bank of India · Canara Bank · 
 | API security headers | `helmet` (XSS, CSRF, clickjacking, HSTS, etc.) |
 | Rate limiting | `express-rate-limit` on auth routes |
 | Secrets | `.env` file — never committed to Git (excluded via `.gitignore`) |
+
+---
+
+## 👥 Contributions
+
+| Area | Owner |
+|------|-------|
+| **Product · Backend · API · Database · Auth · SMS pipeline · Deployment** | **[Kadiam Yeshwanth](https://github.com/kadiamyeshwanth)** — built the entire full‑stack platform and shipped it |
+| **UI/UX · Front‑end · Brand ("Clario") · Design system · Motion** | **[Abhinay](https://github.com/Abhinay)** — the redesign documented at the top of this README; UI‑only, backend untouched |
+
+> The backend in this fork is intentionally **identical** to the deployed version —
+> the redesign changed only what you see, never how it works.
 
 ---
 

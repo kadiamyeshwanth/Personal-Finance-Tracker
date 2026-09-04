@@ -1,20 +1,32 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, Trash2, Calendar, TrendingDown, TrendingUp, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import {
+  BookOpen as BookOpen,
+  Plus as Plus,
+  Trash as Trash2,
+  Calendar as Calendar,
+  TrendDown as TrendingDown,
+  TrendUp as TrendingUp,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  Sparkle as Sparkles,
+  Smiley, SmileyWink, SmileyMeh, SmileyBlank, SmileyNervous, SmileySad,
+} from '@phosphor-icons/react';
 import { fetchJournal, createJournalEntry, deleteJournalEntry } from '../api/journal';
 import PageHeader from '../components/ui/PageHeader';
 import toast from 'react-hot-toast';
 
 const MOODS = [
-  { key: 'happy',    emoji: '😊', label: 'Happy'   },
-  { key: 'excited',  emoji: '🤩', label: 'Excited' },
-  { key: 'neutral',  emoji: '😐', label: 'Neutral' },
-  { key: 'bored',    emoji: '😑', label: 'Bored'   },
-  { key: 'stressed', emoji: '😰', label: 'Stressed'},
-  { key: 'anxious',  emoji: '😟', label: 'Anxious' },
-  { key: 'sad',      emoji: '😢', label: 'Sad'     },
+  { key: 'happy',    Icon: Smiley,        label: 'Happy'   },
+  { key: 'excited',  Icon: SmileyWink,    label: 'Excited' },
+  { key: 'neutral',  Icon: SmileyMeh,     label: 'Neutral' },
+  { key: 'bored',    Icon: SmileyBlank,   label: 'Bored'   },
+  { key: 'stressed', Icon: SmileyNervous, label: 'Stressed'},
+  { key: 'anxious',  Icon: SmileyNervous, label: 'Anxious' },
+  { key: 'sad',      Icon: SmileySad,     label: 'Sad'     },
 ];
+const moodIcon = (key) => (MOODS.find(m => m.key === key)?.Icon) || BookOpen;
 
 const PROMPTS = [
   'What did I spend money on today and was it worth it?',
@@ -80,13 +92,15 @@ const JournalPage = () => {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: 'Total Entries', value: entries.length, icon: BookOpen, color: 'var(--accent)' },
+          { label: 'Total Entries', value: entries.length, icon: BookOpen, color: 'var(--brand)' },
           { label: 'Total Tracked Spending', value: fmt(totalSpent), icon: TrendingDown, color: 'var(--red)' },
           { label: 'Total Tracked Income', value: fmt(totalEarned), icon: TrendingUp, color: 'var(--green)' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Icon size={14} style={{ color }} />
+              <span style={{ width: 26, height: 26, borderRadius: '7px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: `color-mix(in srgb, ${color} 14%, transparent)` }}>
+                <Icon size={14} weight="fill" style={{ color }} />
+              </span>
               <span style={{ fontSize: '11px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>{label}</span>
             </div>
             <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)' }}>{value}</div>
@@ -115,15 +129,15 @@ const JournalPage = () => {
                 const isToday  = day.toDateString() === new Date().toDateString();
                 return (
                   <div key={i} onClick={() => { if (hasEntry) { const e = entries.find(e => new Date(e.date).toDateString() === day.toDateString()); setSelectedEntry(e); } else { setDate(day.toISOString().slice(0,10)); setShowForm(true); } }}
-                    style={{ aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--r)', fontSize: '12px', cursor: 'pointer', fontWeight: isToday ? 700 : 400, background: hasEntry ? 'var(--accent)' : isToday ? 'var(--bg-secondary)' : 'transparent', color: hasEntry ? '#fff' : isToday ? 'var(--text)' : 'var(--text-2)', border: isToday && !hasEntry ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.1s' }}>
+                    style={{ aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--r)', fontSize: '12px', cursor: 'pointer', fontWeight: isToday ? 700 : 400, background: hasEntry ? 'var(--brand)' : isToday ? 'var(--bg-secondary)' : 'transparent', color: hasEntry ? '#fff' : isToday ? 'var(--text)' : 'var(--text-2)', border: isToday && !hasEntry ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.1s' }}>
                     {day.getDate()}
                   </div>
                 );
               })}
             </div>
           </div>
-          <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--text-3)' }}>
-            🔵 = has journal entry · Click empty day to write
+          <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand)', flexShrink: 0 }} /> has an entry · click an empty day to write
           </div>
         </div>
 
@@ -134,8 +148,9 @@ const JournalPage = () => {
               style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
               <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
-                    {MOODS.find(m => m.key === selectedEntry.mood)?.emoji || '📔'} {new Date(selectedEntry.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    {React.createElement(moodIcon(selectedEntry.mood), { size: 16, weight: 'fill', style: { color: 'var(--brand)' } })}
+                    {new Date(selectedEntry.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                   </div>
                   {(selectedEntry.totalSpentToday > 0 || selectedEntry.totalIncomeToday > 0) && (
                     <div style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '2px' }}>
@@ -155,16 +170,26 @@ const JournalPage = () => {
           ) : (
             isLoading ? <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-3)' }}>Loading…</div> :
             entries.length === 0 ? (
-              <div style={{ padding: '48px', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📔</div>
-                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Start your financial journal</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px' }}>Daily reflection builds financial awareness and better habits.</div>
+              <div style={{ padding: '40px 32px', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)' }}>
+                <span style={{ width: 44, height: 44, borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--brand-bg)', marginBottom: '14px' }}>
+                  <BookOpen size={22} weight="fill" style={{ color: 'var(--brand)' }} />
+                </span>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>Start your financial journal</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '18px', lineHeight: 1.6, maxWidth: '340px', marginInline: 'auto' }}>Daily reflection builds financial awareness and better habits. Not sure where to begin? Pick a prompt.</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', marginBottom: '18px' }}>
+                  {PROMPTS.slice(0, 3).map(p => (
+                    <button key={p} onClick={() => { setContent(p); setShowForm(true); }}
+                      style={{ padding: '7px 12px', borderRadius: '999px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', fontSize: '12px', color: 'var(--text-2)', cursor: 'pointer', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
                 <button className="n-btn n-btn-primary n-btn-sm" onClick={() => setShowForm(true)}><Plus size={14} /> Write first entry</button>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {entries.slice(0, 20).map((e, i) => {
-                  const moodData = MOODS.find(m => m.key === e.mood);
+                  const MoodIcon = moodIcon(e.mood);
                   return (
                     <motion.div key={e._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                       onClick={() => setSelectedEntry(e)}
@@ -172,7 +197,7 @@ const JournalPage = () => {
                       className="hover-card">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>{moodData?.emoji || '📔'}</span>
+                          <MoodIcon size={17} weight="fill" style={{ color: 'var(--brand)' }} />
                           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{new Date(e.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                         </div>
                         {e.totalSpentToday > 0 && <span style={{ fontSize: '12px', color: 'var(--red)' }}>-{fmt(e.totalSpentToday)}</span>}
@@ -198,7 +223,7 @@ const JournalPage = () => {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '560px', maxWidth: 'calc(100vw - 32px)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
               <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BookOpen size={15} style={{ color: 'var(--accent)' }} />
+                <BookOpen size={15} weight="fill" style={{ color: 'var(--brand)' }} />
                 <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>New Journal Entry</span>
               </div>
               <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -211,8 +236,8 @@ const JournalPage = () => {
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {MOODS.map(m => (
                       <button key={m.key} onClick={() => setMood(m.key)}
-                        style={{ padding: '6px 10px', borderRadius: 'var(--r)', border: `1px solid ${mood === m.key ? 'var(--accent)' : 'var(--border)'}`, background: mood === m.key ? 'rgba(35,131,226,0.1)' : 'var(--bg)', cursor: 'pointer', fontSize: '13px', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {m.emoji} {m.label}
+                        style={{ padding: '6px 11px', borderRadius: '999px', border: `1px solid ${mood === m.key ? 'var(--brand)' : 'var(--border)'}`, background: mood === m.key ? 'var(--brand-bg)' : 'var(--bg)', cursor: 'pointer', fontSize: '13px', color: mood === m.key ? 'var(--brand)' : 'var(--text-2)', fontWeight: mood === m.key ? 600 : 400, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <m.Icon size={15} weight="fill" /> {m.label}
                       </button>
                     ))}
                   </div>
@@ -220,7 +245,7 @@ const JournalPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>Your reflection</span>
-                    <button onClick={() => setContent(PROMPTS[Math.floor(Math.random() * PROMPTS.length)])} style={{ fontSize: '11px', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <button onClick={() => setContent(PROMPTS[Math.floor(Math.random() * PROMPTS.length)])} style={{ fontSize: '11px', color: 'var(--brand)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
                       <Sparkles size={11} /> Random prompt
                     </button>
                   </div>

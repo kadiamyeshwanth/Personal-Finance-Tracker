@@ -2,24 +2,35 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Wallet, Plus, Trash2, Edit3, X, Star, TrendingUp } from 'lucide-react';
+import {
+  Wallet as Wallet,
+  Plus as Plus,
+  Trash as Trash2,
+  PencilSimple as Edit3,
+  X as X,
+  Star as Star,
+  TrendUp as TrendingUp,
+} from '@phosphor-icons/react';
 import { fetchWallets, addWallet, updateWallet, deleteWallet } from '../api/wallets';
 import { fetchTransactions } from '../api/transactions';
 import PageHeader from '../components/ui/PageHeader';
+import BrandLogo from '../components/ui/BrandLogo';
+import FloatingPaths from '../components/ui/FloatingPaths';
+import { queryStates } from '../components/ui/States';
 
 const WALLET_TYPES = [
-  { value: 'cash',       label: 'Cash',        icon: '💵' },
-  { value: 'bank',       label: 'Bank Account', icon: '🏦' },
-  { value: 'savings',    label: 'Savings',      icon: '🏧' },
-  { value: 'credit',     label: 'Credit Card',  icon: '💳' },
-  { value: 'investment', label: 'Investment',   icon: '📈' },
+  { value: 'cash',       label: 'Cash' },
+  { value: 'bank',       label: 'Bank Account' },
+  { value: 'savings',    label: 'Savings' },
+  { value: 'credit',     label: 'Credit Card' },
+  { value: 'investment', label: 'Investment' },
 ];
 
-const WALLET_COLORS = ['#2383e2','#0f7b6c','#9065b0','#d9730d','#c4554d','#6366f1','#14b8a6','#84cc16'];
+const WALLET_COLORS = ['var(--brand)','var(--brand)','var(--brand)','var(--red)','var(--red)','var(--brand)','var(--brand)','var(--brand)'];
 
 const getTypeConfig = (type) => WALLET_TYPES.find(t => t.value === type) || WALLET_TYPES[1];
 
-const EMPTY_FORM = { name: '', type: 'bank', balance: '', currency: 'INR', color: '#2383e2', isDefault: false, notes: '' };
+const EMPTY_FORM = { name: '', type: 'bank', balance: '', currency: 'INR', color: 'var(--brand)', isDefault: false, notes: '' };
 
 // ── Wallet card ───────────────────────────────────────────────────────────────
 const WalletCard = ({ wallet, onEdit, onDelete }) => {
@@ -28,22 +39,21 @@ const WalletCard = ({ wallet, onEdit, onDelete }) => {
 
   return (
     <motion.div
-      layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-      whileHover={{ borderColor: wallet.color }}
-      style={{
-        border: `1px solid var(--border)`, borderRadius: 'var(--r-md)',
-        overflow: 'hidden', background: 'var(--bg)',
-        transition: 'border-color 0.2s',
-      }}
+      className="wcard"
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0, rotateY: 0 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      whileHover={{ rotateX: 3.5, rotateY: -6, y: -6 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+      style={{ transformPerspective: 1100 }}
     >
-      {/* Color accent top bar */}
-      <div style={{ height: '4px', background: wallet.color }} />
-
-      <div style={{ padding: '16px 18px' }}>
+      <span className="wcard-sheen" aria-hidden="true" />
+      <div style={{ padding: '18px 18px 16px', position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '22px' }}>{typeConfig.icon}</span>
+            <BrandLogo name={wallet.name} type={wallet.type} size={38} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{wallet.name}</span>
@@ -92,7 +102,7 @@ const WalletForm = ({ initial = EMPTY_FORM, onSave, onClose, isPending }) => {
         <div>
           <label className="n-label">Type</label>
           <select className="n-input" value={form.type} onChange={e => set('type', e.target.value)}>
-            {WALLET_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+            {WALLET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
         <div>
@@ -132,8 +142,8 @@ const WalletsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const { data: res = { data: [], totalBalance: 0 }, isLoading } =
-    useQuery({ queryKey: ['wallets'], queryFn: fetchWallets });
+  const walletsQuery = useQuery({ queryKey: ['wallets'], queryFn: fetchWallets });
+  const { data: res = { data: [], totalBalance: 0 }, isLoading } = walletsQuery;
   const { data: wallets, totalBalance } = res;
 
   const addMut = useMutation({
@@ -166,14 +176,15 @@ const WalletsPage = () => {
 
       {/* Total balance banner */}
       {!isLoading && wallets?.length > 0 && (
-        <div style={{ padding: '20px 24px', marginBottom: '28px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ flex: 1 }}>
+        <div className="wal-networth" style={{ padding: '22px 26px', marginBottom: '28px', borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
+          <FloatingPaths className="tile-fp" />
+          <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '4px' }}>Net worth across all wallets</div>
             <div style={{ fontSize: '36px', fontWeight: 700, letterSpacing: '-0.03em', color: totalBalance >= 0 ? 'var(--text)' : 'var(--red)', fontVariantNumeric: 'tabular-nums' }}>
               {totalBalance < 0 && '−'}₹{Math.abs(totalBalance).toLocaleString('en-IN')}
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right', position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>{wallets.length} account{wallets.length !== 1 ? 's' : ''}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>
               {wallets.filter(w => w.isDefault)[0]?.name && `Default: ${wallets.filter(w => w.isDefault)[0].name}`}
@@ -209,20 +220,17 @@ const WalletsPage = () => {
       </AnimatePresence>
 
       {/* Cards grid */}
-      {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: '12px' }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: '140px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '16px' }}><div className="n-skeleton" style={{ height: '100%' }} /></div>)}
-        </div>
-      ) : wallets?.length === 0 ? (
-        <div className="n-empty">
-          <div className="n-empty-icon"><Wallet size={28} strokeWidth={1.2} /></div>
-          <p style={{ fontWeight: 500, color: 'var(--text-2)', fontSize: '14px' }}>No wallets yet</p>
-          <p style={{ fontSize: '13px' }}>Add your bank accounts, cash, and credit cards.</p>
-          <button className="n-btn n-btn-default n-btn-sm" onClick={() => setShowForm(true)} style={{ marginTop: '10px' }}>
-            <Plus size={12} /> Add wallet
-          </button>
-        </div>
-      ) : (
+      {queryStates({
+        query: walletsQuery,
+        isEmpty: !isLoading && (wallets?.length === 0),
+        label: 'Loading your accounts',
+        empty: {
+          icon: <Wallet size={26} weight="fill" />,
+          title: 'No wallets yet',
+          body: 'Add your bank accounts, cash and credit cards to see your net worth.',
+          action: <button className="n-btn n-btn-primary n-btn-sm" onClick={() => setShowForm(true)}><Plus size={13} weight="bold" /> Add wallet</button>,
+        },
+      }) || (
         <motion.div layout style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: '12px' }}>
           <AnimatePresence>
             {wallets.map(w => (

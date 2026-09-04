@@ -1,76 +1,75 @@
-import React, { useMemo, useState } from 'react';
+/**
+ * AnalyticsPage — spending and income analysis.
+ *
+ * Charts are Recharts, restyled end to end by the Skeuo chart kit: every plot
+ * sits in a recessed groove, bars are drawn as extrusions, and the tooltip is a
+ * small floating card. The income/expense chart carries a Brush so a long
+ * period can be scrubbed rather than squinted at.
+ *
+ * All derivation logic is unchanged — this is presentation only.
+ */
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, PointElement, LineElement, Filler } from 'chart.js';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, TrendingDown, Target, Calendar } from 'lucide-react';
+import {
+  ChartBar as BarChart3, TrendUp as TrendingUp, TrendDown as TrendingDown,
+  Target, Calendar,
+} from '@phosphor-icons/react';
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Brush,
+} from 'recharts';
+import PageHeader from '../components/ui/PageHeader';
 import { fetchTransactions } from '../api/transactions';
 import { fetchBudgets } from '../api/budgets';
-import PageHeader from '../components/ui/PageHeader';
 import { useTheme } from '../context/ThemeContext';
+import {
+  ChartFrame, SkeuoDefs, RaisedBar, RaisedBarH, SkeuoTooltipSlot, useChartTokens,
+} from '../components/charts/SkeuoChart';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, PointElement, LineElement, Filler);
-
-const PALETTE = ['#2383e2','#0f7b6c','#9065b0','#d9730d','#c4554d','#6366f1','#14b8a6','#84cc16'];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PERIODS = [
+  { value: '1m', label: '1M' }, { value: '3m', label: '3M' },
+  { value: '6m', label: '6M' }, { value: '1y', label: '1Y' },
+];
 
-const useChartOptions = () => {
-  const { theme } = useTheme();
-  return useMemo(() => {
-    const s = getComputedStyle(document.documentElement);
-    const text3 = s.getPropertyValue('--text-3').trim();
-    const text   = s.getPropertyValue('--text').trim();
-    const text2  = s.getPropertyValue('--text-2').trim();
-    const border = s.getPropertyValue('--border').trim();
-    const bgTip  = theme === 'dark' ? '#2a2a2a' : '#ffffff';
-    const base = {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: text3, font: { family: 'Inter', size: 12 }, boxWidth: 10, padding: 14, usePointStyle: true } },
-        tooltip: { backgroundColor: bgTip, borderColor: border, borderWidth: 1, titleColor: text, bodyColor: text2, titleFont: { family: 'Inter', size: 13, weight: '600' }, bodyFont: { family: 'Inter', size: 12 }, padding: 12 },
-      },
-    };
-    const scales = {
-      x: { grid: { color: border }, ticks: { color: text3, font: { family: 'Inter', size: 11 } }, border: { display: false } },
-      y: { grid: { color: border }, ticks: { color: text3, font: { family: 'Inter', size: 11 }, callback: v => `₹${Number(v).toLocaleString('en-IN')}` }, border: { display: false } },
-    };
-    return { base, scales };
-  }, [theme]);
+const inr = (n) => `₹${Math.round(Math.abs(n)).toLocaleString('en-IN')}`;
+const inrShort = (n) => {
+  const v = Math.abs(n);
+  if (v >= 1e7) return `₹${(v / 1e7).toFixed(1)}Cr`;
+  if (v >= 1e5) return `₹${(v / 1e5).toFixed(1)}L`;
+  if (v >= 1e3) return `₹${Math.round(v / 1e3)}k`;
+  return `₹${Math.round(v)}`;
 };
 
-const InsightCard = ({ icon: Icon, label, value, sub, color = 'var(--accent)' }) => (
-  <div style={{ padding: '16px 18px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)' }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-      <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
-      <div style={{ width: '28px', height: '28px', borderRadius: 'var(--r)', background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={13} style={{ color }} strokeWidth={1.5} />
-      </div>
-    </div>
-    <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    {sub && <div style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '4px' }}>{sub}</div>}
-  </div>
+/* One headline figure, sharing the dashboard's tile anatomy. */
+const Metric = ({ icon: Icon, label, value, sub, accent = false, index = 0 }) => (
+  <motion.section
+    className={`tile ${accent ? 'tile--accent' : ''}`}
+    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3, delay: index * 0.05 }}
+  >
+    <header className="tile-head">
+      <span className="tile-icon"><Icon size={16} weight="fill" /></span>
+      <div className="tile-titles"><h3>{label}</h3>{sub && <p>{sub}</p>}</div>
+    </header>
+    <div className="tile-figure money">{value}</div>
+  </motion.section>
 );
 
-const ChartCard = ({ title, subtitle, children, isLoading, height = 220 }) => (
-  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px', background: 'var(--bg)' }}>
-    <div style={{ marginBottom: '16px' }}>
-      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '2px' }}>{subtitle}</div>}
-    </div>
-    {isLoading ? <div className="n-skeleton" style={{ height }} /> : <div style={{ height }}>{children}</div>}
-  </div>
-);
-
-const AnalyticsPage = () => {
+export default function AnalyticsPage() {
   const now = new Date();
   const [period, setPeriod] = useState('6m');
-  const { base, scales } = useChartOptions();
+  const { theme } = useTheme();
+  const t = useChartTokens(theme);
+
   const { data: allTxns = [], isLoading } = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions });
   const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: fetchBudgets });
-  const txns = allTxns.filter(t => !t.isRecurring);
+
+  const txns = allTxns.filter(x => !x.isRecurring);
   const pm = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 }[period];
   const cutoff = new Date(now.getFullYear(), now.getMonth() - pm + 1, 1);
-  const filt = txns.filter(t => new Date(t.date) >= cutoff);
+  const filt = txns.filter(x => new Date(x.date) >= cutoff);
 
   const monthlyTrend = useMemo(() => {
     const ms = [];
@@ -78,112 +77,215 @@ const AnalyticsPage = () => {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       ms.push({ label: MONTHS[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), income: 0, expense: 0 });
     }
-    filt.forEach(t => {
-      const d = new Date(t.date);
-      const m = ms.find(m => m.year === d.getFullYear() && m.month === d.getMonth());
+    filt.forEach(x => {
+      const d = new Date(x.date);
+      const m = ms.find(mm => mm.year === d.getFullYear() && mm.month === d.getMonth());
       if (!m) return;
-      if (t.type === 'income') m.income += t.amount;
-      if (t.type === 'expense') m.expense += t.amount;
+      if (x.type === 'income') m.income += x.amount;
+      if (x.type === 'expense') m.expense += x.amount;
     });
     return ms;
-  }, [filt, pm]);
+  }, [filt, pm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const catSpend = useMemo(() => {
     const map = {};
-    filt.filter(t => t.type === 'expense').forEach(t => { map[t.category] = (map[t.category] || 0) + t.amount; });
+    filt.filter(x => x.type === 'expense').forEach(x => { map[x.category] = (map[x.category] || 0) + x.amount; });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [filt]);
 
   const totalExp = catSpend.reduce((s, [, v]) => s + v, 0);
-  const totalInc = filt.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const totalInc = filt.filter(x => x.type === 'income').reduce((s, x) => s + x.amount, 0);
   const net = totalInc - totalExp;
   const sr = totalInc > 0 ? ((net / totalInc) * 100).toFixed(1) : 0;
 
   const daySpend = useMemo(() => {
     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => ({ label: d, total: 0 }));
-    filt.filter(t => t.type === 'expense').forEach(t => { days[new Date(t.date).getDay()].total += t.amount; });
+    filt.filter(x => x.type === 'expense').forEach(x => { days[new Date(x.date).getDay()].total += x.amount; });
     return days;
   }, [filt]);
-  const maxDay = Math.max(...daySpend.map(d => d.total), 1);
 
   const budgetStatus = useMemo(() => {
-    const sm = filt.filter(t => t.type === 'expense').reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {});
-    return budgets.map(b => ({ ...b, spent: sm[b.category] || 0, pct: Math.min(((sm[b.category] || 0) / b.limit) * 100, 100) })).sort((a, b) => b.pct - a.pct);
+    const sm = filt.filter(x => x.type === 'expense')
+      .reduce((acc, x) => { acc[x.category] = (acc[x.category] || 0) + x.amount; return acc; }, {});
+    return budgets
+      .map(b => ({ ...b, spent: sm[b.category] || 0, pct: Math.min(((sm[b.category] || 0) / b.limit) * 100, 100) }))
+      .sort((a, b) => b.pct - a.pct);
   }, [budgets, filt]);
 
-  const trendData = { labels: monthlyTrend.map(m => m.label), datasets: [
-    { label: 'Income', data: monthlyTrend.map(m => m.income), borderColor: '#0f7b6c', backgroundColor: 'rgba(15,123,108,0.07)', fill: true, tension: 0.4, pointRadius: 4 },
-    { label: 'Expenses', data: monthlyTrend.map(m => m.expense), borderColor: '#c4554d', backgroundColor: 'rgba(196,85,77,0.07)', fill: true, tension: 0.4, pointRadius: 4 },
-  ]};
-  const catBarData = { labels: catSpend.slice(0, 7).map(([k]) => k), datasets: [{ label: 'Spend (₹)', data: catSpend.slice(0, 7).map(([, v]) => v), backgroundColor: PALETTE.slice(0, 7).map(c => c + '22'), borderColor: PALETTE.slice(0, 7), borderWidth: 1.5, borderRadius: 5, borderSkipped: false }] };
-  const doughnutData = { labels: catSpend.slice(0, 6).map(([k]) => k), datasets: [{ data: catSpend.slice(0, 6).map(([, v]) => v), backgroundColor: PALETTE.slice(0, 6).map(c => c + '22'), borderColor: PALETTE.slice(0, 6), borderWidth: 2, hoverOffset: 4 }] };
-  const PERIODS = [{ value: '1m', label: '1M' }, { value: '3m', label: '3M' }, { value: '6m', label: '6M' }, { value: '1y', label: '1Y' }];
+  const topCats = catSpend.slice(0, 7).map(([name, value], i) => ({ name, value, fill: t.ramp[i % t.ramp.length] }));
+  const donut  = catSpend.slice(0, 6).map(([name, value], i) => ({ name, value, fill: t.ramp[i % t.ramp.length] }));
+  const noExp = catSpend.length === 0;
 
   return (
     <div>
-      <PageHeader icon={BarChart3} title="Analytics" subtitle="Deep insights into your spending patterns and financial trends." />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '24px', border: '1px solid var(--border-strong)', borderRadius: 'var(--r)', overflow: 'hidden', width: 'fit-content' }}>
+      <PageHeader icon={BarChart3} title="Analytics" subtitle="Where your money goes, and how that is trending." />
+
+      {/* Period — one recessed segmented control */}
+      <div className="cf-range" style={{ width: 'fit-content', marginBottom: 18 }} role="group" aria-label="Period">
         {PERIODS.map(p => (
-          <button key={p.value} onClick={() => setPeriod(p.value)}
-            style={{ padding: '5px 14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: 500, transition: 'all 0.15s', background: period === p.value ? 'var(--text)' : 'transparent', color: period === p.value ? 'var(--bg)' : 'var(--text-2)' }}>
+          <button key={p.value} type="button" className={period === p.value ? 'is-on' : ''}
+            onClick={() => setPeriod(p.value)} aria-pressed={period === p.value}>
             {p.label}
           </button>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px', marginBottom: '24px' }}>
-        <InsightCard icon={TrendingUp}   label="Total income"   value={`₹${totalInc.toLocaleString('en-IN')}`} sub={`Last ${pm} month${pm > 1 ? 's' : ''}`} color="#0f7b6c" />
-        <InsightCard icon={TrendingDown} label="Total expenses" value={`₹${totalExp.toLocaleString('en-IN')}`} sub={`${catSpend.length} categories`} color="#c4554d" />
-        <InsightCard icon={Target}       label="Net savings"    value={`₹${Math.abs(net).toLocaleString('en-IN')}`} sub={net >= 0 ? 'Surplus' : 'Deficit'} color={net >= 0 ? '#0f7b6c' : '#c4554d'} />
-        <InsightCard icon={Calendar}     label="Savings rate"   value={`${sr}%`} sub={sr >= 20 ? 'Excellent' : sr >= 10 ? 'Good' : 'Needs work'} color="#2383e2" />
+
+      {/* Headline figures */}
+      <div className="tile-row tile-row--4">
+        <Metric index={0} accent icon={TrendingUp} label="Total income" sub={`Last ${pm} month${pm > 1 ? 's' : ''}`} value={inr(totalInc)} />
+        <Metric index={1} icon={TrendingDown} label="Total expenses" sub={`${catSpend.length} categories`} value={inr(totalExp)} />
+        <Metric index={2} icon={Target} label="Net savings" sub={net >= 0 ? 'Surplus' : 'Deficit'} value={inr(net)} />
+        <Metric index={3} icon={Calendar} label="Savings rate" sub={sr >= 20 ? 'Excellent' : sr >= 10 ? 'Good' : 'Needs work'} value={`${sr}%`} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-        <ChartCard title="Income vs Expenses" subtitle={`Last ${pm} months`} isLoading={isLoading} height={220}>
-          <Line data={trendData} options={{ ...base, scales }} />
-        </ChartCard>
-        <ChartCard title="Spending by Category" subtitle="Expense breakdown" isLoading={isLoading} height={220}>
-          {catSpend.length === 0 ? <div className="n-empty" style={{ height: '100%' }}><p>No expenses in this period</p></div> : <Doughnut data={doughnutData} options={{ ...base, cutout: '65%' }} />}
-        </ChartCard>
-      </div>
-      <ChartCard title="Top Spending Categories" subtitle="Highest expense categories" isLoading={isLoading} height={200}>
-        {catSpend.length === 0 ? <div className="n-empty"><p>No expense data</p></div> : <Bar data={catBarData} options={{ ...base, scales, indexAxis: 'y' }} />}
-      </ChartCard>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
-        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px', background: 'var(--bg)' }}>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>Spending by Day</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '16px' }}>Which days you spend the most</div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '100px' }}>
-            {daySpend.map((d, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', height: '100%', justifyContent: 'flex-end' }}>
-                <motion.div initial={{ height: 0 }} animate={{ height: `${(d.total / maxDay) * 80}%` }} transition={{ duration: 0.6, delay: i * 0.05 }}
-                  style={{ width: '100%', background: PALETTE[i % PALETTE.length], borderRadius: '3px 3px 0 0', opacity: 0.7, minHeight: d.total > 0 ? '3px' : 0 }} />
-                <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>{d.label}</span>
+
+      <div className="an-grid">
+        {/* Income vs expenses — scrubbable */}
+        <ChartFrame
+          title="Income vs expenses"
+          subtitle={`Last ${pm} months · drag the scrubber to zoom`}
+          height={264}
+          loading={isLoading}
+          action={
+            <div className="skc-legend" style={{ margin: 0 }}>
+              <span><i style={{ background: t.brand }} />Income</span>
+              <span><i style={{ background: '#646464' }} />Expenses</span>
+            </div>
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={monthlyTrend} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+              <SkeuoDefs id="an-trend" />
+              <CartesianGrid strokeDasharray="3 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} dy={6} />
+              <YAxis tickFormatter={inrShort} tickLine={false} axisLine={false} width={54} />
+              <SkeuoTooltipSlot cursorKind="line" formatter={(v) => inr(v)} />
+              <Area type="monotone" dataKey="expense" name="Expenses" stroke="#646464" strokeWidth={1.75}
+                fill="url(#an-trend-area2)" activeDot={{ r: 4, fill: '#A7A7A7', stroke: 'none' }} />
+              <Area type="monotone" dataKey="income" name="Income" stroke={t.brand} strokeWidth={2.5}
+                fill="url(#an-trend-area)" activeDot={{ r: 5, fill: t.brand, stroke: '#fff', strokeWidth: 1.5 }} />
+              {monthlyTrend.length > 4 && (
+                <Brush dataKey="label" height={22} travellerWidth={9} stroke="transparent" y={232} />
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+
+        {/* Category split */}
+        <ChartFrame
+          title="Spending by category"
+          subtitle="Share of total expenses"
+          height={264}
+          loading={isLoading}
+          empty={noExp ? 'No expenses in this period' : null}
+          footer={
+            <div className="skc-legend">
+              {donut.map(d => <span key={d.name}><i style={{ background: d.fill }} />{d.name}</span>)}
+            </div>
+          }
+        >
+          <div style={{ position: 'relative', height: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <SkeuoDefs id="an-donut" />
+                <SkeuoTooltipSlot cursorKind="none" formatter={(v) => inr(v)} />
+                <Pie
+                  data={donut} dataKey="value" nameKey="name"
+                  innerRadius="62%" outerRadius="88%" paddingAngle={2}
+                  stroke="var(--surface-in)" strokeWidth={3}
+                  isAnimationActive
+                >
+                  {donut.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            {!noExp && (
+              <div className="skc-donut-centre">
+                <b>{inrShort(totalExp)}</b>
+                <span>total spend</span>
               </div>
-            ))}
+            )}
           </div>
-        </div>
-        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px', background: 'var(--bg)' }}>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>Budget Adherence</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '16px' }}>How well you're staying within limits</div>
-          {budgetStatus.length === 0 ? <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: '13px', padding: '24px 0' }}>No budgets set</div> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {budgetStatus.slice(0, 5).map(b => (
-                <div key={b._id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>{b.category}</span>
-                    <span style={{ fontSize: '11px', color: b.pct >= 100 ? 'var(--red)' : b.pct >= 80 ? 'var(--yellow)' : 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>₹{b.spent.toLocaleString('en-IN')} / ₹{b.limit.toLocaleString('en-IN')}</span>
+        </ChartFrame>
+      </div>
+
+      {/* Top categories — horizontal, ranked */}
+      <ChartFrame
+        title="Top spending categories"
+        subtitle="Ranked by amount"
+        height={Math.max(180, topCats.length * 34)}
+        loading={isLoading}
+        empty={noExp ? 'No expense data' : null}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={topCats} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
+            <SkeuoDefs id="an-top" />
+            <CartesianGrid strokeDasharray="3 4" horizontal={false} />
+            <XAxis type="number" tickFormatter={inrShort} tickLine={false} axisLine={false} />
+            <YAxis type="category" dataKey="name" width={110} tickLine={false} axisLine={false} />
+            <SkeuoTooltipSlot formatter={(v) => inr(v)} />
+            <Bar dataKey="value" name="Spend" barSize={20}
+              shape={<RaisedBarH filterId="an-top-lift" radius={7} />}>
+              {topCats.map((c, i) => <Cell key={i} fill={c.fill} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <div className="an-grid" style={{ marginTop: 16 }}>
+        {/* Weekday rhythm */}
+        <ChartFrame title="Spending by day" subtitle="Which days cost you the most" height={190} loading={isLoading}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={daySpend} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+              <SkeuoDefs id="an-day" />
+              <CartesianGrid strokeDasharray="3 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} dy={6} />
+              <YAxis tickFormatter={inrShort} tickLine={false} axisLine={false} width={54} />
+              <SkeuoTooltipSlot formatter={(v) => inr(v)} />
+              <Bar dataKey="total" name="Spend" barSize={26}
+                shape={<RaisedBar filterId="an-day-lift" radius={7} />}>
+                {daySpend.map((d, i) => <Cell key={i} fill={t.ramp[i % t.ramp.length]} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+
+        {/* Budget adherence */}
+        <section className="skc">
+          <header className="skc-head">
+            <div className="skc-titles">
+              <h3>Budget adherence</h3>
+              <p>How close each budget is to its limit</p>
+            </div>
+          </header>
+          {budgetStatus.length === 0 ? (
+            <div className="skc-empty" style={{ height: 120 }}>No budgets set</div>
+          ) : (
+            <div className="an-budgets">
+              {budgetStatus.slice(0, 6).map(b => {
+                const over = b.pct >= 100, near = b.pct >= 80;
+                return (
+                  <div key={b._id || b.id} className="an-budget">
+                    <div className="an-budget-top">
+                      <span className="an-budget-name">{b.category}</span>
+                      <span className="an-budget-num" style={{ color: over ? 'var(--red)' : near ? 'var(--brand)' : 'var(--text-2)' }}>
+                        {inr(b.spent)} <em>/ {inr(b.limit)}</em>
+                      </span>
+                    </div>
+                    <span className="hs-part-track">
+                      <motion.span
+                        className="hs-part-fill"
+                        initial={{ width: 0 }} animate={{ width: `${b.pct}%` }}
+                        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                        style={over ? { background: 'var(--red)' } : undefined}
+                      />
+                    </span>
                   </div>
-                  <div className="n-progress-track" style={{ height: '5px' }}>
-                    <motion.div className="n-progress-fill" initial={{ width: 0 }} animate={{ width: `${b.pct}%` }} transition={{ duration: 0.7 }}
-                      style={{ background: b.pct >= 100 ? 'var(--red)' : b.pct >= 80 ? 'var(--yellow)' : 'var(--green)' }} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
-};
-
-export default AnalyticsPage;
+}

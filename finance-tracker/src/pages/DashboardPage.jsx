@@ -6,43 +6,80 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, TrendingDown, ArrowRight, CreditCard, Target,
-  Wallet, RefreshCcw, LayoutDashboard, AlertTriangle, Flame,
-  Sparkles, BookOpen, Smile,
-} from 'lucide-react';
+  TrendUp as TrendingUp,
+  TrendDown as TrendingDown,
+  ArrowRight as ArrowRight,
+  CreditCard as CreditCard,
+  Target as Target,
+  Wallet as Wallet,
+  ArrowsClockwise as RefreshCcw,
+  SquaresFour as LayoutDashboard,
+  Warning as AlertTriangle,
+  Flame as Flame,
+  Sparkle as Sparkles,
+  BookOpen as BookOpen,
+  Smiley as Smile,
+  X as X,
+} from '@phosphor-icons/react';
 import { fetchTransactions } from '../api/transactions';
 import { fetchGoals }        from '../api/goals';
 import { fetchBudgets }      from '../api/budgets';
 import { fetchStreaks }       from '../api/streaks';
 import { logMood, fetchMoodHistory } from '../api/mood';
+import { fetchJournal } from '../api/journal';
 import PageHeader    from '../components/ui/PageHeader';
 import HealthScore   from '../components/ui/HealthScore';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
+import BalanceOverview from '../components/ui/BalanceOverview';
+import TrendChart from '../components/ui/TrendChart';
+import CashFlow from '../components/ui/CashFlow';
+import MoodMoney from '../components/ui/MoodMoney';
+import GoalsMini from '../components/ui/GoalsMini';
+import ChartsPanel from '../components/ui/ChartsPanel';
+import { AccountsCard, PortfolioCard, AIPromoCard } from '../components/ui/DashCards';
+import { StatTile, WalletCard } from '../components/ui/DashTiles';
+import AiTip from '../components/ui/AiTip';
+import { fetchWallets } from '../api/wallets';
+import { fetchInvestments } from '../api/investments';
+import { stagger, spring } from '../lib/motion';
+import {
+  PiggyBank, Tornado, ShieldCheck, Scales, Lightning, Diamond, Wallet as WalletIcon, ChartLineUp,
+  Smiley, SmileyMeh, SmileyNervous, SmileyBlank, SmileySad, Sparkle, Plus,
+} from '@phosphor-icons/react';
 import { useAuth }   from '../context/AuthContext';
 import client        from '../api/client';
 import toast         from 'react-hot-toast';
 
 // ── Financial personality avatars ─────────────────────────────────────────────
+/* Compact money label for tile deltas: ₹1.2L / ₹93k / ₹640 */
+const inrShort = (n) => {
+  const v = Math.abs(n);
+  if (v >= 1e7) return `₹${(v / 1e7).toFixed(1)}Cr`;
+  if (v >= 1e5) return `₹${(v / 1e5).toFixed(1)}L`;
+  if (v >= 1e3) return `₹${Math.round(v / 1e3)}k`;
+  return `₹${Math.round(v)}`;
+};
+
 const AVATARS = {
-  'Silent Saver':      { emoji: '🐢', color: '#4cc38a', desc: 'You save quietly and consistently.' },
-  'Chaos Spender':     { emoji: '🌪️', color: '#e06c75', desc: 'Your spending is all over the place!' },
-  'Budget Ninja':      { emoji: '🥷', color: '#4a9eff', desc: 'You stay within budget like a pro.' },
-  'Balanced Spender':  { emoji: '⚖️', color: '#e5a445', desc: 'You balance spending and saving well.' },
-  'Impulse Buyer':     { emoji: '⚡', color: '#b48eff', desc: 'You love spontaneous purchases.' },
-  'Luxury Addict':     { emoji: '💎', color: '#f472b6', desc: 'You enjoy the finer things in life.' },
-  'unknown':           { emoji: '💰', color: 'var(--accent)', desc: 'Keep tracking to discover your type.' },
+  'Silent Saver':      { Icon: PiggyBank,   desc: 'You save quietly and consistently.' },
+  'Chaos Spender':     { Icon: Tornado,     desc: 'Your spending is all over the place.' },
+  'Budget Ninja':      { Icon: ShieldCheck, desc: 'You stay within budget like a pro.' },
+  'Balanced Spender':  { Icon: Scales,      desc: 'You balance spending and saving well.' },
+  'Impulse Buyer':     { Icon: Lightning,   desc: 'You love spontaneous purchases.' },
+  'Luxury Addict':     { Icon: Diamond,     desc: 'You enjoy the finer things in life.' },
+  'unknown':           { Icon: WalletIcon,  desc: 'Keep tracking to discover your type.' },
 };
 
 // ── Mood options ──────────────────────────────────────────────────────────────
 const MOODS = [
-  { key: 'happy',    emoji: '😊', label: 'Happy' },
-  { key: 'neutral',  emoji: '😐', label: 'Neutral' },
-  { key: 'stressed', emoji: '😤', label: 'Stressed' },
-  { key: 'bored',    emoji: '😒', label: 'Bored' },
-  { key: 'sad',      emoji: '😢', label: 'Sad' },
+  { key: 'happy',    Icon: Smiley,        label: 'Happy' },
+  { key: 'neutral',  Icon: SmileyMeh,     label: 'Neutral' },
+  { key: 'stressed', Icon: SmileyNervous, label: 'Stressed' },
+  { key: 'bored',    Icon: SmileyBlank,   label: 'Bored' },
+  { key: 'sad',      Icon: SmileySad,     label: 'Sad' },
 ];
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
@@ -82,74 +119,22 @@ const QuickLink = ({ icon: Icon, label, value, to }) => (
   </Link>
 );
 
-// ── 6-month mini bar chart ─────────────────────────────────────────────────
-const SpendingMiniChart = ({ transactions }) => {
-  const bars = useMemo(() => {
-    const months = [];
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({ label: d.toLocaleDateString('en-IN', { month: 'short' }), year: d.getFullYear(), month: d.getMonth(), income: 0, expenses: 0 });
-    }
-    transactions.filter(t => !t.isRecurring).forEach(t => {
-      const d = new Date(t.date);
-      const m = months.find(m => m.year === d.getFullYear() && m.month === d.getMonth());
-      if (!m) return;
-      if (t.type === 'income')  m.income   += t.amount;
-      if (t.type === 'expense') m.expenses += t.amount;
-    });
-    const maxVal = Math.max(...months.map(m => Math.max(m.income, m.expenses)), 1);
-    return months.map(m => ({ ...m, incPct: (m.income / maxVal) * 100, expPct: (m.expenses / maxVal) * 100 }));
-  }, [transactions]);
-
-  return (
-    <div>
-      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '12px' }}>6-month overview</div>
-      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '60px' }}>
-        {bars.map((m, i) => (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-            <div style={{ width: '100%', display: 'flex', gap: '2px', alignItems: 'flex-end', height: '48px' }}>
-              <motion.div initial={{ height: 0 }} animate={{ height: `${m.incPct}%` }}
-                transition={{ duration: 0.6, delay: i * 0.05 }}
-                style={{ flex: 1, background: 'var(--green)', borderRadius: '2px 2px 0 0', opacity: 0.65, minHeight: m.income > 0 ? '2px' : 0 }} />
-              <motion.div initial={{ height: 0 }} animate={{ height: `${m.expPct}%` }}
-                transition={{ duration: 0.6, delay: i * 0.05 }}
-                style={{ flex: 1, background: 'var(--red)', borderRadius: '2px 2px 0 0', opacity: 0.65, minHeight: m.expenses > 0 ? '2px' : 0 }} />
-            </div>
-            <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>{m.label}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
-        {[{ label: 'Income', color: 'var(--green)' }, { label: 'Expenses', color: 'var(--red)' }].map(({ label, color }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-3)' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: color, opacity: 0.65 }} />
-            {label}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 // ── Streak Badge ──────────────────────────────────────────────────────────────
-const StreakBadge = ({ emoji, label, count, color }) => {
+// Monochrome by design: streaks are habit markers, not money. Reserving colour
+// for amounts is what keeps the figures readable at a glance.
+const StreakBadge = ({ icon: Icon, label, count, index = 0 }) => {
   if (!count || count < 1) return null;
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+    <motion.div
+      className="dash-streak"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={stagger(index, 0.06)}
       title={`${count}-day ${label} streak`}
-      style={{
-        display: 'flex', alignItems: 'center', gap: '5px',
-        padding: '5px 10px',
-        border: `1px solid ${color}30`,
-        background: `${color}10`,
-        borderRadius: '20px',
-        fontSize: '12px', fontWeight: 600, color,
-        cursor: 'default',
-      }}>
-      <span style={{ fontSize: '14px' }}>{emoji}</span>
-      <span>{count}d</span>
-      <span style={{ fontWeight: 400, opacity: 0.75 }}>{label}</span>
+    >
+      <Icon size={13} strokeWidth={1.8} style={{ color: 'var(--text-3)' }} />
+      <b>{count}d</b>
+      <span>{label}</span>
     </motion.div>
   );
 };
@@ -169,7 +154,7 @@ const MoodWidget = () => {
 
   const logMoodMut = useMutation({
     mutationFn: (mood) => logMood({ mood, date: today }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['mood'] }); toast.success('Mood logged! 🎯'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['mood'] }); toast.success('Mood logged'); },
     onError: () => toast.error('Could not log mood'),
   });
 
@@ -184,7 +169,10 @@ const MoodWidget = () => {
 
       {todayMood ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '24px' }}>{MOODS.find(m => m.key === todayMood.mood)?.emoji}</span>
+          {(() => {
+            const M = MOODS.find(m => m.key === todayMood.mood);
+            return M ? <M.Icon size={26} weight="fill" style={{ color: 'var(--brand)' }} /> : null;
+          })()}
           <div>
             <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)', textTransform: 'capitalize' }}>{todayMood.mood}</div>
             <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>logged today</div>
@@ -192,7 +180,7 @@ const MoodWidget = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {MOODS.map(({ key, emoji, label }) => (
+          {MOODS.map(({ key, Icon, label }) => (
             <motion.button key={key}
               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
               onClick={() => logMoodMut.mutate(key)}
@@ -207,7 +195,7 @@ const MoodWidget = () => {
                 cursor: 'pointer',
                 transition: 'all 0.12s',
               }}>
-              {emoji}
+              <Icon size={19} weight="fill" />
             </motion.button>
           ))}
         </div>
@@ -221,14 +209,16 @@ const AvatarCard = ({ personality }) => {
   const av = AVATARS[personality] || AVATARS['unknown'];
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      style={{ padding: '14px 16px', border: `1px solid ${av.color}25`, background: `${av.color}08`, borderRadius: 'var(--r-md)' }}>
+      style={{ padding: '14px 16px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', borderRadius: 'var(--r-md)' }}>
       <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '10px' }}>
         Finance type
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ fontSize: '28px' }}>{av.emoji}</span>
+        <span style={{ display: 'grid', placeItems: 'center', width: '36px', height: '36px', borderRadius: '11px', background: 'var(--brand-bg)', flexShrink: 0 }}>
+          <av.Icon size={20} weight="fill" style={{ color: 'var(--brand)' }} />
+        </span>
         <div>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: av.color }}>{personality || 'Unknown'}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{personality || 'Unknown'}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px', lineHeight: 1.4 }}>{av.desc}</div>
         </div>
       </div>
@@ -239,22 +229,54 @@ const AvatarCard = ({ personality }) => {
   );
 };
 
+// Fire the alert toasts at most once every 10 minutes across the whole session,
+// so re-navigating back to the dashboard doesn't replay them each time.
+let lastAlertAt = 0;
+
+// ── Transient dashboard notification — small filled pill that drops in from
+//    the top and auto-dismisses. One tone = one solid colour, white content. ──
+const DashToast = ({ t, tone, icon, title, body, onView }) => (
+  <motion.div
+    initial={{ opacity: 0, y: -12, scale: 0.96 }}
+    animate={
+      t.visible
+        ? { opacity: 1, y: 0, scale: 1 }
+        : { opacity: 0, y: -12, scale: 0.96 }
+    }
+    transition={{ type: 'spring', bounce: 0.24, duration: 0.45 }}
+    className={`dash-toast dash-toast--${tone}`}
+    role="status"
+  >
+    <span className="dash-toast-dot">{icon}</span>
+    <div className="dash-toast-body">
+      <strong>{title}</strong>
+      {body && <span>{body}</span>}
+    </div>
+    {onView && (
+      <button type="button" className="dash-toast-link"
+        onClick={() => { toast.dismiss(t.id); onView(); }}>View</button>
+    )}
+    <button type="button" className="dash-toast-x" onClick={() => toast.dismiss(t.id)} aria-label="Dismiss">
+      <X size={12} weight="bold" />
+    </button>
+  </motion.div>
+);
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════════
 const DashboardPage = () => {
   const { currentUser } = useAuth();
-  const [personality, setPersonality] = useState(null);
+  const navigate = useNavigate();
+  // (personality avatar + mood widget retired from the dashboard layout)
 
   const { data: allTxns = [], isLoading: tl } = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions });
   const { data: goals   = [], isLoading: gl } = useQuery({ queryKey: ['goals'],        queryFn: fetchGoals });
   const { data: budgets = [], isLoading: bl } = useQuery({ queryKey: ['budgets'],      queryFn: fetchBudgets });
   const { data: streaks }                     = useQuery({ queryKey: ['streaks'],       queryFn: fetchStreaks,  staleTime: 60_000 });
-
-  // Fetch personality on mount
-  React.useEffect(() => {
-    client.get('/insights/personality').then(r => setPersonality(r.data?.type)).catch(() => {});
-  }, []);
+  const { data: walletData }                  = useQuery({ queryKey: ['wallets'],     queryFn: fetchWallets,     staleTime: 60_000 });
+  const { data: investments = [] }            = useQuery({ queryKey: ['investments'], queryFn: fetchInvestments, staleTime: 60_000 });
+  const { data: journal = [] }                = useQuery({ queryKey: ['journal'],     queryFn: fetchJournal,     staleTime: 60_000 });
 
   const txns      = allTxns.filter(t => !t.isRecurring);
   const recurring = allTxns.filter(t => t.isRecurring);
@@ -276,10 +298,123 @@ const DashboardPage = () => {
       .sort((a, b) => b.pct - a.pct);
   }, [budgets, txns]);
 
+  // Feed for <ActivityDropdown> — budget alerts, goal milestones and the
+  // day's most recent transactions. Built from data already fetched above,
+  // so mounting the dropdown costs no extra request.
+  const activityItems = useMemo(() => {
+    const items = [];
+    budgetAlerts.slice(0, 3).forEach(b => {
+      items.push({
+        id: `budget-${b.id || b._id}`,
+        icon: <Wallet size={16} />,
+        tone: b.pct >= 100 ? 'var(--red)' : 'var(--brand)',
+        title: b.pct >= 100 ? `${b.category} over budget` : `${b.category} nearing limit`,
+        description: `${Math.round(b.pct)}% of ₹${b.limit.toLocaleString('en-IN')} spent`,
+        time: 'Today',
+      });
+    });
+    goals.filter(g => g.targetAmount > 0 && (g.currentAmount / g.targetAmount) >= 0.85).slice(0, 2).forEach(g => {
+      const pct = Math.round((g.currentAmount / g.targetAmount) * 100);
+      items.push({
+        id: `goal-${g.id || g._id}`,
+        icon: <Target size={16} />,
+        tone: 'var(--brand)',
+        title: `${g.name || g.title} at ${pct}%`,
+        description: pct >= 100 ? 'Goal reached — nice work.' : 'Almost there.',
+        time: 'This week',
+      });
+    });
+    recent.slice(0, 2).forEach(t => {
+      items.push({
+        id: `txn-${t.id || t._id}`,
+        icon: <CreditCard size={16} />,
+        tone: t.type === 'income' ? 'var(--brand)' : 'var(--text-3)',
+        title: t.merchant || t.category,
+        description: `${t.type === 'income' ? '+' : '−'}₹${t.amount.toLocaleString('en-IN')} · ${t.category}`,
+        time: new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+      });
+    });
+    return items;
+  }, [budgetAlerts, goals, recent]);
+
+  const wallets      = walletData?.data || walletData?.wallets || (Array.isArray(walletData) ? walletData : []);
+  const totalBalance = walletData?.totalBalance;
+  const invList      = Array.isArray(investments) ? investments : (investments?.data || investments?.investments || []);
   const isLoading  = tl || gl || bl;
   const hour       = new Date().getHours();
   const greeting   = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const savingsRate = income > 0 ? Math.round((net / income) * 100) : 0;
+
+  // Last-30-days snapshot for the insight card
+  const monthInsights = useMemo(() => {
+    const mStart = new Date(); mStart.setDate(mStart.getDate() - 30); mStart.setHours(0, 0, 0, 0);
+    const mtx = txns.filter(t => new Date(t.date) >= mStart);
+    const exp = mtx.filter(t => t.type === 'expense');
+    const byCat = exp.reduce((a, t) => { a[t.category] = (a[t.category] || 0) + t.amount; return a; }, {});
+    const top = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
+    const biggest = exp.slice().sort((a, b) => b.amount - a.amount)[0];
+    const spent = exp.reduce((s, t) => s + t.amount, 0);
+    return {
+      topCat: top ? { name: top[0], amount: top[1] } : null,
+      biggest: biggest || null,
+      spent,
+      count: mtx.length,
+    };
+  }, [txns]);
+
+  const journalSorted = useMemo(
+    () => [...journal].sort((a, b) => new Date(b.date) - new Date(a.date)),
+    [journal],
+  );
+  const journalStreak = useMemo(() => {
+    const days = new Set(journalSorted.map(e => new Date(e.date).toDateString()));
+    let n = 0; const d = new Date();
+    while (days.has(d.toDateString())) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }, [journalSorted]);
+
+  // Alerts surface as transient toasts (pop in, auto-dismiss) instead of
+  // permanent panels cluttering the layout. Fire once per mount.
+  const notifiedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (isLoading || notifiedRef.current) return;
+    if (budgetAlerts.length === 0 && activityItems.length === 0) return;
+    if (Date.now() - lastAlertAt < 10 * 60 * 1000) { notifiedRef.current = true; return; }
+    notifiedRef.current = true;
+    lastAlertAt = Date.now();
+
+    const exceeded = budgetAlerts.filter(b => b.pct >= 100);
+    if (budgetAlerts.length > 0) {
+      const over = exceeded.length > 0;
+      const list = (over ? exceeded : budgetAlerts).slice(0, 3);
+      toast.custom((t) => (
+        <DashToast
+          t={t}
+          tone={over ? 'red' : 'brand'}
+          icon={<AlertTriangle size={15} weight="fill" />}
+          title={over
+            ? `${exceeded.length} budget${exceeded.length > 1 ? 's' : ''} exceeded`
+            : `${budgetAlerts.length} budget${budgetAlerts.length > 1 ? 's' : ''} near limit`}
+          body={list.map(b => `${b.category} ${Math.round(b.pct)}%`).join('  ·  ')}
+          onView={() => navigate("/budgets")}
+        />
+      ), { id: 'dash-budget-alert', duration: 2400 });
+    }
+
+    const milestones = activityItems.filter(i => String(i.id).startsWith('goal-'));
+    if (milestones.length > 0) {
+      toast.custom((t) => (
+        <DashToast
+          t={t}
+          tone="brand"
+          icon={<Target size={15} weight="fill" />}
+          title={`${milestones.length} goal${milestones.length > 1 ? 's' : ''} almost funded`}
+          body={milestones.map(m => m.title).join('  ·  ')}
+          onView={() => navigate("/goals")}
+        />
+      ), { id: 'dash-goal-alert', duration: 2400 });
+    }
+  }, [isLoading, budgetAlerts, activityItems]);
 
   // Streak data
   const noSpendStreak    = streaks?.noSpendStreak?.current    || 0;
@@ -288,88 +423,89 @@ const DashboardPage = () => {
 
   return (
     <div>
-      {/* ── Header with avatar ───────────────────────────────────────────── */}
-      <div style={{ marginBottom: '36px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <motion.div
+        className="dash-head"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={spring}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
           <div>
-            {/* Avatar icon */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '8px', border: '1px solid var(--border-strong)', background: 'var(--bg-secondary)', marginBottom: '12px', fontSize: '20px' }}>
-              {personality ? (AVATARS[personality]?.emoji || '💰') : <LayoutDashboard size={20} strokeWidth={1.5} style={{ color: 'var(--text-2)' }} />}
-            </div>
-            <h1 style={{ fontSize: '40px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.15, letterSpacing: '-0.025em' }}>
-              {greeting}, {currentUser?.username}
+            <h1 className="dash-greet">
+              Welcome back, {currentUser?.username}
             </h1>
-            <p style={{ color: 'var(--text-3)', fontSize: '14px', marginTop: '4px' }}>
-              Here's an overview of your finances.
+            <p className="dash-sub">
+              Here is your account activity for {new Date().toLocaleDateString('en-IN', { month: 'long' })}.
             </p>
           </div>
 
-          {/* Streak badges row */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-            <StreakBadge emoji="🔥" label="no-spend" count={noSpendStreak}  color="#f97316" />
-            <StreakBadge emoji="💰" label="savings"  count={savingsStreak}  color="#4ade80" />
-            <StreakBadge emoji="✅" label="healthy"  count={healthyStreak}  color="#60a5fa" />
+          {/* Streak chips */}
+          <div className="dash-streaks">
+            <StreakBadge icon={Flame}    label="no-spend" count={noSpendStreak} index={0} />
+            <StreakBadge icon={Wallet}   label="savings"  count={savingsStreak} index={1} />
+            <StreakBadge icon={Sparkles} label="healthy"  count={healthyStreak} index={2} />
           </div>
         </div>
-        <hr style={{ border: 'none', borderTop: '1px solid var(--border)', marginTop: '24px' }} />
-      </div>
+      </motion.div>
 
-      {/* ── Budget alert banner ──────────────────────────────────────────── */}
-      <AnimatePresence>
-        {!isLoading && budgetAlerts.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', marginBottom: '20px', border: '1px solid var(--red-border)', borderRadius: 'var(--r-md)', background: 'var(--red-bg)' }}>
-            <AlertTriangle size={14} style={{ color: 'var(--red)', flexShrink: 0, marginTop: '1px' }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '4px' }}>
-                {budgetAlerts.filter(b => b.pct >= 100).length > 0
-                  ? `${budgetAlerts.filter(b => b.pct >= 100).length} budget(s) exceeded`
-                  : `${budgetAlerts.length} budget(s) near limit`}
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {budgetAlerts.map(b => (
-                  <span key={b.id || b._id} style={{ fontSize: '12px', color: 'var(--text-2)' }}>{b.category}: {b.pct.toFixed(0)}%</span>
-                ))}
-              </div>
-            </div>
-            <Link to="/budgets" style={{ fontSize: '12px', color: 'var(--accent)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
-              View <ArrowRight size={11} />
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Budget / goal alerts now pop as transient toasts (see notifiedRef effect) */}
 
-      {/* ── Stat cards ───────────────────────────────────────────────────── */}
+      {/* ── Headline figures ────────────────────────────────────────────── */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '24px' }}>
-          <SkelCard /><SkelCard /><SkelCard />
+        <div className="tile-row">
+          {[0, 1, 2].map(i => <div key={i} className="n-skeleton" style={{ height: 132, borderRadius: 20 }} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '12px', marginBottom: '24px' }}>
-          <StatCard label="Total Income"   value={income}            icon={TrendingUp}  valueColor="var(--green)" subtext={<><TrendingUp size={10} color="var(--green)" /> All time</>} />
-          <StatCard label="Total Expenses" value={expenses}          icon={TrendingDown} valueColor="var(--red)"   subtext={<><TrendingDown size={10} color="var(--red)" /> All time</>} />
-          <StatCard label="Net Savings"    value={Math.abs(net)}     icon={net >= 0 ? TrendingUp : TrendingDown}
-            valueColor={net >= 0 ? 'var(--text)' : 'var(--red)'}
-            subtext={income > 0 ? `${savingsRate}% savings rate` : (net >= 0 ? 'Positive balance' : 'Overspending')} />
+        <div className="tile-row">
+          <StatTile
+            index={0} accent
+            label="Total balance" sub="Across all accounts"
+            value={totalBalance ?? wallets.reduce((s, w) => s + (w.balance || 0), 0)}
+            icon={WalletIcon} to="/wallets"
+          />
+          <StatTile
+            index={1} tone="white"
+            label="Monthly income" sub={new Date().toLocaleDateString('en-IN', { month: 'long' })}
+            value={income} icon={ChartLineUp} to="/transactions"
+          />
+          <AiTip
+            income={income} net={net} savingsRate={savingsRate}
+            topCategory={monthInsights.topCat} biggest={monthInsights.biggest}
+            goals={goals}
+          />
         </div>
       )}
 
-      {/* ── Main 2-column layout ─────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 232px', gap: '20px', alignItems: 'start' }}>
+      {/* ── Analysis ────────────────────────────────────────────────────── */}
+      <div className="dash-grid">
 
-        {/* ── Left column ─────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="dash-main">
+
+          {/* All graphs in one switchable panel */}
+          {!isLoading && (
+            <ChartsPanel
+              transactions={allTxns}
+              investments={invList}
+              income={income}
+              expenses={expenses}
+              net={net}
+            />
+          )}
 
           {/* Recent transactions */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>Recent transactions</span>
-              <Link to="/transactions" style={{ fontSize: '12px', color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                View all <ArrowRight size={11} />
+          <section className="rec">
+            <header className="rec-head">
+              <div>
+                <h2 className="rec-title">Recent transactions</h2>
+                <p className="rec-sub">Your latest {recent.length} entries</p>
+              </div>
+              <Link to="/transactions" className="n-btn n-btn-default n-btn-sm">
+                View all <ArrowRight size={12} />
               </Link>
-            </div>
+            </header>
 
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+            <div className="rec-body">
               {isLoading ? (
                 <div style={{ padding: '32px', textAlign: 'center' }}>
                   <div className="n-skeleton" style={{ height: '13px', width: '40%', margin: '0 auto' }} />
@@ -406,9 +542,9 @@ const DashboardPage = () => {
                           </div>
                         </td>
                         <td>
-                          <span className={`n-tag n-tag-${t.type === 'income' ? 'green' : 'red'}`}>{t.category}</span>
+                          <span className="n-tag n-tag-gray">{t.category}</span>
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: t.type === 'income' ? 'var(--green)' : 'var(--red)', fontVariantNumeric: 'tabular-nums', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                        <td className="money" style={{ textAlign: 'right', fontWeight: 600, color: t.type === 'income' ? 'var(--brand)' : 'var(--text)', fontSize: '13px', whiteSpace: 'nowrap' }}>
                           {t.type === 'income' ? '+' : '−'}₹{t.amount.toLocaleString('en-IN')}
                         </td>
                       </tr>
@@ -417,94 +553,85 @@ const DashboardPage = () => {
                 </table>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* 6-month chart */}
-          {!isLoading && allTxns.length > 0 && (
-            <div style={{ padding: '16px 18px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-              <SpendingMiniChart transactions={allTxns} />
-            </div>
-          )}
-
-          {/* Journal quick access */}
+          {/* This month + Journal — filled with real data */}
           {!isLoading && (
-            <Link to="/journal" style={{ textDecoration: 'none' }}>
-              <motion.div whileHover={{ borderColor: 'var(--border-strong)', boxShadow: 'var(--shadow-xs)' }}
-                style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                <BookOpen size={16} strokeWidth={1.5} style={{ color: 'var(--text-3)' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)' }}>Financial Journal</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>Reflect on today's spending</div>
-                </div>
-                <ArrowRight size={13} style={{ color: 'var(--text-3)' }} />
-              </motion.div>
-            </Link>
+            <div className="dash-pair">
+              <section className="dash-insight">
+                <header className="dash-insight-head">
+                  <span className="dc-chip"><Sparkles size={15} weight="fill" /></span>
+                  <h2>Last 30 days</h2>
+                  <Link to="/ai-insights" className="dash-insight-cta">Analyse <ArrowRight size={12} weight="bold" /></Link>
+                </header>
+                <ul className="dash-insight-list">
+                  <li>
+                    <span className="dash-insight-k">Spent</span>
+                    <span className="dash-insight-v money">₹{Math.round(monthInsights.spent).toLocaleString('en-IN')}</span>
+                    <span className="dash-insight-note">{monthInsights.count} transactions logged</span>
+                  </li>
+                  {monthInsights.topCat && (
+                    <li>
+                      <span className="dash-insight-k">Top category</span>
+                      <span className="dash-insight-v">{monthInsights.topCat.name}</span>
+                      <span className="dash-insight-note">₹{Math.round(monthInsights.topCat.amount).toLocaleString('en-IN')}</span>
+                    </li>
+                  )}
+                  {monthInsights.biggest && (
+                    <li>
+                      <span className="dash-insight-k">Biggest expense</span>
+                      <span className="dash-insight-v">{monthInsights.biggest.merchant || monthInsights.biggest.category}</span>
+                      <span className="dash-insight-note">₹{Math.round(monthInsights.biggest.amount).toLocaleString('en-IN')}</span>
+                    </li>
+                  )}
+                  <li>
+                    <span className="dash-insight-k">Savings rate</span>
+                    <span className="dash-insight-v" style={{ color: savingsRate >= 20 ? 'var(--green)' : savingsRate >= 0 ? 'var(--text)' : 'var(--red)' }}>{savingsRate}%</span>
+                    <span className="dash-insight-note">{inrShort(net)} kept</span>
+                  </li>
+                </ul>
+              </section>
+
+              <section className="dash-journal">
+                <header className="dash-journal-head">
+                  <span className="dc-chip"><BookOpen size={15} weight="fill" /></span>
+                  <div>
+                    <h2>Financial Journal</h2>
+                    <p>{journalStreak > 0 ? `${journalStreak}-day streak · ${journal.length} entries` : `${journal.length} entries`}</p>
+                  </div>
+                  <Link to="/journal" className="dash-insight-cta">Open <ArrowRight size={12} weight="bold" /></Link>
+                </header>
+                {journalSorted.length === 0 ? (
+                  <Link to="/journal" className="dash-journal-empty">
+                    <Plus size={13} weight="bold" /> Write your first entry
+                  </Link>
+                ) : (
+                  <ul className="dash-journal-list">
+                    {journalSorted.slice(0, 3).map(e => {
+                      const M = MOODS.find(m => m.key === e.mood);
+                      const MIcon = M?.Icon || Smile;
+                      return (
+                        <li key={e._id || e.id}>
+                          <MIcon size={15} weight="fill" style={{ color: 'var(--brand)', flexShrink: 0, marginTop: '1px' }} />
+                          <div style={{ minWidth: 0 }}>
+                            <span className="dash-journal-date">{new Date(e.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                            <span className="dash-journal-text">{e.content}</span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+            </div>
           )}
         </div>
 
-        {/* ── Right column ─────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
-          {/* Quick links */}
-          <div>
-            <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>Quick access</div>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden', padding: '3px' }}>
-              <QuickLink icon={CreditCard} label="Transactions" value={txns.length}      to="/transactions" />
-              <QuickLink icon={Target}     label="Goals"        value={goals.length}     to="/goals" />
-              <QuickLink icon={Wallet}     label="Budgets"      value={budgets.length}   to="/budgets" />
-              <QuickLink icon={RefreshCcw} label="Recurring"    value={recurring.length} to="/recurring" />
-            </div>
-          </div>
-
-          {/* Mood check-in */}
-          <MoodWidget />
-
-          {/* Finance avatar */}
-          {personality && <AvatarCard personality={personality} />}
-
-          {/* Health score */}
-          {!isLoading && (
-            <HealthScore transactions={allTxns} budgets={budgets} goals={goals} />
-          )}
-
-          {/* Savings rate */}
-          {!isLoading && income > 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-              <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>Savings rate</div>
-              <div style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
-                color: savingsRate >= 20 ? 'var(--green)' : savingsRate >= 0 ? 'var(--text)' : 'var(--red)' }}>
-                {savingsRate}%
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '3px' }}>
-                {savingsRate >= 20 ? '🎉 Excellent habit' : savingsRate >= 10 ? '👍 Good progress' : savingsRate >= 0 ? '💡 Room to improve' : '⚠️ Spending exceeds income'}
-              </div>
-              <div style={{ height: '4px', borderRadius: '2px', background: 'var(--progress-track)', overflow: 'hidden', marginTop: '10px' }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(Math.max(savingsRate, 0), 100)}%` }}
-                  transition={{ duration: 0.8, delay: 0.3 }}
-                  style={{ height: '100%', borderRadius: '2px', background: savingsRate >= 20 ? 'var(--green)' : savingsRate >= 0 ? 'var(--accent)' : 'var(--red)' }} />
-              </div>
-            </motion.div>
-          )}
-
-          {/* Wrapped shortcut */}
-          <Link to="/wrapped" style={{ textDecoration: 'none' }}>
-            <motion.div whileHover={{ scale: 1.01 }}
-              style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--r-md)',
-                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer',
-              }}>
-              <span style={{ fontSize: '20px' }}>✨</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>Monthly Wrapped</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>See your month in stories</div>
-              </div>
-              <ArrowRight size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
-            </motion.div>
-          </Link>
+        {/* ── Right column — health first, then accounts, goals ───────────── */}
+        <div className="dash-aside">
+          {!isLoading && <HealthScore transactions={allTxns} budgets={budgets} goals={goals} />}
+          {!isLoading && <WalletCard wallets={wallets} />}
+          {!isLoading && <GoalsMini goals={goals} />}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { IconContext } from '@phosphor-icons/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 
@@ -8,6 +9,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary     from './components/ErrorBoundary';
 import AppLayout         from './components/layout/AppLayout';
 
+import PrelandingPage  from './pages/PrelandingPage';
 import LoginPage          from './pages/LoginPage';
 import ResetPasswordPage  from './pages/ResetPasswordPage';
 import OAuthCallbackPage  from './pages/OAuthCallbackPage';
@@ -28,6 +30,12 @@ import WrappedPage        from './pages/WrappedPage';
 import SpendingChallengesPage from './pages/SpendingChallengesPage';
 import FamilyPage         from './pages/FamilyPage';
 import NotFoundPage       from './pages/NotFoundPage';
+import HelpPage           from './pages/HelpPage';
+
+/* One icon system, filled by default.
+   Setting the weight here means no call site has to pass weight="fill", and the
+   whole product stays visually consistent. */
+const ICON_STYLE = { weight: 'fill', size: 16 };
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -64,22 +72,25 @@ const App = () => (
                 <Route path="/challenges"    element={<SpendingChallengesPage />} />
                 <Route path="/family"        element={<FamilyPage />} />
                 <Route path="/settings"      element={<SettingsPage />} />
+                <Route path="/help"          element={<HelpPage />} />
               </Route>
 
-              <Route path="/"  element={<Navigate to="/dashboard" replace />} />
+              <Route path="/"  element={<PrelandingPage />} />
               <Route path="*"  element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
 
-          <Toaster position="top-right" toastOptions={{
+          <Toaster position="top-center" containerStyle={{ top: 76 }} gutter={8} toastOptions={{
             style: {
-              background: 'rgb(47,47,47)', color: '#f8fafc',
-              border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
-              fontSize: '13px', fontFamily: "'Inter', sans-serif",
-              padding: '10px 14px', boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+              background: 'rgba(12,12,12,0.62)', color: '#F7F7F7',
+              backdropFilter: 'blur(14px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(14px) saturate(150%)',
+              border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px',
+              fontSize: '12.5px', fontFamily: "'Inter', sans-serif",
+              padding: '7px 13px', boxShadow: '0 8px 26px -10px rgba(0,0,0,0.5)',
             },
-            success: { iconTheme: { primary: '#0f7b6c', secondary: '#f8fafc' } },
-            error:   { iconTheme: { primary: '#c4554d', secondary: '#f8fafc' } },
+            success: { iconTheme: { primary: 'var(--green)', secondary: '#fff' } },
+            error:   { iconTheme: { primary: 'var(--red)', secondary: '#fff' } },
             duration: 3500,
           }} />
         </AuthProvider>

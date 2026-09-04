@@ -1,8 +1,19 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { wgslVitePlugin } from '@vgpu/wgsl/loader-vite'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'src')
 
 export default defineConfig({
-  plugins: [react()],
+  // wgslVitePlugin resolves the `.wgsl` import graph in triangle-led-front/ at
+  // build time and hands each entry shader to vgpu as one finished ShaderSource.
+  plugins: [react(), tailwindcss(), wgslVitePlugin()],
+  resolve: {
+    alias: { '@': src },
+  },
   server: {
     proxy: {
       '/api': {
@@ -32,6 +43,7 @@ export default defineConfig({
           'vendor-pdf': ['jspdf', 'html2canvas'],
           // Icons & UI
           'vendor-ui': ['lucide-react', 'react-hot-toast'],
+          'vendor-heroui': ['@heroui/react'],
         },
       },
     },

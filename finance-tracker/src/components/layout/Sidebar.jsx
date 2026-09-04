@@ -1,289 +1,202 @@
 /**
- * Sidebar — Notion-exact navigation sidebar.
- * Pixel-accurate Notion desktop sidebar with workspace header,
- * grouped nav sections, search shortcut, theme toggle, and user footer.
+ * Sidebar — a control panel attached to the content well.
+ *
+ *  · Expanded  → labelled rows, brand lockup, "More" opens as an inline drawer.
+ *  · Collapsed → icon rail; labels appear as hover chips; "More" opens as a
+ *    floating menu anchored to its button.
+ *
+ * Collapse state is owned by AppLayout (persisted + auto below a breakpoint);
+ * this component only renders. Search lives in the top bar now, not here.
  */
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LogoMark, LogoWordmark } from '../ui/Logo';
 import {
-  LayoutDashboard, CreditCard, RefreshCcw, Target, Wallet,
-  BarChart3, Settings, Search, LogOut, Sparkles, ChevronDown,
-  Moon, Sun, PieChart, Tag, BookOpen, TrendingUp, Gift,
-  Trophy, Users,
-} from 'lucide-react';
-import { useAuth }  from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+  SquaresFour, ChartBar, CreditCard, Folder, Target,
+  Wallet, TrendUp, ArrowsClockwise, Tag, BookOpen,
+  Trophy, UsersThree, Gift, GearSix, Lifebuoy,
+  DotsThreeOutline, CaretRight, SidebarSimple,
+} from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchBudgets }      from '../../api/budgets';
+import { fetchBudgets } from '../../api/budgets';
 import { fetchTransactions } from '../../api/transactions';
+import { springFast } from '../../lib/motion';
 
-// ── Single nav item ───────────────────────────────────────────────────────────
-const SidebarItem = ({ to, icon: Icon, label, badge = 0 }) => (
-  <NavLink to={to} style={{ textDecoration: 'none', display: 'block' }}>
+const Row = ({ to, icon: Icon, label, badge = 0, onNavigate, collapsed }) => (
+  <NavLink to={to} onClick={onNavigate} className="rail-item" data-tip={collapsed ? label : undefined}>
     {({ isActive }) => (
-      <motion.div
-        whileHover={{ backgroundColor: 'var(--bg-hover)' }}
-        transition={{ duration: 0.08 }}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '5px 10px',
-          borderRadius: 'var(--r)',
-          color: isActive ? 'var(--text)' : 'var(--text-2)',
-          fontWeight: isActive ? 500 : 400,
-          fontSize: '14px',
-          cursor: 'pointer',
-          backgroundColor: isActive ? 'var(--bg-active)' : 'transparent',
-          transition: 'color 0.1s',
-          userSelect: 'none',
-        }}
-      >
-        <Icon
-          size={15}
-          strokeWidth={isActive ? 2 : 1.5}
-          style={{ flexShrink: 0, opacity: isActive ? 0.9 : 0.55 }}
-        />
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {label}
-        </span>
-        {badge > 0 && (
-          <motion.span
-            initial={{ scale: 0 }} animate={{ scale: 1 }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              minWidth: '17px', height: '17px', borderRadius: '8px',
-              background: 'var(--red)', color: '#fff',
-              fontSize: '10px', fontWeight: 700, padding: '0 4px', flexShrink: 0,
-            }}
-          >
-            {badge}
-          </motion.span>
-        )}
-      </motion.div>
+      <span className={`rail-btn${isActive ? ' is-active' : ''}`}>
+        <Icon size={18} weight={isActive ? 'fill' : 'regular'} />
+        <span className="rail-label">{label}</span>
+        {badge > 0 && <span className="rail-badge">{badge}</span>}
+      </span>
     )}
   </NavLink>
 );
 
-// ── Section label ─────────────────────────────────────────────────────────────
-const SectionLabel = ({ children }) => (
-  <div style={{
-    padding: '4px 12px 3px',
-    fontSize: '11px',
-    fontWeight: 500,
-    color: 'var(--text-3)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.07em',
-    marginTop: '2px',
-  }}>
-    {children}
-  </div>
-);
+const MORE_PATHS = ['/subscriptions', '/recurring', '/reports', '/family', '/challenges', '/journal', '/wrapped'];
 
-// ── Main Sidebar component ────────────────────────────────────────────────────
-const Sidebar = ({ collapsed, onToggle, onOpenPalette }) => {
-  const { currentUser, logout } = useAuth();
-  const { theme, toggleTheme }  = useTheme();
-  const navigate = useNavigate();
-  const initials = currentUser?.username?.[0]?.toUpperCase() || 'U';
+export default function Sidebar({ collapsed = false, onToggleCollapse, onClose }) {
+  const location = useLocation();
+  const onMoreRoute = MORE_PATHS.includes(location.pathname);
+  // Keep the drawer open whenever the user is inside a "More" section, so
+  // navigating between those pages doesn't collapse it under them.
+  const [moreOpen, setMoreOpen] = useState(onMoreRoute);
+  const [flyPos, setFlyPos] = useState(null);
+  const moreRef = useRef(null);
+  const toggleRef = useRef(null);
 
-  // Badge: budgets over limit
-  const { data: budgets = [] }  = useQuery({ queryKey: ['budgets'],      queryFn: fetchBudgets,      staleTime: 60_000 });
-  const { data: allTxns = [] }  = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions, staleTime: 60_000 });
-  const spendMap        = allTxns.filter(t => !t.isRecurring && t.type === 'expense')
-                                  .reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {});
-  const overBudgetCount = budgets.filter(b => (spendMap[b.category] || 0) >= b.limit).length;
+  useEffect(() => { if (onMoreRoute && !collapsed) setMoreOpen(true); }, [onMoreRoute, collapsed]);
 
-  // Dark mode: hover colour needs to match
-  const hoverBg = theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(55,53,47,0.06)';
+  const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: fetchBudgets, staleTime: 60_000 });
+  const { data: allTxns = [] } = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions, staleTime: 60_000 });
 
-  const NAV_MAIN = [
-    { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard'    },
-    { to: '/transactions', icon: CreditCard,       label: 'Transactions' },
-    { to: '/analytics',    icon: PieChart,         label: 'Analytics'    },
-    { to: '/budgets',      icon: Wallet,           label: 'Budgets',  badge: overBudgetCount },
-    { to: '/goals',        icon: Target,           label: 'Goals'        },
+  const spendMap = allTxns
+    .filter(t => !t.isRecurring && t.type === 'expense')
+    .reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {});
+  const overBudget = budgets.filter(b => (spendMap[b.category] || 0) >= b.limit).length;
+
+  const PRIMARY = [
+    { to: '/dashboard',    icon: SquaresFour, label: 'Overview' },
+    { to: '/analytics',    icon: ChartBar,    label: 'Analytics' },
+    { to: '/transactions', icon: CreditCard,  label: 'Transactions' },
+    { to: '/investments',  icon: TrendUp,     label: 'Portfolio' },
+    { to: '/wallets',      icon: Wallet,      label: 'Accounts' },
+  ];
+  const PLANNING = [
+    { to: '/budgets', icon: Folder, label: 'Budgets', badge: overBudget },
+    { to: '/goals',   icon: Target, label: 'Goals' },
+  ];
+  const MORE = [
+    { to: '/subscriptions', icon: Tag,             label: 'Subscriptions' },
+    { to: '/recurring',     icon: ArrowsClockwise, label: 'Recurring' },
+    { to: '/reports',       icon: ChartBar,        label: 'Reports' },
+    { to: '/family',        icon: UsersThree,      label: 'Family' },
+    { to: '/challenges',    icon: Trophy,          label: 'Challenges' },
+    { to: '/journal',       icon: BookOpen,        label: 'Journal' },
+    { to: '/wrapped',       icon: Gift,            label: 'Monthly Wrapped' },
   ];
 
-  const NAV_FINANCE = [
-    { to: '/wallets',       icon: Wallet,      label: 'Wallets'       },
-    { to: '/subscriptions', icon: Tag,         label: 'Subscriptions' },
-    { to: '/recurring',     icon: RefreshCcw,  label: 'Recurring'     },
-    { to: '/investments',   icon: TrendingUp,  label: 'Investments'   },
-    { to: '/reports',       icon: BarChart3,   label: 'Reports'       },
-    { to: '/family',        icon: Users,       label: 'Family'        },
-  ];
+  // Close the collapsed-mode flyout on outside click / Esc.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDown = (e) => { if (!moreRef.current?.contains(e.target)) setMoreOpen(false); };
+    const onKey  = (e) => { if (e.key === 'Escape') setMoreOpen(false); };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [moreOpen]);
 
-  const NAV_AI = [
-    { to: '/ai-insights',  icon: Sparkles,  label: 'AI Insights'     },
-    { to: '/challenges',   icon: Trophy,    label: 'Challenges'      },
-    { to: '/journal',      icon: BookOpen,  label: 'Journal'         },
-    { to: '/wrapped',      icon: Gift,      label: 'Monthly Wrapped' },
-  ];
+  // Collapsing the rail also closes an open drawer.
+  useEffect(() => { if (collapsed) setMoreOpen(false); }, [collapsed]);
+
+  // Close mobile overlay on navigate; the collapsed flyout closes too, but the
+  // expanded inline drawer stays put (it self-manages via the onMoreRoute rule).
+  const go = () => { if (collapsed) setMoreOpen(false); onClose?.(); };
+
+  const openMore = () => {
+    const next = !moreOpen;
+    if (next && collapsed && toggleRef.current) {
+      const r = toggleRef.current.getBoundingClientRect();
+      const estH = MORE.length * 40 + 16;
+      const top = Math.max(8, Math.min(r.top, window.innerHeight - 8 - estH));
+      setFlyPos({ left: r.right + 8, top });
+    }
+    setMoreOpen(next);
+  };
 
   return (
-    /* The outer aside is sized/animated by AppLayout — here we just fill it */
-    <div style={{ width: 'var(--sidebar-w)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-
-      {/* ── Workspace header ─────────────────────────────────────────────── */}
-      <motion.div
-        whileHover={{ backgroundColor: hoverBg }}
-        transition={{ duration: 0.1 }}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '10px 12px', margin: '6px 6px 2px',
-          borderRadius: 'var(--r)', cursor: 'pointer',
-        }}
-      >
-        {/* App logo pill */}
-        <div style={{
-          width: '22px', height: '22px',
-          borderRadius: '5px',
-          background: 'linear-gradient(135deg, #2383e2 0%, #6366f1 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <Sparkles size={11} color="#fff" strokeWidth={2.5} />
-        </div>
-
-        <span style={{
-          fontSize: '14px', fontWeight: 600,
-          color: 'var(--text)',
-          flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          Money Tracker
-        </span>
-
-        <ChevronDown size={13} color="var(--text-3)" />
-      </motion.div>
-
-      {/* ── Search shortcut — Notion's "Search" item ─────────────────────── */}
-      <div style={{ padding: '2px 6px' }}>
-        <motion.div
-          whileHover={{ backgroundColor: hoverBg }}
-          onClick={onOpenPalette}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '5px 10px', borderRadius: 'var(--r)',
-            color: 'var(--text-3)', fontSize: '14px',
-            cursor: 'pointer', userSelect: 'none',
-          }}
-        >
-          <Search size={14} strokeWidth={1.5} style={{ opacity: 0.55, flexShrink: 0 }} />
-          <span style={{ flex: 1 }}>Search</span>
-          <span style={{
-            display: 'flex', gap: '2px',
-            fontSize: '11px', color: 'var(--text-3)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: '3px', padding: '1px 5px',
-            background: 'var(--bg-tertiary)',
-          }}>
-            ⌘K
-          </span>
-        </motion.div>
-      </div>
-
-      {/* ── Scrollable nav area ───────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingBottom: '8px' }}>
-
-        {/* Main */}
-        <div style={{ padding: '8px 6px 2px' }}>
-          <SectionLabel>Main</SectionLabel>
-          {NAV_MAIN.map(({ to, icon, label, badge }) => (
-            <SidebarItem key={to} to={to} icon={icon} label={label} badge={badge} />
-          ))}
-        </div>
-
-        <div style={{ margin: '4px 12px', borderTop: '1px solid var(--border)' }} />
-
-        {/* Finance */}
-        <div style={{ padding: '2px 6px' }}>
-          <SectionLabel>Finance</SectionLabel>
-          {NAV_FINANCE.map(({ to, icon, label }) => (
-            <SidebarItem key={to} to={to} icon={icon} label={label} />
-          ))}
-        </div>
-
-        <div style={{ margin: '4px 12px', borderTop: '1px solid var(--border)' }} />
-
-        {/* AI & Tools */}
-        <div style={{ padding: '2px 6px' }}>
-          <SectionLabel>AI & Tools</SectionLabel>
-          {NAV_AI.map(({ to, icon, label }) => (
-            <SidebarItem key={to} to={to} icon={icon} label={label} />
-          ))}
-        </div>
-
-        <div style={{ margin: '4px 12px', borderTop: '1px solid var(--border)' }} />
-
-        {/* Settings + Theme */}
-        <div style={{ padding: '2px 6px' }}>
-          <SidebarItem to="/settings" icon={Settings} label="Settings" />
-
-          {/* Theme toggle — non-navlink, styled same as nav item */}
-          <motion.div
-            whileHover={{ backgroundColor: hoverBg }}
-            onClick={toggleTheme}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '5px 10px', borderRadius: 'var(--r)',
-              color: 'var(--text-2)', fontSize: '14px',
-              cursor: 'pointer', userSelect: 'none',
-            }}
+    <nav className={`rail${collapsed ? ' is-collapsed' : ''}`} aria-label="Primary">
+      <div className="rail-top">
+        <NavLink to="/dashboard" className="rail-brand" onClick={go} aria-label="Clario home">
+          <LogoMark size={30} />
+          {!collapsed && <LogoWordmark className="rail-wordmark" height={22} />}
+        </NavLink>
+        {onToggleCollapse && (
+          <button
+            type="button"
+            className="rail-collapse"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            data-tip={collapsed ? 'Expand' : undefined}
           >
-            {theme === 'dark'
-              ? <Sun  size={15} strokeWidth={1.5} style={{ opacity: 0.55, flexShrink: 0 }} />
-              : <Moon size={15} strokeWidth={1.5} style={{ opacity: 0.55, flexShrink: 0 }} />
-            }
-            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          </motion.div>
-        </div>
+            <SidebarSimple size={16} />
+          </button>
+        )}
       </div>
 
-      {/* ── User footer (Notion's bottom user row) ───────────────────────── */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '6px 6px 8px', flexShrink: 0 }}>
-        <motion.div
-          whileHover={{ backgroundColor: hoverBg }}
-          onClick={() => { logout(); navigate('/login'); }}
-          title="Sign out"
-          style={{
-            display: 'flex', alignItems: 'center', gap: '9px',
-            padding: '7px 10px', borderRadius: 'var(--r)',
-            cursor: 'pointer',
-          }}
+      <div className="rail-group">
+        {PRIMARY.map(i => <Row key={i.to} {...i} collapsed={collapsed} onNavigate={go} />)}
+      </div>
+
+      {!collapsed && <div className="rail-group-label">Planning</div>}
+      <div className="rail-group">
+        {PLANNING.map(i => <Row key={i.to} {...i} collapsed={collapsed} onNavigate={go} />)}
+      </div>
+
+      {/* More */}
+      <div className={`rail-more${moreOpen ? ' is-open' : ''}`} ref={moreRef}>
+        <button
+          type="button"
+          ref={toggleRef}
+          className="rail-item rail-more-toggle"
+          onClick={openMore}
+          aria-expanded={moreOpen}
+          data-tip={collapsed ? 'More' : undefined}
         >
-          {/* Avatar */}
-          <div style={{
-            width: '24px', height: '24px',
-            borderRadius: '5px',
-            background: 'linear-gradient(135deg, #2383e2, #6366f1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '11px', fontWeight: 700, color: '#fff', flexShrink: 0,
-          }}>
-            {initials}
-          </div>
+          <span className={`rail-btn${onMoreRoute ? ' is-active' : ''}`}>
+            <DotsThreeOutline size={18} weight={moreOpen || onMoreRoute ? 'fill' : 'regular'} />
+            <span className="rail-label">More</span>
+            <CaretRight size={13} weight="bold" className="rail-more-caret" />
+          </span>
+        </button>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: '13px', fontWeight: 500, color: 'var(--text)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {currentUser?.username}
-            </div>
-            <div style={{
-              fontSize: '11px', color: 'var(--text-3)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {currentUser?.email}
-            </div>
-          </div>
-
-          <LogOut size={13} style={{ color: 'var(--text-3)', opacity: 0.45, flexShrink: 0 }} />
-        </motion.div>
+        <AnimatePresence initial={false}>
+          {moreOpen && (
+            collapsed ? (
+              <motion.div
+                key="fly"
+                className="rail-flyout"
+                role="menu"
+                style={flyPos ? { position: 'fixed', left: flyPos.left, top: flyPos.top, bottom: 'auto' } : undefined}
+                initial={{ opacity: 0, x: -6, scale: 0.98 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -6, scale: 0.98 }}
+                transition={springFast}
+              >
+                {MORE.map(({ to, icon: Icon, label }) => (
+                  <NavLink key={to} to={to} onClick={go} className="rail-flyout-item" role="menuitem">
+                    {({ isActive }) => (
+                      <><Icon size={17} weight={isActive ? 'fill' : 'regular'} />{label}</>
+                    )}
+                  </NavLink>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="drawer"
+                className="rail-subgroup"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              >
+                {MORE.map(i => <Row key={i.to} {...i} collapsed={false} onNavigate={go} />)}
+              </motion.div>
+            )
+          )}
+        </AnimatePresence>
       </div>
-    </div>
-  );
-};
 
-export default Sidebar;
+      <span className="rail-spacer" />
+
+      <div className="rail-group">
+        <Row to="/help" icon={Lifebuoy} label="Help" collapsed={collapsed} onNavigate={go} />
+      </div>
+    </nav>
+  );
+}

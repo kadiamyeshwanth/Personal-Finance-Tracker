@@ -7,9 +7,18 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Plus, LogIn, Copy, CheckCircle2, Trash2,
-  TrendingUp, TrendingDown, ArrowRight, Crown, UserMinus,
-} from 'lucide-react';
+  UsersThree as Users,
+  Plus as Plus,
+  SignIn as LogIn,
+  Copy as Copy,
+  CheckCircle as CheckCircle2,
+  Trash as Trash2,
+  TrendUp as TrendingUp,
+  TrendDown as TrendingDown,
+  ArrowRight as ArrowRight,
+  Crown as Crown,
+  UserMinus as UserMinus,
+} from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/ui/PageHeader';
 import client from '../api/client';
@@ -24,7 +33,7 @@ const leaveFamily     = ()     => client.delete('/family/leave').then(r => r.dat
 
 // ── Member avatar ────────────────────────────────────────────────────────────
 const MemberAvatar = ({ username, isOwner, size = 32 }) => {
-  const colors = ['#2383e2', '#0f7b6c', '#9065b0', '#d9730d', '#c4554d', '#6366f1'];
+  const colors = ['var(--brand)', 'var(--brand)', 'var(--brand)', 'var(--red)', 'var(--red)', 'var(--brand)'];
   const color = colors[username?.charCodeAt(0) % colors.length];
   return (
     <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
@@ -32,7 +41,7 @@ const MemberAvatar = ({ username, isOwner, size = 32 }) => {
         {username?.[0]?.toUpperCase()}
       </div>
       {isOwner && (
-        <div style={{ position: 'absolute', bottom: -3, right: -3, background: '#f59e0b', borderRadius: '50%', width: 12, height: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', bottom: -3, right: -3, background: 'var(--red)', borderRadius: '50%', width: 12, height: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Crown size={7} color="#fff" />
         </div>
       )}
@@ -49,7 +58,7 @@ const MemberCard = ({ data, isOwner }) => (
       <div>
         <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '5px' }}>
           {data.member.username}
-          {isOwner && <Crown size={11} style={{ color: '#f59e0b' }} />}
+          {isOwner && <Crown size={11} style={{ color: 'var(--red)' }} />}
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>{data.member.email}</div>
       </div>
@@ -95,13 +104,13 @@ const SetupModal = ({ onClose, onDone }) => {
 
   const createMut = useMutation({
     mutationFn: createFamily,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['family'] }); toast.success('Family group created! 🏠'); onDone(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['family'] }); toast.success('Family group created'); onDone(); },
     onError: e  => toast.error(e.response?.data?.error || 'Failed to create'),
   });
 
   const joinMut = useMutation({
     mutationFn: () => joinFamily(code),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['family'] }); toast.success('Joined family! 👨‍👩‍👧'); onDone(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['family'] }); toast.success('Joined family'); onDone(); },
     onError: e  => toast.error(e.response?.data?.error || 'Invalid invite code'),
   });
 
@@ -119,7 +128,7 @@ const SetupModal = ({ onClose, onDone }) => {
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
           {['create', 'join'].map(t => (
             <button key={t} onClick={() => setTab(t)}
-              style={{ flex: 1, padding: '10px', border: 'none', background: tab === t ? 'var(--bg)' : 'var(--bg-secondary)', fontSize: '13px', fontWeight: tab === t ? 600 : 400, color: tab === t ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent', cursor: 'pointer' }}>
+              style={{ flex: 1, padding: '10px', border: 'none', background: tab === t ? 'var(--bg)' : 'var(--bg-secondary)', fontSize: '13px', fontWeight: tab === t ? 600 : 400, color: tab === t ? 'var(--text)' : 'var(--text-3)', borderBottom: tab === t ? '2px solid var(--brand)' : '2px solid transparent', cursor: 'pointer' }}>
               {t === 'create' ? '+ Create group' : '→ Join with code'}
             </button>
           ))}
@@ -194,30 +203,69 @@ const FamilyPage = () => {
       <div>
         <PageHeader icon={Users} title="Family Finance" subtitle="Track finances together with your household" />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', maxWidth: '600px', margin: '0 auto' }}>
-          <motion.div whileHover={{ boxShadow: 'var(--shadow-sm)' }}
-            style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '24px', textAlign: 'center', cursor: 'pointer' }}
-            onClick={() => setShowSetup(true)}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-              <Plus size={22} style={{ color: 'var(--accent)' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)', gap: '28px', alignItems: 'start' }}>
+          {/* Left — pitch + actions */}
+          <div>
+            <div style={{
+              position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-lg)', padding: '28px',
+              background: 'linear-gradient(140deg, #1A1420 0%, #2A1508 50%, #E85002 150%)', color: '#fff',
+              boxShadow: '0 20px 56px rgba(232,80,2,0.22)', marginBottom: '18px',
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7, marginBottom: '10px' }}>Shared, not merged</div>
+              <div style={{ fontSize: '24px', fontWeight: 800, lineHeight: 1.15, marginBottom: '10px' }}>One combined view. Everyone keeps their own account.</div>
+              <div style={{ fontSize: '14px', opacity: 0.78, lineHeight: 1.6 }}>Create a group, share the invite code, and see this month's household income, spending and per-member breakdown in one place.</div>
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Create a family group</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-3)', lineHeight: 1.6 }}>Start a shared dashboard and invite your household members</div>
-          </motion.div>
 
-          <motion.div whileHover={{ boxShadow: 'var(--shadow-sm)' }}
-            style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '24px', textAlign: 'center', cursor: 'pointer' }}
-            onClick={() => setShowSetup(true)}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--green-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-              <LogIn size={22} style={{ color: 'var(--green)' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+              {[
+                { icon: TrendingUp, t: 'Combined totals', d: 'Household income, expenses and net savings, updated live.' },
+                { icon: Users, t: 'Per-member breakdown', d: "Each person's spend and top categories — without sharing logins." },
+                { icon: Crown, t: 'You stay in control', d: 'The group owner manages members; anyone can leave anytime.' },
+              ].map(({ icon: Ic, t, d }) => (
+                <div key={t} style={{ display: 'flex', gap: '12px', padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)' }}>
+                  <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: '9px', background: 'var(--brand-bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ic size={17} weight="fill" style={{ color: 'var(--brand)' }} />
+                  </span>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{t}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.5, marginTop: '2px' }}>{d}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Join a family group</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-3)', lineHeight: 1.6 }}>Enter a 6-character invite code from your family admin</div>
-          </motion.div>
-        </div>
 
-        <div style={{ marginTop: '24px', padding: '14px 16px', background: 'var(--blue-bg)', borderRadius: 'var(--r-md)', border: '1px solid rgba(35,131,226,0.15)', maxWidth: '600px', margin: '24px auto 0', fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.7 }}>
-          <strong style={{ color: 'var(--accent)' }}>👨‍👩‍👧 How it works:</strong> Create a group and share the invite code with family members. Each person keeps their own account — you'll see a combined view of this month's spending.
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button className="n-btn n-btn-primary" onClick={() => setShowSetup(true)}><Plus size={14} weight="bold" /> Create a group</button>
+              <button className="n-btn n-btn-default" onClick={() => setShowSetup(true)}><LogIn size={14} weight="fill" /> Join with a code</button>
+            </div>
+          </div>
+
+          {/* Right — faux preview of the shared dashboard */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', background: 'var(--bg)' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', fontSize: '12px', fontWeight: 600, color: 'var(--text-2)' }}>
+              Preview · The Sharma Family
+            </div>
+            <div style={{ padding: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+                {[['Income', '₹1,84,000', 'var(--green)'], ['Spent', '₹1,12,400', 'var(--red)'], ['Net', '₹71,600', 'var(--brand)']].map(([l, v, c]) => (
+                  <div key={l} style={{ textAlign: 'center', padding: '10px 6px', background: 'var(--bg-secondary)', borderRadius: 'var(--r-md)' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{l}</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: c, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              {[['Aditi', 62, 'var(--brand)'], ['Rohan', 44, '#FF8A3D'], ['Priya', 28, '#C94F00']].map(([n, w, c]) => (
+                <div key={n} style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-2)', marginBottom: '4px' }}>
+                    <span>{n}</span><span style={{ color: 'var(--text-3)' }}>₹{(w * 620).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: '999px', background: 'var(--border-strong)', overflow: 'hidden' }}>
+                    <div style={{ width: `${w}%`, height: '100%', borderRadius: '999px', background: c }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {showSetup && <SetupModal onClose={() => setShowSetup(false)} onDone={() => setShowSetup(false)} />}
@@ -286,7 +334,7 @@ const FamilyPage = () => {
             <MemberAvatar username={m.username || '?'} isOwner={(m._id || m) === (family.createdBy?._id || family.createdBy)} size={28} />
             <span style={{ fontSize: '13px', color: 'var(--text)', flex: 1 }}>{m.username || 'Member'}</span>
             {(m._id || m) === (family.createdBy?._id || family.createdBy) && (
-              <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '3px' }}><Crown size={10} /> Admin</span>
+              <span style={{ fontSize: '11px', color: 'var(--red)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '3px' }}><Crown size={10} /> Admin</span>
             )}
           </div>
         ))}

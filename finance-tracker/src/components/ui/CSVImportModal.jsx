@@ -6,7 +6,16 @@
  */
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, FileText, CheckCircle2, AlertTriangle, ArrowRight, Loader2, ChevronDown } from 'lucide-react';
+import {
+  X as X,
+  UploadSimple as Upload,
+  FileText as FileText,
+  CheckCircle as CheckCircle2,
+  Warning as AlertTriangle,
+  ArrowRight as ArrowRight,
+  CircleNotch as Loader2,
+  CaretDown as ChevronDown,
+} from '@phosphor-icons/react';
 import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
@@ -152,6 +161,7 @@ const CSVImportModal = ({ onClose, onImported }) => {
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         style={{
           background: 'var(--bg)',
           border: '1px solid var(--border)',
@@ -334,7 +344,7 @@ const CSVImportModal = ({ onClose, onImported }) => {
                         <td style={{ fontSize: '12px', color: 'var(--text-3)' }}>{r.date}</td>
                         <td style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px' }}>{r.description || '—'}</td>
                         <td><span className={`n-tag n-tag-${r.type === 'income' ? 'green' : 'red'}`}>{r.type}</span></td>
-                        <td style={{ fontWeight: 600, color: r.type === 'income' ? 'var(--green)' : 'var(--red)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                        <td style={{ fontWeight: 600, color: r.type === 'income' ? 'var(--brand)' : 'var(--text)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                           ₹{r.amount.toLocaleString('en-IN')}
                         </td>
                       </tr>
@@ -351,7 +361,7 @@ const CSVImportModal = ({ onClose, onImported }) => {
           {/* ── STEP 4: Done ───────────────────────────────────────────────── */}
           {step === 'done' && result && (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
+              <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 0.5, bounce: 0.35 }}>
                 <CheckCircle2 size={48} style={{ color: 'var(--green)', margin: '0 auto 16px' }} />
               </motion.div>
               <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>

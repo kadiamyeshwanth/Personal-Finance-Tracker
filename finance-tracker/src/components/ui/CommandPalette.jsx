@@ -12,10 +12,19 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Search, LayoutDashboard, CreditCard, RefreshCcw,
-  Target, Wallet, BarChart3, Settings, ArrowRight,
-  TrendingUp, TrendingDown, Hash,
-} from 'lucide-react';
+  MagnifyingGlass as Search,
+  SquaresFour as LayoutDashboard,
+  CreditCard as CreditCard,
+  ArrowsClockwise as RefreshCcw,
+  Target as Target,
+  Wallet as Wallet,
+  ChartBar as BarChart3,
+  GearSix as Settings,
+  ArrowRight as ArrowRight,
+  TrendUp as TrendingUp,
+  TrendDown as TrendingDown,
+  Hash as Hash,
+} from '@phosphor-icons/react';
 import { fetchTransactions } from '../../api/transactions';
 
 const PAGES = [
@@ -28,7 +37,7 @@ const PAGES = [
   { label: 'Settings',     to: '/settings',     icon: Settings,         desc: 'Profile and preferences' },
 ];
 
-const CommandPalette = ({ open, onClose }) => {
+const CommandPalette = ({ open, onClose, initialQuery = '' }) => {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const inputRef = useRef(null);
@@ -45,7 +54,7 @@ const CommandPalette = ({ open, onClose }) => {
   // Reset state when opening
   useEffect(() => {
     if (open) {
-      setQuery('');
+      setQuery(initialQuery);
       setSelected(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -128,7 +137,7 @@ const CommandPalette = ({ open, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.1 }}
             onClick={onClose}
             style={{
               position: 'fixed', inset: 0, zIndex: 1000,
@@ -137,12 +146,13 @@ const CommandPalette = ({ open, onClose }) => {
             }}
           />
 
-          {/* Palette */}
+          {/* Palette — keyboard-initiated (⌘K), opened many times a day:
+             no entrance transform, just an instant fade (cf. Raycast/Linear) */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -8 }}
-            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1, ease: [0.22, 1, 0.36, 1] }}
             style={{
               position: 'fixed', top: '15vh', left: '50%',
               transform: 'translateX(-50%)',
@@ -269,7 +279,7 @@ const CommandPalette = ({ open, onClose }) => {
                         </div>
                         <span style={{
                           fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums',
-                          color: item.type === 'income' ? 'var(--green)' : 'var(--red)',
+                          color: item.type === 'income' ? 'var(--brand)' : 'var(--text)',
                           flexShrink: 0,
                         }}>
                           {item.type === 'income' ? '+' : '−'}₹{item.amount?.toLocaleString('en-IN')}

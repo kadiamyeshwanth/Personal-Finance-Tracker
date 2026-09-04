@@ -2,7 +2,10 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { RefreshCcw, Trash2 } from 'lucide-react';
+import {
+  ArrowsClockwise as RefreshCcw,
+  Trash as Trash2,
+} from '@phosphor-icons/react';
 import { fetchTransactions, deleteTransaction } from '../api/transactions';
 import PageHeader from '../components/ui/PageHeader';
 
@@ -50,7 +53,7 @@ const RecurringPage = () => {
                   <td><span className={`n-tag n-tag-${t.type === 'income' ? 'green' : 'red'}`}>{t.type}</span></td>
                   <td style={{ color: 'var(--text-2)' }}>{t.category}</td>
                   <td style={{ color: 'var(--text-3)' }}>{t.description || <span style={{ fontStyle: 'italic' }}>—</span>}</td>
-                  <td style={{ fontWeight: 600, color: t.type === 'income' ? 'var(--green)' : 'var(--red)', fontVariantNumeric: 'tabular-nums' }}>
+                  <td style={{ fontWeight: 600, color: t.type === 'income' ? 'var(--brand)' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
                     ₹{t.amount.toLocaleString('en-IN')}
                   </td>
                   <td><span className="n-tag n-tag-blue">{t.frequency}</span></td>

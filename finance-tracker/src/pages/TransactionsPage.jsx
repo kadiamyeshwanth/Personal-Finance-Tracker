@@ -9,11 +9,28 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
-  Plus, Pencil, Trash2, X, Search, SlidersHorizontal,
-  CreditCard, ChevronDown, Loader2, ArrowUp, ArrowDown,
-  ArrowUpDown, AlertTriangle, Upload, Camera, Tag, Store,
-  Sparkles, RefreshCw, FileText, MessageSquare,
-} from 'lucide-react';
+  Plus as Plus,
+  Pencil as Pencil,
+  Trash as Trash2,
+  X as X,
+  MagnifyingGlass as Search,
+  SlidersHorizontal as SlidersHorizontal,
+  CreditCard as CreditCard,
+  CaretDown as ChevronDown,
+  CircleNotch as Loader2,
+  ArrowUp as ArrowUp,
+  ArrowDown as ArrowDown,
+  ArrowsDownUp as ArrowUpDown,
+  Warning as AlertTriangle,
+  UploadSimple as Upload,
+  Camera as Camera,
+  Tag as Tag,
+  Storefront as Store,
+  Sparkle as Sparkles,
+  ArrowsClockwise as RefreshCw,
+  FileText as FileText,
+  ChatText as MessageSquare,
+} from '@phosphor-icons/react';
 import { fetchTransactionsPaged, addTransaction, updateTransaction, deleteTransaction } from '../api/transactions';
 import { fetchCategories } from '../api/categories';
 import { useAuth } from '../context/AuthContext';
@@ -346,13 +363,9 @@ const TransactionsPage = () => {
       </AnimatePresence>
 
       {/* ── Toolbar ──────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-        {/* Search */}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: '6px',
-          border: '1px solid var(--border-strong)', borderRadius: 'var(--r)',
-          padding: '0 10px', height: '32px', minWidth: '180px',
-        }}>
+      <div className="tx-toolbar">
+        {/* Search — a slot milled into the page */}
+        <div className="tx-search">
           <Search size={13} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
           <input
             value={filters.search}
@@ -382,11 +395,7 @@ const TransactionsPage = () => {
       <AnimatePresence>
         {showFilters && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }}>
-            <div style={{
-              border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '14px 16px',
-              marginBottom: '12px', background: 'var(--bg-secondary)',
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '10px',
-            }}>
+            <div className="tx-filters">
               <div>
                 <label className="n-label">Category</label>
                 <select className="n-select" style={{ height: '32px', fontSize: '13px' }}
@@ -417,13 +426,9 @@ const TransactionsPage = () => {
       </AnimatePresence>
 
       {/* ── Transaction Table ─────────────────────────────────────────────────── */}
-      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+      <div className="tx-card">
         {/* Table toolbar */}
-        <div style={{
-          padding: '9px 14px', borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'var(--bg-secondary)',
-        }}>
+        <div className="tx-card-bar">
           <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
             {isLoading ? 'Loading…' : `Showing ${txns.length} of ${total}`}
           </span>
@@ -517,7 +522,7 @@ const TransactionsPage = () => {
                     {/* Amount */}
                     <td style={{
                       fontWeight: 600,
-                      color: t.type === 'income' ? 'var(--green)' : 'var(--red)',
+                      color: t.type === 'income' ? 'var(--brand)' : 'var(--text)',
                       fontVariantNumeric: 'tabular-nums',
                       whiteSpace: 'nowrap',
                       textAlign: 'right',

@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# redesign scratch
+finance-tracker/temp.txt
+finance-tracker/update_animations.py
+finance-tracker/triangle-led-front/
+finance-tracker/.claude/

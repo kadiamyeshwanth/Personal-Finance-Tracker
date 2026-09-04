@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ChevronLeft, ChevronRight, Share2, Download } from 'lucide-react';
+import {
+  Sparkle as Sparkles,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  ShareNetwork as Share2,
+  DownloadSimple as Download,
+} from '@phosphor-icons/react';
 import { fetchWrapped } from '../api/wrapped';
 import PageHeader from '../components/ui/PageHeader';
 import toast from 'react-hot-toast';
@@ -40,9 +46,9 @@ const buildSlides = (data) => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '32px' }}>The Numbers</motion.div>
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center' }}>
           {[
-            { label: 'Earned', value: fmt(data.totalIncome), color: '#4ade80', arrow: '📈' },
+            { label: 'Earned', value: fmt(data.totalIncome), color: 'var(--brand)', arrow: '📈' },
             { label: 'Spent',  value: fmt(data.totalExpenses), color: '#f87171', arrow: '📉' },
-            { label: 'Saved',  value: fmt(Math.abs(data.netSavings)), color: data.netSavings >= 0 ? '#60a5fa' : '#fbbf24', arrow: data.netSavings >= 0 ? '🏦' : '⚠️' },
+            { label: 'Saved',  value: fmt(Math.abs(data.netSavings)), color: data.netSavings >= 0 ? 'var(--brand)' : '#fbbf24', arrow: data.netSavings >= 0 ? '🏦' : '⚠️' },
           ].map(({ label, value, color, arrow }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.15 }}
               style={{ flex: 1, textAlign: 'center' }}>
@@ -55,7 +61,7 @@ const buildSlides = (data) => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
           style={{ marginTop: '32px', padding: '12px 20px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', display: 'inline-block' }}>
           <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>Savings rate: </span>
-          <span style={{ color: data.savingsRate >= 20 ? '#4ade80' : data.savingsRate >= 0 ? '#fbbf24' : '#f87171', fontWeight: 700, fontSize: '16px' }}>{data.savingsRate}%</span>
+          <span style={{ color: data.savingsRate >= 20 ? 'var(--brand)' : data.savingsRate >= 0 ? '#fbbf24' : '#f87171', fontWeight: 700, fontSize: '16px' }}>{data.savingsRate}%</span>
         </motion.div>
       </div>
     ),
@@ -63,7 +69,7 @@ const buildSlides = (data) => {
 
   // Slide 3: Top categories
   if (data.topCategories?.length > 0) {
-    const colors = ['#60a5fa','#f472b6','#fb923c','#a78bfa','#34d399'];
+    const colors = ['var(--brand)','var(--red)','#FFB866','#C94F00','#34d399'];
     slides.push({
       id: 'categories',
       gradient: 'linear-gradient(135deg, #1a0533 0%, #2d0a4e 50%, #1a0533 100%)',
@@ -245,36 +251,72 @@ const WrappedPage = () => {
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px', flexDirection: 'column', gap: '16px' }}>
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-            <Sparkles size={28} style={{ color: 'var(--accent)' }} />
+            <Sparkles size={28} style={{ color: 'var(--brand)' }} />
           </motion.div>
           <div style={{ fontSize: '14px', color: 'var(--text-2)' }}>Generating your Wrapped…</div>
         </div>
       ) : isError ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-3)' }}>Could not load Wrapped for this month.</div>
       ) : !started ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '480px' }}>
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ textAlign: 'center', maxWidth: '420px' }}>
-            <div style={{ fontSize: '72px', marginBottom: '20px' }}>{data?.personality?.emoji || '✨'}</div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text)', marginBottom: '8px' }}>Your {MONTHS[month]} Wrapped</div>
-            <div style={{ fontSize: '15px', color: 'var(--text-3)', marginBottom: '24px', lineHeight: 1.6 }}>
-              {data?.transactionCount} transactions · {data?.topCategories?.length} categories · {slides.length} slides
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          style={{
+            position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-lg)',
+            padding: 'clamp(28px, 5vw, 48px)', color: '#fff',
+            background: 'linear-gradient(140deg, #1A1420 0%, #2A1508 45%, #E85002 140%)',
+            boxShadow: '0 24px 70px rgba(232,80,2,0.24)',
+          }}>
+          <div style={{ position: 'absolute', top: -80, right: -60, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,138,61,0.45), transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0, 300px)', gap: '32px', alignItems: 'center' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.7, marginBottom: '14px' }}>
+                {MONTHS[month]} {year} · Wrapped
+              </div>
+              <div style={{ fontSize: 'clamp(30px, 4.6vw, 46px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '14px' }}>
+                {data?.title || `Your month in ${data?.transactionCount || 0} moves.`}
+              </div>
+              <div style={{ fontSize: '15px', opacity: 0.75, lineHeight: 1.6, maxWidth: '440px', marginBottom: '26px' }}>
+                {data?.subtitle || 'A short, Spotify-style recap of where the money went — built from your own transactions.'}
+              </div>
+              <div style={{ display: 'flex', gap: '18px', marginBottom: '28px', flexWrap: 'wrap' }}>
+                {[
+                  { k: 'Transactions', v: data?.transactionCount ?? 0 },
+                  { k: 'Categories', v: data?.topCategories?.length ?? 0 },
+                  { k: 'Slides', v: slides.length },
+                ].map(({ k, v }) => (
+                  <div key={k}>
+                    <div style={{ fontSize: '24px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.6, marginTop: '4px' }}>{k}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button onClick={() => setStarted(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: 'none', background: '#fff', color: '#1A1420', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
+                  <Sparkles size={15} weight="fill" /> View Wrapped
+                </button>
+                <button onClick={handleShare}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '11px 20px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.35)', background: 'transparent', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Share2 size={15} weight="fill" /> Share
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button className="n-btn n-btn-primary" onClick={() => setStarted(true)}>
-                <Sparkles size={14} /> View Wrapped
-              </button>
-              <button className="n-btn n-btn-default" onClick={handleShare}><Share2 size={14} /> Share</button>
+            <div style={{
+              justifySelf: 'center', width: 168, height: 168, borderRadius: '28px',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '84px',
+              backdropFilter: 'blur(6px)',
+            }}>
+              {data?.personality?.emoji || '✨'}
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           {/* Progress dots */}
           <div style={{ display: 'flex', gap: '6px' }}>
             {slides.map((_, i) => (
               <button key={i} onClick={() => setSlide(i)}
-                style={{ width: slide === i ? '20px' : '6px', height: '6px', borderRadius: '3px', border: 'none', background: slide === i ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', transition: 'all 0.2s' }} />
+                style={{ width: slide === i ? '20px' : '6px', height: '6px', borderRadius: '3px', border: 'none', background: slide === i ? 'var(--brand)' : 'var(--border)', cursor: 'pointer', transition: 'all 0.2s' }} />
             ))}
           </div>
 

@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ErrorState, OfflineState } from '../components/ui/States';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Target, PlusCircle, X } from 'lucide-react';
+import {
+  Plus as Plus,
+  Trash as Trash2,
+  Target as Target,
+  PlusCircle as PlusCircle,
+  X as X,
+} from '@phosphor-icons/react';
 import { fetchGoals, addGoal, updateGoal, deleteGoal } from '../api/goals';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/ui/PageHeader';
@@ -13,7 +20,8 @@ const GoalsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', targetAmount: '', deadline: '' });
 
-  const { data: goals = [], isLoading } = useQuery({ queryKey: ['goals'], queryFn: fetchGoals });
+  let goalsQ;
+  const { data: goals = [], isLoading } = (goalsQ = useQuery({ queryKey: ['goals'], queryFn: fetchGoals }));
 
   const addMut = useMutation({
     mutationFn: addGoal,
@@ -45,6 +53,12 @@ const GoalsPage = () => {
 
   return (
     <div>
+      {/* A failed request must not look like an empty list. */}
+      {goalsQ?.isError && (
+        navigator.onLine === false
+          ? <OfflineState onRetry={() => goalsQ.refetch()} compact />
+          : <ErrorState error={goalsQ.error} onRetry={() => goalsQ.refetch()} compact />
+      )}
       <PageHeader
         icon={Target}
         title="Goals"
@@ -63,7 +77,7 @@ const GoalsPage = () => {
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px', marginBottom: '24px', background: 'var(--bg-secondary)' }}>
+            <div className="pg-form">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <span style={{ fontWeight: 600, fontSize: '14px' }}>New savings goal</span>
                 <button onClick={() => setShowForm(false)} className="n-btn n-btn-ghost n-btn-sm" style={{ padding: '3px' }}><X size={14} /></button>
@@ -97,10 +111,10 @@ const GoalsPage = () => {
 
       {/* Goals */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '12px' }}>
+        <div className="pg-cards">
           {[1,2].map(i => <div key={i} className="n-card" style={{ padding: '20px', height: '140px' }}><div className="n-skeleton" style={{ height: '100%' }} /></div>)}
         </div>
-      ) : goals.length === 0 ? (
+      ) : (goals.length === 0 && !goalsQ?.isError) ? (
         <div className="n-empty">
           <div className="n-empty-icon"><Target size={28} strokeWidth={1.2} /></div>
           <p style={{ fontWeight: 500, color: 'var(--text-2)', fontSize: '14px' }}>No goals yet</p>
@@ -110,7 +124,7 @@ const GoalsPage = () => {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '12px' }}>
+        <div className="pg-cards">
           {goals.map(goal => {
             const pct  = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
             const done = pct >= 100;

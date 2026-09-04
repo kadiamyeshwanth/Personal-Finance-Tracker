@@ -1,0 +1,4385 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SKEUO — Clario's modern-skeuomorphic surface system.
+
+   Physical model, outermost → innermost:
+
+     app-shell     the device body        charcoal, holds everything
+       ├ rail      a control panel on it  flush; its search slot milled in
+       └ app-main  a well cut into it     RECESSED (inner shadow), not floating
+           └ card  objects in the well    raised #1C1C1C
+               └ control   recessed groove / raised key
+
+   Depth is shadow + bevel. Surfaces stay solid; gradients only ever appear at
+   very low contrast to imply a curved face, never as decoration.
+
+   Loads last (after clario.css) so it owns geometry, depth and accent.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   0 · TOKENS
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Radius — one continuous macOS-like system */
+  --rad-shell: 30px;
+  --rad-well:  26px;
+  --rad-card:  22px;
+  --rad-tile:  16px;
+  --rad-btn:   14px;
+  --rad-ctl:   11px;
+  --rad-pill:  999px;
+
+  /* Light mode — clean warm paper. Cards are pure white lifted by a real
+     soft shadow (not a grey fill), on an off-white ground. */
+  --shell-bg:    #ECE9E3;   /* page ground — warm off-white       */
+  --well-bg:     #F4F2ED;   /* content area / paper               */
+  --surface:     #FFFFFF;   /* card                               */
+  --surface-2:   #FBFAF7;   /* nested tile — barely-there step    */
+  --surface-in:  #EFEDE7;   /* recessed groove                    */
+
+  --hairline:    rgba(28, 24, 18, 0.10);
+  --hairline-2:  rgba(28, 24, 18, 0.17);
+
+  --bevel:       inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --lift-1:      0 1px 2px rgba(30, 26, 20, 0.05);
+  --lift-2:      0 1px 2px rgba(30, 26, 20, 0.05), 0 10px 26px -14px rgba(30, 26, 20, 0.18);
+  --lift-3:      0 2px 6px rgba(30, 26, 20, 0.08), 0 20px 46px -16px rgba(30, 26, 20, 0.24);
+  --well-in:     inset 0 2px 5px rgba(40, 40, 40, 0.1), inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+  --recess:      inset 0 3px 10px rgba(40, 40, 40, 0.12),
+                 inset 0 -1px 0 rgba(255, 255, 255, 0.65),
+                 inset 0 0 0 1px rgba(51, 51, 51, 0.06);
+}
+
+[data-theme="dark"] {
+  /* Dark-mode materials — Clario brand palette: Primary #000 ground, grays
+     stepping up from it, Light Gray #A7A7A7 hairlines. */
+  --shell-bg:    #060606;
+  --well-bg:     #030303;
+  --surface:     #161618;   /* card — plain dark, a step above the black well */
+  --surface-2:   #202024;   /* elevated / nested tile                        */
+  --surface-in:  #0A0A0A;
+
+  --hairline:    rgba(255, 255, 255, 0.08);
+  --hairline-2:  rgba(255, 255, 255, 0.16);
+
+  --bevel:       inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --lift-1:      0 1px 2px rgba(0, 0, 0, 0.55);
+  --lift-2:      0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 22px -12px rgba(0, 0, 0, 0.95);
+  --lift-3:      0 2px 6px rgba(0, 0, 0, 0.6), 0 20px 48px -18px rgba(0, 0, 0, 1);
+  --well-in:     inset 0 2px 6px rgba(0, 0, 0, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  --recess:      inset 0 3px 12px rgba(0, 0, 0, 0.85),
+                 inset 0 -1px 0 rgba(255, 255, 255, 0.045),
+                 inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1 · SHELL + RECESSED CONTENT WELL
+   ═══════════════════════════════════════════════════════════════════════════ */
+.app-shell {
+  background: var(--shell-bg) !important;
+  padding: 0 !important;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+[data-theme="dark"] .app-shell {
+  background:
+    radial-gradient(58% 42% at 12% 0%, rgba(232, 80, 2, 0.055), transparent 72%),
+    var(--shell-bg) !important;
+}
+:root:not([data-theme="dark"]) .app-shell {
+  background:
+    radial-gradient(58% 42% at 12% 0%, rgba(232, 80, 2, 0.07), transparent 72%),
+    var(--shell-bg) !important;
+}
+
+.app-frame {
+  background: transparent !important;
+  border: 0 !important;
+  height: 100% !important;
+}
+
+/* The content area is a well CUT INTO the shell — inner shadow, no drop shadow.
+   It stretches the full height of the shell, so nothing is left unfinished at
+   the bottom; only a hairline of shell shows around it. */
+.app-frame .app-main {
+  position: relative;
+  height: auto !important;
+  min-height: 0;
+  margin: 10px 10px 10px 0 !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 20px !important;
+  background: var(--well-bg) !important;
+  box-shadow: var(--recess) !important;
+  overflow: hidden !important;
+}
+/* Upper-edge highlight, so the well reads as cut rather than painted. */
+.app-frame .app-main::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+:root:not([data-theme="dark"]) .app-frame .app-main::after {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.app-main > main {
+  flex: 1 1 auto !important;
+  min-height: 0;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+/* removed padding-bottom override */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2 · SIDEBAR — a control panel on the shell; auto-shrinks to an icon rail
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root { --sidebar-w: 236px; --sidebar-w-min: 72px; }
+
+.app-frame .app-sidebar {
+  width: var(--sidebar-w) !important;
+  flex: 0 0 var(--sidebar-w) !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  position: relative;
+  z-index: 40;
+  height: 100%;
+  display: flex; flex-direction: column;
+  transition: width 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+              flex-basis 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-frame .app-sidebar[data-collapsed="true"] {
+  width: var(--sidebar-w-min) !important;
+  flex: 0 0 var(--sidebar-w-min) !important;
+}
+
+/* Hover-peek: the resting rail keeps its 72px slot; the rail itself is
+   pulled out of flow and floats over the content, its width easing
+   72 → 236 on hover so nothing reflows and the motion is smooth. */
+.app-frame .app-sidebar[data-collapsed="true"] { overflow: visible !important; }
+.app-frame .app-sidebar[data-collapsed="true"] .rail {
+  position: absolute !important;
+  top: 0; left: 0; height: 100% !important;
+  width: var(--sidebar-w-min) !important;
+  z-index: 60;
+  padding: 14px 12px 12px !important;
+  transition: width 0.26s cubic-bezier(0.33, 1, 0.68, 1),
+              box-shadow 0.26s ease, background 0.2s ease;
+}
+.app-frame .app-sidebar.is-peek .rail {
+  width: var(--sidebar-w) !important;
+  background: var(--shell-bg) !important;
+  box-shadow: var(--lift-3) !important;
+  border-radius: 0 16px 16px 0 !important;
+}
+/* labels fade/slide in slightly behind the width so text doesn't jump */
+.app-frame .app-sidebar[data-collapsed="true"] .rail-label,
+.app-frame .app-sidebar[data-collapsed="true"] .rail-group-label,
+.app-frame .app-sidebar[data-collapsed="true"] .rail-wordmark {
+  transition: opacity 0.18s ease 0.08s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-frame .app-sidebar[data-collapsed="true"] .rail { transition: none; }
+}
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar[data-collapsed="true"] .rail { position: relative !important; box-shadow: none !important; transition: none; }
+}
+
+.app-frame .rail,
+.rail {
+  width: 100% !important;
+  height: 100% !important;
+  align-items: stretch !important;
+  padding: 14px 12px 12px !important;
+  gap: 2px !important;
+  background: transparent !important;
+  border: 0 !important;
+  overflow-y: auto;
+  overflow-x: visible;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar { display: none; }
+
+/* Brand + collapse toggle share the top row */
+.rail-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 2px 4px 0;
+  margin-bottom: 16px;
+}
+.rail-brand {
+  display: flex !important; align-items: center; gap: 10px;
+  width: auto !important; height: auto !important;
+  padding: 0 !important; margin: 0 !important;
+  background: none !important; box-shadow: none !important;
+  border: 0 !important; border-radius: 0 !important;
+  min-width: 0;
+}
+.rail-brand svg:first-child { border-radius: 0; flex-shrink: 0; }
+.rail-wordmark { color: var(--text); flex-shrink: 0; }
+.rail-collapse {
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: var(--rad-ctl);
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+.rail-collapse:hover { color: var(--brand); background: var(--surface); }
+.rail-collapse:active { transform: scale(0.92); }
+.is-collapsed .rail-top {
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  padding-top: 0;
+}
+.is-collapsed .rail-collapse svg { transform: rotate(180deg); }
+
+.rail-group-label {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-3);
+  padding: 18px 10px 7px;
+}
+
+.rail-item {
+  display: flex !important; align-items: center;
+  width: 100% !important; padding: 0 !important;
+  border-radius: var(--rad-btn);
+  position: relative;
+}
+
+/* Inactive rows — unlit keys */
+.rail-btn {
+  position: relative;
+  display: flex !important; align-items: center; gap: 11px;
+  width: 100% !important; height: 40px !important;
+  padding: 0 12px !important;
+  margin: 1px 0;
+  border-radius: var(--rad-btn) !important;
+  color: var(--text-2) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 13.5px; font-weight: 600;
+  transition: color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+.rail-btn svg { flex-shrink: 0; transition: color 0.16s ease; }
+.rail-label {
+  flex: 1; text-align: left; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  transition: opacity 0.16s ease;
+}
+.rail-item:hover .rail-btn {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+}
+
+/* Active row — a raised key with an orange face */
+.rail-btn.is-active {
+  color: #fff !important;
+  background: var(--brand) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 2px 3px rgba(0, 0, 0, 0.3),
+    0 8px 18px -8px rgba(232, 80, 2, 0.75) !important;
+}
+.rail-btn.is-active svg { color: #fff !important; }
+
+/* ── The attached pill: the active key extends a rounded tab that meets the
+      content well, so the panel and the well read as one moulded object.
+      rail padding-right is 12px → right:-12px lands it on the well's edge. ── */
+.rail-btn.is-active::after {
+  content: '';
+  position: absolute;
+  right: -12px; top: 50%;
+  width: 20px; height: 22px;
+  transform: translateY(-50%);
+  background: var(--brand);
+  border-radius: 0 var(--rad-pill) var(--rad-pill) 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    6px 0 16px -8px rgba(232, 80, 2, 0.7);
+  pointer-events: none;
+  z-index: 1;
+  animation: rail-pill-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes rail-pill-in {
+  from { width: 4px; opacity: 0; }
+  to   { width: 20px; opacity: 1; }
+}
+@media (max-width: 1000px) {
+  .rail-btn.is-active::after { display: none; }
+}
+
+.rail-badge {
+  position: static !important;
+  min-width: auto !important;
+  padding: 2px 7px !important;
+  border-radius: var(--rad-pill) !important;
+  font-size: 10.5px !important; font-weight: 800;
+  background: var(--brand) !important; color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.rail-btn.is-active .rail-badge {
+  background: rgba(0, 0, 0, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.rail-tip, .rail-rule { display: none !important; }
+.rail-spacer { flex: 1 1 auto; min-height: 16px; }
+
+/* "More" — inline drawer when expanded */
+.rail-more-caret { margin-left: auto; opacity: 0.45; transition: transform 0.2s ease; }
+.rail-more.is-open .rail-more-caret { transform: rotate(90deg); }
+.rail-subgroup { overflow: hidden; }
+.rail-subgroup .rail-btn { height: 38px !important; font-size: 13.5px; }
+.rail-subgroup .rail-btn svg { opacity: 0.75; }
+
+/* "More" — floating card when collapsed */
+.rail-flyout {
+  position: absolute;
+  left: calc(100% + 8px); bottom: 0;
+  min-width: 210px; z-index: 951;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline-2) !important;
+  border-radius: var(--rad-tile) !important;
+  box-shadow: var(--bevel), var(--lift-3) !important;
+  padding: 7px !important;
+}
+.rail-flyout-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 11px; border-radius: var(--rad-ctl);
+  font-size: 13.5px; font-weight: 600; color: var(--text-2);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.rail-flyout-item.active { color: var(--brand); }
+.rail-flyout-item.active svg { color: var(--brand); }
+.rail-flyout-item:hover { background: var(--surface-2); color: var(--text); }
+
+/* ── Collapsed rail: icons only, hover chips ──────────────────────────────── */
+.is-collapsed .rail-brand { gap: 0; }
+.is-collapsed .rail-label,
+.is-collapsed .rail-group-label,
+.is-collapsed .rail-more-caret { display: none !important; }
+.is-collapsed .rail-btn {
+  justify-content: center;
+  gap: 0;
+  padding: 0 !important;
+}
+.is-collapsed .rail-badge {
+  position: absolute !important;
+  top: 3px; right: 3px;
+  padding: 1px 5px !important;
+}
+.is-collapsed .rail-btn.is-active::after { right: -12px; }
+
+/* Hover chip for collapsed items */
+.is-collapsed .rail-item[data-tip],
+.is-collapsed .rail-collapse[data-tip] { position: relative; }
+.is-collapsed .rail-item[data-tip]::after,
+.is-collapsed .rail-collapse[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px); top: 50%;
+  transform: translateY(-50%) scale(0.94);
+  transform-origin: left center;
+  padding: 5px 9px;
+  border-radius: var(--rad-ctl);
+  font-size: 12px; font-weight: 650; white-space: nowrap;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--hairline-2);
+  box-shadow: var(--bevel), var(--lift-2);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  z-index: 70;
+}
+.is-collapsed .rail-item[data-tip]:hover::after,
+.is-collapsed .rail-collapse[data-tip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3 · TOP CONTROL STRIP
+   ═══════════════════════════════════════════════════════════════════════════ */
+.topbar {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 14px 24px 10px !important;
+  background: var(--well-bg) !important;
+  border: 0 !important;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  transition: padding-left 0.26s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24px;
+  transform: translateY(100%);
+  background: linear-gradient(var(--well-bg), transparent);
+  pointer-events: none;
+}
+/* While the rail is hover-expanded as an overlay, slide the top bar's
+   contents clear of it so the search field is never covered. */
+.app-frame .app-sidebar.is-peek ~ .app-main .topbar {
+  padding-left: calc(var(--sidebar-w) - var(--sidebar-w-min) + 24px) !important;
+}
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar.is-peek ~ .app-main .topbar { padding-left: 24px !important; }
+}
+
+/* Search — a wide recessed slot on the left, opens the command palette */
+.topbar-search {
+  display: flex !important;
+  align-items: center;
+  gap: 9px;
+  height: 38px;
+  min-width: 200px;
+  max-width: 340px;
+  flex: 0 1 320px;
+  padding: 0 12px 0 13px !important;
+  border-radius: var(--rad-btn) !important;
+  background: var(--surface-in) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--well-in) !important;
+  color: var(--text-3) !important;
+  font: inherit;
+  font-size: 13px !important;
+  font-weight: 600;
+  cursor: text;
+  transition: border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+.topbar-search:hover { border-color: var(--hairline-2) !important; color: var(--text-2) !important; }
+.topbar-search:focus-visible {
+  outline: none;
+  border-color: rgba(232, 80, 2, 0.5) !important;
+  box-shadow: var(--well-in), 0 0 0 3px var(--brand-bg) !important;
+}
+.topbar-search svg { flex-shrink: 0; }
+.topbar-search span {
+  flex: 1; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-search kbd {
+  flex-shrink: 0;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 10px;
+  padding: 2px 6px; border-radius: 5px;
+  color: var(--text-3);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+}
+.topbar-hamburger { display: none !important; }
+
+@media (max-width: 1000px) {
+  .topbar-hamburger { display: grid !important; }
+  .topbar-search span { display: none; }
+  .topbar-search kbd { display: none; }
+  .topbar-search { min-width: 0; flex: 0 0 38px; width: 38px; justify-content: center; padding: 0 !important; }
+}
+
+.topbar-btn,
+.topbar-avatar {
+  width: 36px !important; height: 36px !important;
+  border-radius: var(--rad-ctl) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  color: var(--text-2) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.12s ease, transform 0.08s ease;
+}
+.topbar-btn:hover {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+.topbar-btn:active {
+  background: var(--surface-in) !important;
+  box-shadow: var(--well-in) !important;
+  transform: translateY(1px);
+}
+.topbar-avatar {
+  background: var(--brand) !important;
+  color: #fff !important;
+  font-weight: 800;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    0 8px 18px -8px rgba(232, 80, 2, 0.7) !important;
+}
+.topbar-avatar:active { transform: translateY(1px); }
+/* holds the <Avatar> (photo or initial) edge-to-edge */
+.topbar-avatar { padding: 0 !important; overflow: hidden !important; }
+.topbar-avatar > span {
+  width: 100% !important; height: 100% !important;
+  border-radius: inherit !important; background: transparent;
+}
+.topbar-menu-avatar { overflow: hidden; }
+.topbar-badge {
+  background: var(--brand) !important; color: #fff !important; font-weight: 800;
+  box-shadow: 0 0 0 2px var(--well-bg), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4 · CARDS — raised objects sitting in the well
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dc, .hs, .mm, .cf, .bo,
+.charts-panel, .dash-aside-card, .tile, .wal, .rec, .gm,
+.app-main .n-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--rad-card) !important;
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+
+/* Tiles nested inside a card sit one step up */
+.dc-accounts li, .dc-alloc li, .mm-checkin,
+.gm-list > li, .wal-grid li {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--rad-tile) !important;
+  box-shadow: var(--bevel) !important;
+}
+
+/* Icon plates */
+.dc-chip, .bo-chip, .cf-chip, .mm-chip, .state-icon,
+.dc-out, .bo-out, .dc-acc-icon, .tile-out {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--rad-ctl) !important;
+  color: var(--text-2) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.dc-out:hover, .bo-out:hover, .tile-out:hover {
+  color: var(--brand) !important;
+  border-color: rgba(232, 80, 2, 0.35) !important;
+  transform: translate(1px, -1px);
+}
+
+/* Water-drop icon plate — used only where the icon carries the accent */
+.tile-icon, .dc-ai-glyph {
+  background: var(--brand-bg) !important;
+  border: 1px solid rgba(232, 80, 2, 0.24) !important;
+  border-radius: 14px 14px 14px 6px !important;
+  color: var(--brand) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+}
+
+/* ── Per-figure card tones — so the three headline tiles read as three
+   distinct objects at a glance (orange · white · gray). ───────────────────── */
+.tile--white {
+  background: #FFFFFF !important;          /* brightest — pure white          */
+  border-color: var(--hairline) !important;
+}
+.tile--gray {
+  background: #DFDFDF !important;          /* one clear step down             */
+  border-color: rgba(51, 51, 51, 0.16) !important;
+}
+[data-theme="dark"] .tile--white {
+  background: #1C1C1F !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+[data-theme="dark"] .tile--gray {
+  background: #141416 !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* ── Right-rail cards — same palette logic, so accounts / health / goals each
+   read as their own object rather than three identical panels. ───────────── */
+.wal { background: #FFFFFF !important; }
+.hs  { background: #FFFFFF !important; }
+.gm  { background: #FFFFFF !important; border-color: rgba(20,18,15,0.09) !important; }
+[data-theme="dark"] .wal { background: #1B1B1E !important; }
+[data-theme="dark"] .gm  { background: #141416 !important; border-color: rgba(255,255,255,0.07) !important; }
+/* [data-theme="dark"] .hs — set in §34 (shader card) */
+
+/* ── The one accent object: solid #E85002 ────────────────────────────────── */
+.tile--accent, .dc--balance {
+  background: var(--brand) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24),
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    0 14px 34px -16px rgba(232, 80, 2, 0.8) !important;
+}
+.tile--accent .tile-titles h3,
+.tile--accent .tile-figure,
+.dc--balance .dc-title, .dc--balance .dc-figure { color: #fff !important; }
+.tile--accent .tile-titles p { color: rgba(255, 255, 255, 0.8) !important; }
+.tile--accent .tile-icon,
+.tile--accent .tile-out {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
+  color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+.tile--accent .tile-out:hover { background: rgba(255, 255, 255, 0.32) !important; }
+.tile--accent .tile-delta { background: rgba(0, 0, 0, 0.2) !important; color: #fff !important; }
+
+/* AI card — the login's branding gradient (Primary → #C10801 → #F16001 → warm),
+   dark-anchored so it still sits in the dashboard rather than shouting. */
+.dc--ai {
+  background:
+    radial-gradient(130% 110% at 100% 0%, rgba(217, 195, 171, 0.16), transparent 46%),
+    linear-gradient(122deg,
+      #0A0A0B 0%, #5E1200 34%, #C10801 58%, #F16001 82%, #FF9A3D 100%) !important;
+  border: 1px solid rgba(255, 190, 140, 0.28) !important;
+  box-shadow:
+    var(--bevel),
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 22px 48px -22px rgba(193, 8, 1, 0.55) !important;
+}
+.dc--ai::before,
+.dc--ai::after { display: none !important; }
+.dc-ai-title { color: #FFFFFF !important; }
+.dc-ai-body  { color: rgba(255, 255, 255, 0.78) !important; }
+.dc-ai-mesh, .dc-ai-particles { display: none !important; }
+/* icon plate + button on the gradient read against white, not the brand */
+.dc--ai .dc-ai-glyph {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
+  color: #fff !important;
+}
+.dc--ai .dc-ai-btn {
+  background: #FFFFFF !important; color: #C10801 !important;
+  border-color: transparent !important;
+}
+.dc--ai .dc-ai-btn:hover { background: #F4F4F4 !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5 · BUTTONS — physical keys
+   ═══════════════════════════════════════════════════════════════════════════ */
+.n-btn, .dc-ai-btn, .gm-all, .dash-toast-link {
+  border-radius: var(--rad-btn) !important;
+  font-weight: 650;
+  transition: background 0.15s ease, color 0.15s ease,
+              box-shadow 0.12s ease, transform 0.08s ease;
+}
+.n-btn-default {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  color: var(--text) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+}
+.n-btn-default:hover:not(:disabled) {
+  border-color: var(--hairline-2) !important;
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+.n-btn-default:active:not(:disabled) {
+  background: var(--surface-in) !important;
+  box-shadow: var(--well-in) !important;
+  transform: translateY(1px);
+}
+
+.n-btn-primary, .dc-ai-btn {
+  background: var(--brand) !important;
+  border: 1px solid transparent !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24),
+    0 2px 4px rgba(0, 0, 0, 0.32),
+    0 8px 20px -10px rgba(232, 80, 2, 0.8) !important;
+}
+.n-btn-primary:hover:not(:disabled), .dc-ai-btn:hover { background: var(--brand-from) !important; }
+.n-btn-primary:active:not(:disabled), .dc-ai-btn:active {
+  background: var(--brand-to) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+  transform: translateY(1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6 · SEGMENTED CONTROLS, TRACKS, SLIDERS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.cf-range, .dc-range, .charts-tabs {
+  background: var(--surface-in) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--rad-btn) !important;
+  box-shadow: var(--well-in) !important;
+  padding: 4px !important;
+  gap: 2px !important;
+}
+.charts-tabs { margin: 12px 12px 0; border-bottom: 1px solid var(--hairline) !important; }
+.cf-range button, .dc-range button, .charts-tabs button {
+  border-radius: var(--rad-ctl) !important;
+  color: var(--text-3) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-weight: 650;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.12s ease;
+}
+.cf-range button:hover, .dc-range button:hover, .charts-tabs button:hover { color: var(--text) !important; }
+.cf-range button.is-on, .dc-range button.is-on, .charts-tabs button.is-on {
+  color: #fff !important;
+  background: var(--brand) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.35),
+    0 4px 10px -5px rgba(232, 80, 2, 0.7) !important;
+}
+
+/* Progress tracks — milled grooves with a raised orange fill */
+.hs-part-track, .gm-track, .mm-row-track,
+.dash-aside-track, .dc-comp-bar {
+  background: var(--surface-in) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--well-in) !important;
+}
+.hs-part-fill, .gm-fill, .mm-row-fill {
+  background: var(--brand) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 22px; background: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px; border-radius: var(--rad-pill);
+  background: var(--surface-in);
+  box-shadow: var(--well-in), inset 0 0 0 1px var(--hairline);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; margin-top: -5px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 2px 5px rgba(0, 0, 0, 0.5);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7 · CHARTS — every plot sits in a recessed groove, data reads as raised
+   ═══════════════════════════════════════════════════════════════════════════ */
+.cf-chart, .bo-bars, .dc-strip, .mm-bars {
+  position: relative;
+  border-radius: var(--rad-tile);
+  background: var(--surface-in);
+  box-shadow: var(--well-in), inset 0 0 0 1px var(--hairline);
+}
+.bo-bars  { padding: 12px !important; }
+.dc-strip { padding: 10px 12px !important; height: 78px !important; overflow: hidden; }
+.mm-bars  { padding: 14px !important; }
+
+/* Cash flow — a big Recharts groove, no legacy hover dimming */
+.cf-chart {
+  height: 300px !important;
+  padding: 12px 12px 6px !important;
+  overflow: hidden;
+}
+.cf-chart:hover .cf-bar,
+.cf-chart:hover .cf-col:not(.is-hover) { opacity: 1 !important; }  /* kill old dim */
+.cf .recharts-cartesian-grid line { stroke: var(--hairline); }
+.cf .recharts-text { fill: var(--text-3); font-size: 10.5px; font-weight: 600; }
+.cf .recharts-cartesian-axis-line,
+.cf .recharts-cartesian-axis-tick-line { stroke: transparent; }
+.cf .recharts-tooltip-cursor { fill: rgba(232, 80, 2, 0.08); }
+@media (max-width: 900px) { .cf-chart { height: 240px !important; } }
+
+.cf-up   { color: var(--brand) !important; }
+
+.bo-bars .cf-bar--in {  /* legacy net-position bars still use these */
+  background: var(--brand) !important;
+  border-radius: 4px 4px 1px 1px !important;
+}
+
+.bo-bar {
+  background: var(--brand) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.bo-dot { background: var(--brand) !important; }
+
+/* Segment strip — per-bar colour comes from JS; this adds the extrusion */
+.dc-bar { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+.dc-bar.is-dim {
+  background: #333333 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  opacity: 1 !important;
+}
+:root:not([data-theme="dark"]) .dc-bar.is-dim { background: #CFCABF !important; }
+.dc-strip-glow { display: none !important; }
+
+/* Tooltips — small floating physical cards */
+.cf-tooltip {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline-2) !important;
+  border-radius: var(--rad-tile) !important;
+  box-shadow: var(--bevel), var(--lift-3) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8 · DATA — tables, tags, deltas
+   ═══════════════════════════════════════════════════════════════════════════ */
+.n-table th {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-3) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+}
+.n-table td { border-bottom: 1px solid var(--hairline) !important; }
+.n-table tbody tr { transition: background 0.14s ease; }
+.n-table tbody tr:hover { background: var(--surface-2) !important; }
+.n-table tbody tr:last-child td { border-bottom: 0 !important; }
+
+.n-tag, .n-tag-gray {
+  border-radius: var(--rad-ctl) !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  color: var(--text-2) !important;
+  box-shadow: var(--bevel) !important;
+  font-weight: 650;
+}
+.dc-delta.is-up, .tile-delta.is-up {
+  color: var(--green) !important; background: var(--green-bg) !important;
+  box-shadow: var(--bevel) !important;
+}
+.dc-delta.is-down, .tile-delta.is-down {
+  color: var(--red) !important; background: var(--red-bg) !important;
+  box-shadow: var(--bevel) !important;
+}
+
+/* dash-toast is deliberately plain now — see clario.css. No skeuo dressing. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9 · STAT TILES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tile-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.tile { position: relative; padding: 18px 20px 20px; min-width: 0; }
+.tile-head { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 16px; }
+.tile-icon { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; }
+.tile-titles { flex: 1; min-width: 0; }
+.tile-titles h3 { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-titles p { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.tile-out { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; }
+.tile-figure { font-size: clamp(1.5rem, 1.05rem + 1.1vw, 2rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; color: var(--text); }
+.tile-delta {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 10px;
+  padding: 3px 9px; border-radius: var(--rad-pill);
+  font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10 · ACCOUNTS CARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wal { padding: 18px; }
+.wal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.wal-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.wal-sub { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.wal-grid { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wal-grid li {
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "icon name" "meta bal";
+  align-items: center; gap: 4px 9px; padding: 12px; min-width: 0;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.wal-grid li:hover {
+  border-color: var(--hairline-2) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+.wal-icon { grid-area: icon; width: 30px !important; height: 30px !important; flex-shrink: 0; overflow: hidden; }
+.wal-icon svg { width: 100%; height: 100%; display: block; }
+.wal-name { grid-area: name; min-width: 0; font-size: 12.5px; font-weight: 650; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wal-meta { grid-area: meta; display: inline-flex; align-items: center; gap: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.wal-meta em {
+  font-style: normal; font-family: inherit; font-size: 8.5px; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--brand); background: var(--brand-bg); padding: 2px 5px; border-radius: 5px;
+}
+.wal-bal { grid-area: bal; justify-self: end; font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.wal-bal.is-neg { color: var(--red); }
+.wal-empty { display: grid; place-items: center; padding: 18px 0; }
+
+.dash-aside .wal-grid { grid-template-columns: 1fr; }
+.dash-aside .wal-grid li { grid-template-columns: auto 1fr auto; grid-template-areas: "icon name bal" "icon meta bal"; column-gap: 11px; }
+.dash-aside .wal-bal { align-self: center; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   11 · RECENT TRANSACTIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.rec { overflow: hidden; }
+.rec-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px 14px; }
+.rec-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.rec-sub { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+.rec-body { overflow-x: auto; }
+.rec .n-table { width: 100%; }
+.rec .n-table th { padding: 8px 20px !important; }
+.rec .n-table td { padding: 12px 20px !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12 · RHYTHM + GRID
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dash-head { margin-bottom: 20px !important; }
+.dash-greet { font-size: clamp(1.55rem, 1.1rem + 1.3vw, 2rem) !important; letter-spacing: -0.035em; }
+.dash-sub { font-size: 13.5px !important; }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 352px) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+.dash-main { display: flex; flex-direction: column; gap: 16px !important; min-width: 0; }
+.dash-aside { display: flex; flex-direction: column; gap: 14px !important; position: static !important; align-self: start !important; }
+.dash-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px !important; }
+.dash-next > div {
+  border-radius: var(--rad-card) !important;
+  background: var(--surface) !important;
+  border-color: var(--hairline) !important;
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+.charts-body { padding: 20px !important; }
+
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--rad-ctl); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   13 · RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1280px) { :root { --sidebar-w: 214px; } }
+
+@media (max-width: 1240px) {
+  .tile-row { grid-template-columns: 1fr 1fr; }
+  .tile-row > :first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 1080px) {
+  .dash-grid, .dash-pair { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 1000px) {
+  .app-frame .app-main { margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  .app-frame .app-main::after { display: none; }
+  .app-frame .app-sidebar { background: var(--shell-bg) !important; box-shadow: var(--lift-3) !important; }
+}
+@media (max-width: 640px) {
+  .tile-row { grid-template-columns: 1fr; gap: 12px; }
+  .tile-row > :first-child { grid-column: auto; }
+  .wal-grid { grid-template-columns: 1fr; }
+  .topbar { padding: 12px 14px 4px !important; }
+  .charts-body { padding: 14px !important; }
+  .rec .n-table th, .rec .n-table td { padding-left: 14px !important; padding-right: 14px !important; }
+  .dc, .hs, .mm, .cf, .bo, .charts-panel, .dash-aside-card, .tile, .wal, .rec {
+    border-radius: var(--rad-tile) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   14 · HEALTH RING — the ring sits in its own groove
+   ═══════════════════════════════════════════════════════════════════════════ */
+.hs { padding: 20px !important; height: 100%; display: flex; flex-direction: column; }
+.hs-ring {
+  border-radius: 50%;
+  background: var(--surface-in);
+  box-shadow: var(--well-in), inset 0 0 0 1px var(--hairline);
+}
+.hs-ring svg circle:first-child { stroke: var(--surface-2) !important; }
+.hs-ring-num strong { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.hs-band { box-shadow: var(--bevel); }
+.hs-tip { border-top: 1px solid var(--hairline) !important; }
+
+/* Retire the violet bloom left over from the previous palette. */
+.hs, .mm, .charts-panel { background-image: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   15 · SKEUO CHART KIT (Recharts) — groove, tooltip, brush, legend
+   ═══════════════════════════════════════════════════════════════════════════ */
+.skc {
+  padding: 18px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+  min-width: 0;
+}
+.skc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.skc-titles h3 { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.skc-titles p  { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+
+/* The plot groove */
+.skc-well {
+  position: relative;
+  border-radius: var(--rad-tile);
+  background: var(--surface-in);
+  box-shadow: var(--well-in), inset 0 0 0 1px var(--hairline);
+  padding: 10px 8px 4px;
+  overflow: hidden;
+}
+.skc-empty {
+  height: 100%; display: grid; place-items: center;
+  font-size: 12.5px; color: var(--text-3);
+}
+
+/* Tooltip — a small floating physical card */
+.skc-tip {
+  min-width: 148px;
+  padding: 10px 12px;
+  border-radius: var(--rad-tile);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline-2);
+  box-shadow: var(--bevel), var(--lift-3);
+}
+.skc-tip-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--text); margin-bottom: 7px;
+}
+.skc-tip-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11.5px; color: var(--text-2);
+  padding: 2px 0;
+}
+.skc-tip-row b {
+  margin-left: auto; color: var(--text); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.skc-tip-dot {
+  width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.skc-tip-name { white-space: nowrap; }
+
+/* Axes — hairline ticks, no library defaults */
+.skc .recharts-cartesian-axis-line,
+.skc .recharts-cartesian-axis-tick-line { stroke: transparent; }
+.skc .recharts-cartesian-grid line { stroke: var(--hairline); }
+.skc .recharts-text { fill: var(--text-3); font-size: 10.5px; font-weight: 600; }
+
+/* Brush — a recessed scrubber with a raised orange handle */
+.skc .recharts-brush > rect:first-of-type { fill: var(--surface-in); stroke: var(--hairline); }
+.skc .recharts-brush-slide { fill: var(--brand); fill-opacity: 0.18; stroke: none; }
+.skc .recharts-brush-traveller rect { fill: var(--brand); stroke: none; rx: 2; }
+.skc .recharts-brush-traveller line { stroke: rgba(255, 255, 255, 0.75); }
+.skc .recharts-brush text { fill: var(--text-3); font-size: 10px; }
+
+/* Legend — small tactile chips */
+.skc-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.skc-legend span {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: var(--rad-pill);
+  font-size: 11px; font-weight: 650; color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+}
+.skc-legend i {
+  width: 8px; height: 8px; border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Donut centre label */
+.skc-donut-centre {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.skc-donut-centre b { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; color: var(--text); }
+.skc-donut-centre span { font-size: 10.5px; color: var(--text-3); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   16 · ANALYTICS PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tile-row--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.an-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+
+.an-budgets { display: flex; flex-direction: column; gap: 13px; }
+.an-budget-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.an-budget-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.an-budget-num {
+  font-size: 11.5px; font-weight: 700; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.an-budget-num em { font-style: normal; font-weight: 500; color: var(--text-3); }
+
+@media (max-width: 1240px) {
+  .tile-row--4 { grid-template-columns: 1fr 1fr; }
+  .tile-row--4 > :first-child { grid-column: auto; }
+}
+@media (max-width: 1080px) { .an-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px)  { .tile-row--4 { grid-template-columns: 1fr; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   17 · TRANSACTIONS PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tx-toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+
+/* Search — recessed slot, same material as the sidebar's */
+.tx-search {
+  flex: 1; min-width: 200px;
+  display: flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 12px;
+  border-radius: var(--rad-btn);
+  background: var(--surface-in);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--well-in);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.tx-search:focus-within {
+  border-color: rgba(232, 80, 2, 0.45);
+  box-shadow: var(--well-in), 0 0 0 3px var(--brand-bg);
+}
+.tx-search input { font-size: 13px !important; font-weight: 500; }
+
+/* Expanded filter panel — a raised tray */
+.tx-filters {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+}
+
+/* The table lives in a card */
+.tx-card {
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+  overflow: hidden;
+}
+.tx-card-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 12px; color: var(--text-3);
+}
+.tx-card .n-table th { padding: 9px 18px !important; }
+.tx-card .n-table td { padding: 12px 18px !important; }
+
+/* Form controls inherit the physical language */
+.n-input, .n-select {
+  border-radius: var(--rad-ctl) !important;
+  background: var(--surface-in) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--well-in) !important;
+  color: var(--text) !important;
+}
+.n-input:hover, .n-select:hover { border-color: var(--hairline-2) !important; }
+.n-input:focus, .n-select:focus {
+  border-color: rgba(232, 80, 2, 0.5) !important;
+  box-shadow: var(--well-in), 0 0 0 3px var(--brand-bg) !important;
+}
+.n-label {
+  font-size: 11.5px !important; font-weight: 700 !important;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-2) !important;
+}
+.n-btn-blue, .n-btn-ghost.is-on {
+  background: var(--brand) !important; color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+
+/* Modal / dialog surfaces */
+.n-modal, .n-dialog, .n-sheet {
+  border-radius: var(--rad-card) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline-2) !important;
+  box-shadow: var(--bevel), var(--lift-3) !important;
+}
+
+@media (max-width: 640px) {
+  .tx-card .n-table th, .tx-card .n-table td { padding-left: 14px !important; padding-right: 14px !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   18 · BUDGETS / GOALS + shared page furniture
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Inline create/edit form — a raised tray */
+.pg-form {
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+}
+
+/* A card of stacked rows (budgets) */
+.pg-list {
+  display: flex; flex-direction: column;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+  overflow: hidden;
+}
+.pg-list > * { border-bottom: 1px solid var(--hairline); }
+.pg-list > *:last-child { border-bottom: 0; }
+
+/* A responsive grid of cards (goals) */
+.pg-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(292px, 1fr)); gap: 16px; }
+
+/* Generic card class used across the remaining pages */
+.n-card {
+  border-radius: var(--rad-card) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+
+/* Progress bars everywhere — milled groove, raised orange fill */
+.n-progress-track {
+  border-radius: var(--rad-pill) !important;
+  background: var(--surface-in) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--well-in) !important;
+  overflow: hidden;
+}
+.n-progress-fill {
+  border-radius: var(--rad-pill) !important;
+  background: var(--brand);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Page header — the icon gets the water-drop plate */
+.n-page-head-icon, .page-head-icon {
+  background: var(--brand-bg) !important;
+  border: 1px solid rgba(232, 80, 2, 0.24) !important;
+  border-radius: 14px 14px 14px 6px !important;
+  color: var(--brand) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+}
+
+/* Empty / error / loading states */
+.n-empty, .state-card {
+  border-radius: var(--rad-card) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   19 · CARD SHEEN — a slow orange light that drifts across cards
+   Very low contrast; reads as ambient lighting on a curved face, not glow.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@property --sheen-x { syntax: "<percentage>"; inherits: false; initial-value: 20%; }
+@property --sheen-y { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+
+.dc, .hs, .mm, .charts-panel, .tile, .wal, .rec, .skc, .dash-aside-card {
+  position: relative;
+  isolation: isolate;
+}
+/* card sheen removed — cards are plain flat fills now */
+.dc::after, .hs::after, .charts-panel::after, .tile::after,
+.wal::after, .rec::after, .skc::after,
+.dc--ai::after, .tile--accent::after { content: none !important; display: none !important; }
+:root:not([data-theme="dark"]) .dc::after,
+:root:not([data-theme="dark"]) .hs::after,
+:root:not([data-theme="dark"]) .charts-panel::after,
+:root:not([data-theme="dark"]) .tile::after,
+:root:not([data-theme="dark"]) .wal::after,
+:root:not([data-theme="dark"]) .rec::after,
+:root:not([data-theme="dark"]) .skc::after {
+  background: radial-gradient(140px 140px at var(--sheen-x, 20%) var(--sheen-y, 0%),
+    rgba(232, 80, 2, 0.07), transparent 70%);
+}
+.hs::after            { animation-delay: -6s;  animation-duration: 30s; }
+.charts-panel::after  { animation-delay: -12s; animation-duration: 34s; }
+.rec::after           { animation-delay: -18s; animation-duration: 28s; }
+.skc::after           { animation-delay: -9s;  animation-duration: 32s; }
+
+@keyframes card-sheen {
+  0%   { --sheen-x: 8%;   --sheen-y: -8%;  opacity: 0.55; }
+  25%  { --sheen-x: 60%;  --sheen-y: 6%;   opacity: 0.9; }
+  50%  { --sheen-x: 95%;  --sheen-y: -4%;  opacity: 0.6; }
+  75%  { --sheen-x: 45%;  --sheen-y: 10%;  opacity: 0.85; }
+  100% { --sheen-x: 8%;   --sheen-y: -8%;  opacity: 0.55; }
+}
+
+.tile--accent::after {
+  background: radial-gradient(160px 100px at var(--sheen-x, 15%) var(--sheen-y, 0%),
+    rgba(255, 255, 255, 0.22), transparent 68%) !important;
+  animation-duration: 18s !important;
+}
+.dc--ai::after {
+  background: radial-gradient(180px 140px at var(--sheen-x, 20%) var(--sheen-y, 0%),
+    rgba(232, 80, 2, 0.20), transparent 66%) !important;
+  animation-duration: 20s !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc::after, .hs::after, .charts-panel::after, .tile::after,
+  .wal::after, .rec::after, .skc::after, .dc--ai::after, .tile--accent::after {
+    animation: none !important;
+    --sheen-x: 25%; --sheen-y: 0%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20 · NOTIFICATIONS — an anchored popover under the bell
+   Kept, not removed: budget-exceeded, upcoming payments, goal milestones and
+   fraud flags are all time-sensitive and actionable in a finance app.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.notif-scrim { position: fixed; inset: 0; z-index: 950; background: transparent; }
+.notif-pop {
+  position: fixed;
+  top: 62px; right: 20px; z-index: 951;
+  width: 350px; max-width: calc(100vw - 32px);
+  max-height: min(560px, calc(100vh - 88px));
+  display: flex; flex-direction: column;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline-2);
+  box-shadow: var(--bevel), var(--lift-3);
+  overflow: hidden;
+  /* scale from the bell trigger (top-right), not the panel centre */
+  transform-origin: top right;
+}
+.notif-pop::before {
+  content: "";
+  position: absolute; top: -6px; right: 46px;
+  width: 12px; height: 12px;
+  background: var(--surface);
+  border-left: 1px solid var(--hairline-2);
+  border-top: 1px solid var(--hairline-2);
+  transform: rotate(45deg);
+}
+.notif-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+.notif-head-title { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--text); }
+.notif-head-title svg { color: var(--brand); }
+.notif-head-title b {
+  font-size: 10.5px; font-weight: 800;
+  padding: 1px 7px; border-radius: var(--rad-pill);
+  background: var(--brand); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.notif-head-actions { display: flex; gap: 3px; }
+.notif-head-actions button {
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: 8px; cursor: pointer;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.notif-head-actions button:hover { color: var(--brand); background: var(--surface); }
+.notif-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.notif-row {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 12px;
+  border-radius: var(--rad-tile);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+  position: relative;
+  transition: border-color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+}
+.notif-row.is-link { cursor: pointer; }
+.notif-row.is-link:hover {
+  border-color: var(--hairline-2);
+  transform: translateY(-1px);
+  box-shadow: var(--bevel), var(--lift-2);
+}
+.notif-row.is-unread { background: var(--surface-2); }
+.notif-row.is-unread::after {
+  content: "";
+  position: absolute; top: 12px; right: 12px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-bg);
+}
+.notif-row.is-read { opacity: 0.55; }
+.notif-row-icon {
+  width: 30px; height: 30px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  box-shadow: var(--bevel);
+}
+.notif-row-body { flex: 1; min-width: 0; }
+.notif-row-title { font-size: 12.5px; font-weight: 650; color: var(--text); line-height: 1.4; }
+.notif-row-desc  { font-size: 11.5px; color: var(--text-3); line-height: 1.45; margin-top: 2px; }
+.notif-row-time  { font-size: 10.5px; color: var(--text-3); opacity: 0.7; margin-top: 4px; }
+.notif-del-btn {
+  flex-shrink: 0; width: 20px; height: 20px;
+  display: grid; place-items: center;
+  border-radius: 6px; cursor: pointer;
+  color: var(--text-3); background: none; border: 0;
+  opacity: 0; transition: opacity 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+.notif-row:hover .notif-del-btn { opacity: 1; }
+.notif-del-btn:hover { color: var(--red); background: var(--red-bg); }
+.notif-empty { padding: 40px 24px; text-align: center; }
+.notif-empty-icon {
+  width: 42px; height: 42px; margin: 0 auto 12px;
+  display: grid; place-items: center;
+  border-radius: 13px;
+  color: var(--brand);
+  background: var(--brand-bg);
+  border: 1px solid rgba(232, 80, 2, 0.22);
+  box-shadow: var(--bevel);
+}
+.notif-empty b { display: block; font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.notif-empty p { font-size: 12px; color: var(--text-3); line-height: 1.5; }
+.notif-foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--hairline);
+  font-size: 10.5px; color: var(--text-3); text-align: center;
+}
+@media (max-width: 560px) {
+  .notif-pop { top: 56px; right: 12px; left: 12px; width: auto; }
+  .notif-pop::before { right: 40px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   21 · AUTH + PRELANDING — the physical language on the marketing shell
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* The auth split is a fixed composition: a dark marketing panel on the left,
+   the interactive card on the right. It does not follow the app theme. */
+.auth-shell {
+  background: var(--a-ground, #0C0B0A) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  min-height: 0 !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+.auth-main {
+  min-height: 0 !important;
+  height: 100dvh !important;
+  overflow-y: auto !important;      /* the card scrolls, the page does not */
+}
+.auth-aside { min-height: 0 !important; height: 100dvh !important; }
+
+/* clario.css forces `.auth-panel * { color:#0f172a }` — kill it on the dark card */
+.auth-panel * { color: inherit !important; }
+.auth-panel { color: var(--a-ink, #F9F9F9) !important; }
+.auth-head p,
+.auth-panel .n-label,
+.auth-divider,
+.auth-foot span,
+.auth-panel .auth-trust,
+.auth-panel [class*="never"] { color: var(--a-ink-2, #A7A7A7) !important; }
+.auth-panel .auth-link,
+.auth-panel .auth-link--strong,
+.auth-foot .auth-link { color: var(--brand) !important; }
+.auth-panel .auth-link:hover { color: var(--brand-from) !important; }
+.auth-back, .auth-back svg { color: var(--a-ink-2, #A7A7A7) !important; }
+.auth-back:hover, .auth-back:hover svg { color: var(--brand) !important; }
+.auth-eye { color: var(--a-ink-3, #646464) !important; }
+.auth-eye:hover { color: var(--a-ink, #F9F9F9) !important; }
+.auth-error {
+  color: #FCA5A5 !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.28) !important;
+}
+.auth-aside {
+  background:
+    radial-gradient(70% 50% at 12% 0%, rgba(232, 80, 2, 0.14), transparent 70%),
+    var(--a-ground, #0C0B0A) !important;
+}
+.auth-aside .clario-logo { gap: 10px !important; }
+.auth-aside .clario-logo svg:last-child path,
+.auth-aside .rail-wordmark { fill: #fff !important; color: var(--a-on-brand, #fff) !important; }
+.auth-display { color: var(--a-ink, #F9F9F9) !important; }
+.auth-promises strong { color: var(--a-ink, #F9F9F9) !important; }
+.auth-promises p { color: var(--a-ink-2, rgba(249, 249, 249, 0.55)) !important; }
+.auth-promise-icon {
+  border-radius: 14px 14px 14px 6px !important;
+  border: 1px solid rgba(232, 80, 2, 0.3) !important;
+  background: rgba(232, 80, 2, 0.14) !important;
+  color: #FF7A18 !important;
+  box-shadow: inset 0 1px 0 var(--a-hair, rgba(255,255,255,0.08)) !important;
+}
+
+/* The card renders on a solid dark surface regardless of theme */
+.auth-panel {
+  border-radius: var(--rad-card) !important;
+  background: var(--a-card, #1C1C1C) !important;
+  border: 1px solid var(--a-card-bd, rgba(255, 255, 255, 0.1)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 34px 80px -22px rgba(0, 0, 0, 0.7) !important;
+  color: var(--a-ink, #F9F9F9) !important;
+}
+.auth-head h1 { color: var(--a-ink, #F9F9F9) !important; }
+.auth-head p, .auth-panel .n-label { color: var(--a-ink-2, #A7A7A7) !important; }
+.auth-panel .n-input {
+  border-radius: var(--rad-ctl) !important;
+  background: var(--a-field, #111111) !important;
+  border: 1px solid var(--a-field-bd, rgba(255, 255, 255, 0.09)) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+  color: var(--a-ink, #F9F9F9) !important;
+}
+.auth-panel .n-input::placeholder { color: var(--a-ink-3, #646464) !important; }
+.auth-panel .n-input:focus {
+  background: var(--a-field, #111111) !important;   /* stay dark on focus — clario.css flips it to #fff, hiding the white text */
+  color: var(--a-ink, #F9F9F9) !important;
+  border-color: rgba(232, 80, 2, 0.55) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(232, 80, 2, 0.18) !important;
+}
+.auth-panel .auth-oauth {
+  background: var(--a-raised, #222222) !important;
+  border: 1px solid var(--a-field-bd, rgba(255, 255, 255, 0.09)) !important;
+  color: var(--a-ink, #F9F9F9) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4) !important;
+}
+.auth-panel .auth-oauth:hover { background: var(--a-raised-h, #2a2a2a) !important; }
+.auth-divider { color: var(--a-ink-3, #646464) !important; }
+.auth-divider::before, .auth-divider::after { background: var(--a-hair, rgba(255,255,255,0.08)) !important; }
+.auth-panel [class*="never"], .auth-trust {
+  background: var(--a-raised, #222222) !important;
+  border: 1px solid var(--a-hair, rgba(255,255,255,0.08)) !important;
+  color: var(--a-ink-2, #A7A7A7) !important;
+}
+
+/* Right frame — the shader lives on an orange-lit recessed slab */
+.auth-right-frame {
+  border-radius: var(--rad-shell) !important;
+  box-shadow: var(--bevel), var(--lift-3) !important;
+}
+
+
+/* Primary action — orange physical key (was the black reference pill) */
+.auth-panel .auth-submit,
+.auth-panel .n-btn-primary {
+  border-radius: var(--rad-btn) !important;
+  background: var(--brand) !important;
+  color: #fff !important;
+  border: 1px solid transparent !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24),
+    0 2px 4px rgba(0, 0, 0, 0.32),
+    0 8px 20px -10px rgba(232, 80, 2, 0.8) !important;
+  transition: background 0.15s ease, box-shadow 0.12s ease, transform 0.08s ease;
+}
+.auth-panel .n-btn-primary:hover:not(:disabled) { background: var(--brand-from) !important; }
+.auth-panel .n-btn-primary:active:not(:disabled) {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(1px);
+}
+
+/* Secondary / OAuth — raised neutral key */
+.auth-panel .auth-oauth {
+  border-radius: var(--rad-btn) !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  color: var(--text) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+}
+.auth-panel .auth-oauth:hover { background: var(--surface) !important; border-color: var(--hairline-2) !important; }
+
+.auth-divider { color: var(--text-3) !important; }
+.auth-divider::before, .auth-divider::after { background: var(--hairline) !important; }
+
+.auth-back {
+  border-radius: var(--rad-ctl) !important;
+  color: var(--text-3);
+}
+.auth-back:hover { color: var(--brand) !important; }
+
+/* Trust chip / footer note */
+.auth-panel [class*="never"], .auth-trust {
+  border-radius: var(--rad-pill) !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--bevel) !important;
+  color: var(--text-2) !important;
+}
+
+/* ── Prelanding ──────────────────────────────────────────────────────────── */
+.pre { background: var(--well-bg) !important; }
+.pre-card, .pre-feature, .pre-panel {
+  border-radius: var(--rad-card) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--bevel), var(--lift-2) !important;
+}
+.pre-btn, .pre-cta {
+  border-radius: var(--rad-btn) !important;
+}
+.pre-btn--primary, .pre-cta--primary {
+  background: var(--brand) !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 8px 20px -10px rgba(232, 80, 2, 0.8) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   22 · SPACING — kill the dead band under the top bar; tighten page headers
+   ═══════════════════════════════════════════════════════════════════════════ */
+.topbar { padding: 12px 22px 2px !important; min-height: 0 !important; }
+.app-main > main > div { padding-top: 14px !important; }
+.dash-head { margin-bottom: 16px !important; }
+
+/* PageHeader — smaller, on-system, water-drop icon */
+.n-page-header { margin-bottom: 20px !important; }
+.n-page-header h1 { font-size: clamp(1.5rem, 1.1rem + 1.2vw, 1.9rem) !important; letter-spacing: -0.03em; }
+.n-page-header > div:first-child,          /* the icon box (inline style) */
+.n-page-header .page-head-icon {
+  width: 34px !important; height: 34px !important;
+  border-radius: 12px 12px 12px 5px !important;
+  background: var(--brand-bg) !important;
+  border: 1px solid rgba(232, 80, 2, 0.24) !important;
+  box-shadow: var(--bevel), var(--lift-1) !important;
+  margin-bottom: 10px !important;
+}
+.n-page-header > div:first-child svg { color: var(--brand) !important; }
+.n-page-header hr { margin-top: 16px !important; border-color: var(--hairline) !important; }
+.n-page-header p { color: var(--text-3) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   23 · PRELANDING HERO — orange aurora, central orb, floating tags
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pre { background: #09090A !important; }
+
+.pre-hero {
+  position: relative;
+  min-height: clamp(560px, 80vh, 760px);
+  padding: clamp(84px, 11vw, 132px) clamp(20px, 4vw, 56px) clamp(150px, 20vw, 240px) !important;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 22px;
+  overflow: hidden;
+}
+.pre-glow { display: none !important; }
+.pre-hero > *:not(.pre-spline):not(.pre-tags) { position: relative; z-index: 2; }
+
+/* ── Spline 3D backdrop ──────────────────────────────────────────────────── */
+.pre-spline {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden;
+}
+/* The scene reacts to pointer, but only in a band that isn't over the copy. */
+.pre-spline iframe {
+  position: absolute;
+  left: 50%; bottom: -8%;
+  width: min(1400px, 130vw);
+  height: 118%;
+  transform: translateX(-50%);
+  border: 0;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: auto;   /* the scene reacts to the cursor */
+}
+.pre-spline iframe.is-ready { opacity: 1; }
+/* copy + controls stay clickable above the scene */
+.pre-hero .pre-badge,
+.pre-hero .pre-display,
+.pre-hero .pre-sub,
+.pre-hero .pre-actions,
+.pre-hero .pre-trust { pointer-events: auto; }
+.pre-hero .pre-display,
+.pre-hero .pre-sub { pointer-events: none; }   /* let drags pass through text */
+.pre-spline-mask { pointer-events: none; }
+/* fade the Spline into the page — top + sides go to black */
+.pre-spline-mask {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, #09090A 0%, transparent 26%, transparent 72%, rgba(9,9,10,0.55) 100%),
+    radial-gradient(120% 80% at 50% 108%, transparent 40%, #09090A 92%);
+}
+/* CSS aurora sits under the Spline as an instant-load fallback */
+.pre-aurora-fallback {
+  position: absolute; inset: 0; z-index: -1;
+}
+.pre-spline iframe.is-ready ~ .pre-spline-mask { }
+.pre-spline:has(iframe.is-ready) .pre-aurora-fallback { opacity: 0.35; transition: opacity 1s ease; }
+
+/* ── Aurora (fallback / accent) ─────────────────────────────────────────── */
+.pre-aurora {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+}
+.pre-aurora-glow {
+  position: absolute; left: 50%; bottom: -14%;
+  width: min(1100px, 150vw); height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 60% at 50% 100%,
+    rgba(232, 80, 2, 0.5) 0%,
+    rgba(232, 80, 2, 0.16) 32%,
+    transparent 70%);
+  filter: blur(30px);
+}
+.pre-aurora-streaks {
+  position: absolute; left: 50%; bottom: -6%;
+  width: min(1080px, 118vw); height: 46%;
+  transform: translateX(-50%);
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 5px;
+  filter: blur(0.4px);
+  -webkit-mask-image: radial-gradient(78% 100% at 50% 100%, #000 24%, transparent 78%);
+          mask-image: radial-gradient(78% 100% at 50% 100%, #000 24%, transparent 78%);
+}
+.pre-aurora-streaks span {
+  flex: 1 1 0; max-width: 13px; min-width: 3px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(to top,
+    #E85002 0%, #F16001 34%, #FA9E5C 62%, rgba(250, 158, 92, 0) 100%);
+  box-shadow: 0 0 12px rgba(232, 80, 2, 0.5);
+  transform-origin: bottom;
+  animation: streak-breathe 4.6s ease-in-out infinite;
+}
+@keyframes streak-breathe {
+  0%, 100% { transform: scaleY(0.82); opacity: 0.7; }
+  50%      { transform: scaleY(1.06); opacity: 1; }
+}
+
+/* The orb — a thin glowing ring with a dark pupil */
+.pre-aurora-orb {
+  position: absolute; left: 50%; bottom: 4%;
+  width: 96px; height: 96px;
+  transform: translateX(-50%);
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, #090909 0 34%, transparent 35%),
+    conic-gradient(from 200deg, #C10801, #F98D42, #FFCFA8, #E85002, #C10801);
+  box-shadow:
+    0 0 60px 14px rgba(232, 80, 2, 0.55),
+    0 0 130px 30px rgba(232, 80, 2, 0.28),
+    inset 0 0 18px rgba(0, 0, 0, 0.7);
+  animation: orb-spin 9s linear infinite;
+}
+.pre-aurora-orb i {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #FFE7CD, #E85002 70%);
+  box-shadow: 0 0 18px 4px rgba(255, 184, 102, 0.8);
+  animation: orb-spin 9s linear infinite reverse;
+}
+@keyframes orb-spin { to { transform: translateX(-50%) rotate(360deg); } }
+
+/* ── Floating tags ───────────────────────────────────────────────────────── */
+.pre-tags { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.pre-tag {
+  position: absolute;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 26px -10px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  animation: tag-float 7s ease-in-out infinite;
+}
+.pre-tag i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #F16001;
+  box-shadow: 0 0 8px 2px rgba(232, 80, 2, 0.7);
+}
+.pre-tag:nth-child(2) { animation-delay: -1.4s; }
+.pre-tag:nth-child(3) { animation-delay: -2.8s; }
+.pre-tag:nth-child(4) { animation-delay: -4.2s; }
+.pre-tag:nth-child(5) { animation-delay: -5.6s; }
+@keyframes tag-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
+}
+@media (max-width: 820px) { .pre-tags { display: none; } }
+
+/* ── Copy ────────────────────────────────────────────────────────────────── */
+.pre-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 13px 6px 10px;
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.66);
+  background: rgba(232, 80, 2, 0.1);
+  border: 1px solid rgba(232, 80, 2, 0.28);
+}
+.pre-badge i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #F16001; box-shadow: 0 0 8px 2px rgba(232, 80, 2, 0.8);
+  animation: streak-breathe 2.4s ease-in-out infinite;
+}
+
+.pre-hero .pre-display {
+  font-size: clamp(2.7rem, 1.1rem + 5.6vw, 5.2rem) !important;
+  font-weight: 800; line-height: 1.02; letter-spacing: -0.04em;
+  color: #F9F9F9; max-width: 18ch; margin-inline: auto;
+}
+.pre-hero .pre-sub { max-width: 56ch; color: rgba(255, 255, 255, 0.6); }
+
+.pre-btn--outline {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #F9F9F9 !important;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.pre-btn--outline:hover { background: rgba(255, 255, 255, 0.09) !important; }
+
+.pre-hero .pre-trust { color: rgba(255, 255, 255, 0.66); margin-top: 4px; position: relative; z-index: 3; }
+.pre-hero .pre-trust svg { color: #F16001; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pre-aurora-streaks span, .pre-aurora-orb, .pre-aurora-orb i, .pre-tag, .pre-badge i {
+    animation: none !important;
+  }
+}
+
+/* Override clario.css §18's `.pre-hero > *:not(...)` which forces relative */
+.pre-hero > .pre-spline,
+.pre-hero > .pre-tags {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+}
+.pre-hero > .pre-tags { z-index: 1 !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   24 · AI INSIGHTS — borderless surfaces, skeuo material
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Tabs — an underline strip, orange active */
+.ai-tabs {
+  display: flex; align-items: center; gap: 2px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--hairline);
+}
+.ai-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 14px 12px;
+  background: none; border: 0; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--text-3);
+  position: relative;
+  transition: color 0.15s ease;
+}
+.ai-tab:hover { color: var(--text); }
+.ai-tab.is-on { color: var(--text); }
+.ai-tab.is-on::after {
+  content: ''; position: absolute; left: 10px; right: 10px; bottom: -1px;
+  height: 2px; border-radius: 2px;
+  background: var(--brand);
+  box-shadow: 0 0 10px -1px var(--brand);
+}
+.ai-roast-btn {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--rad-btn);
+  font: inherit; font-size: 12px; font-weight: 650;
+  color: var(--brand); cursor: pointer;
+  background: var(--brand-bg);
+  border: 1px solid rgba(232, 80, 2, 0.28);
+  box-shadow: var(--bevel);
+  transition: background 0.15s ease;
+}
+.ai-roast-btn:hover { background: rgba(232, 80, 2, 0.16); }
+
+/* Score header — a raised card, no hard border */
+.ai-score {
+  display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center;
+  padding: 22px 24px; margin-bottom: 20px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+}
+
+/* Insights layout */
+.ai-insights-grid { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 20px; align-items: start; }
+
+/* Insight cards — soft tinted edge, subtle lift */
+.ai-card {
+  border-radius: var(--rad-tile);
+  padding: 15px 16px;
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+}
+
+/* Chat */
+.ai-chat-grid { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 20px; align-items: start; }
+.ai-chat {
+  display: flex; flex-direction: column;
+  height: min(560px, calc(100vh - 260px));
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-2);
+  overflow: hidden;
+}
+.ai-chat-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--hairline);
+}
+.ai-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px 1px rgba(74, 222, 128, 0.6);
+}
+.ai-chat-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.ai-chat-meta::before { content: none; }
+.ai-chat-meta { font-size: 11px; color: var(--text-3); }
+.ai-chat-body {
+  flex: 1; overflow-y: auto;
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 4px;
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgba(232, 80, 2, 0.04), transparent 60%),
+    var(--surface-in);
+  box-shadow: var(--well-in);
+}
+
+/* Message rows */
+.ai-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; }
+.ai-row--user { justify-content: flex-end; }
+.ai-avatar {
+  width: 26px; height: 26px; flex-shrink: 0; margin-top: 2px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  background: var(--brand);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+.ai-bubble {
+  max-width: 78%;
+  padding: 10px 13px;
+  font-size: 13px; line-height: 1.6;
+  border: 0;
+}
+.ai-bubble--assistant {
+  border-radius: 4px 14px 14px 14px;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+}
+.ai-bubble--user {
+  border-radius: 14px 14px 4px 14px;
+  color: #fff;
+  background: var(--brand);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.ai-bubble strong { color: var(--text); font-weight: 700; }
+
+.ai-chat-input {
+  display: flex; gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--hairline);
+}
+.ai-chat-input .n-input { flex: 1; font-size: 13px; }
+.ai-chat-input .n-btn-primary {
+  flex-shrink: 0; width: 40px; padding: 0;
+  display: grid; place-items: center;
+}
+
+/* Side rail — suggestions + tips + note, all borderless tiles */
+.ai-side { display: flex; flex-direction: column; gap: 8px; }
+.ai-side-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-3);
+  margin-bottom: 4px;
+}
+.ai-suggest {
+  padding: 11px 13px;
+  border-radius: var(--rad-tile);
+  font: inherit; font-size: 12.5px; text-align: left; line-height: 1.4;
+  color: var(--text-2); cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel);
+  transition: border-color 0.14s ease, transform 0.14s ease, color 0.14s ease;
+}
+.ai-suggest:hover {
+  color: var(--text);
+  border-color: rgba(232, 80, 2, 0.3);
+  transform: translateY(-1px);
+}
+.ai-tips {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-1);
+}
+.ai-tip {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 9px 4px;
+  font-size: 12px; color: var(--text-2); line-height: 1.5;
+}
+.ai-tip span:first-child { flex-shrink: 0; }
+.ai-tip + .ai-tip { border-top: 1px solid var(--hairline); }
+.ai-note {
+  padding: 11px 13px;
+  border-radius: var(--rad-tile);
+  font-size: 11.5px; color: var(--text-3); line-height: 1.6;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+}
+.ai-explain {
+  padding: 16px 18px; margin-top: 16px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--bevel), var(--lift-1);
+}
+
+@media (max-width: 980px) {
+  .ai-insights-grid, .ai-chat-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   25 · PRELANDING REDESIGN — dark, premium, orange-lit (Recognito direction)
+   Overrides the older §16–20 prelanding rules in clario.css.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pre {
+  background: #09090A !important;
+  color: #F9F9F9;
+  --pl-ink:   #F9F9F9;
+  --pl-ink-2: rgba(249, 249, 249, 0.62);
+  --pl-ink-3: rgba(249, 249, 249, 0.42);
+  --pl-line:  rgba(255, 255, 255, 0.08);
+  --pl-line-2: rgba(255, 255, 255, 0.14);
+  --pl-surf:  #121114;
+  --pl-surf-2: #17161A;
+}
+.pre a { color: inherit; }
+
+/* ── Floating pill nav ─────────────────────────────────────────────────────── */
+.pre-nav {
+  position: fixed !important;
+  top: 14px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: calc(100% - 32px);
+  max-width: 1120px;
+  display: flex; align-items: center; gap: 22px;
+  padding: 9px 10px 9px 18px !important;
+  border-radius: 999px;
+  background: rgba(18, 17, 20, 0.72);
+  border: 1px solid var(--pl-line-2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 40px -12px rgba(0,0,0,0.7);
+}
+.pre-nav .clario-logo { gap: 9px; }
+.pre-nav .clario-logo svg:last-child path { fill: #fff; }
+.pre-nav-links {
+  display: flex; gap: 4px; flex: 1; justify-content: center;
+}
+.pre-nav-links a {
+  padding: 7px 13px; border-radius: 999px;
+  font-size: 13px; font-weight: 550;
+  color: var(--pl-ink-2);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.pre-nav-links a:hover { color: var(--pl-ink); background: rgba(255,255,255,0.05); }
+.pre-nav-cta { display: flex; align-items: center; gap: 10px; }
+.pre-nav-cta .pre-link { font-size: 13px; font-weight: 600; color: var(--pl-ink-2); padding: 0 6px; }
+.pre-nav-cta .pre-link:hover { color: var(--pl-ink); }
+.pre-btn--light {
+  padding: 9px 18px !important; border-radius: 999px !important;
+  background: #F9F9F9 !important; color: #0B0A09 !important;
+  font-weight: 700 !important; font-size: 13px !important;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.4) !important;
+}
+.pre-btn--light:hover { background: #fff !important; }
+@media (max-width: 780px) { .pre-nav-links { display: none; } }
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.pre-section {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(72px, 10vw, 128px) clamp(20px, 4vw, 40px) !important;
+  border-top: 1px solid var(--pl-line);
+}
+.pre-section-head { max-width: 62ch; margin-bottom: clamp(36px, 5vw, 56px) !important; }
+.pre-section-head .n-label {
+  display: inline-flex; align-items: center;
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #F98D42 !important;
+  background: rgba(232, 80, 2, 0.1);
+  border: 1px solid rgba(232, 80, 2, 0.26);
+  margin-bottom: 18px !important;
+}
+.pre-h2 {
+  font-size: clamp(1.9rem, 1.2rem + 2.4vw, 3rem) !important;
+  font-weight: 800; line-height: 1.06; letter-spacing: -0.035em;
+  color: var(--pl-ink);
+}
+.pre-lede { margin-top: 16px !important; font-size: 1.02rem; line-height: 1.62; color: var(--pl-ink-2) !important; }
+
+/* ── Why: dark cards, orange icon plate, glow on hover ─────────────────────── */
+.pre-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pre-card {
+  position: relative;
+  padding: 24px 22px !important;
+  border-radius: 20px !important;
+  background: var(--pl-surf) !important;
+  border: 1px solid var(--pl-line) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  overflow: hidden;
+}
+.pre-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(120px 90px at 82% -8%, rgba(232,80,2,0.14), transparent 60%);
+  opacity: 0; transition: opacity 0.2s ease;
+}
+.pre-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(232, 80, 2, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 44px -18px rgba(232,80,2,0.28);
+}
+.pre-card:hover::before { opacity: 1; }
+.pre-card-icon {
+  display: grid; place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 13px 13px 13px 6px;
+  color: #F98D42;
+  background: rgba(232, 80, 2, 0.12);
+  border: 1px solid rgba(232, 80, 2, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  margin-bottom: 16px;
+}
+.pre-card-kicker {
+  display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #F98D42; margin-bottom: 8px;
+}
+.pre-card h3 { font-size: 16px !important; font-weight: 750; color: var(--pl-ink) !important; margin-bottom: 8px; letter-spacing: -0.01em; }
+.pre-card p { font-size: 13.5px !important; line-height: 1.65; color: var(--pl-ink-2) !important; }
+@media (max-width: 900px) { .pre-grid { grid-template-columns: 1fr; } }
+
+/* ── Bento (shadcn cards) ─────────────────────────────────────────────────── */
+.pre-bento { gap: 16px !important; }
+.pre-bento > div {
+  border-radius: 20px !important;
+  background: var(--pl-surf) !important;
+  border: 1px solid var(--pl-line) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  transition: border-color 0.18s ease, transform 0.18s ease !important;
+}
+.pre-bento > div:hover { border-color: rgba(232,80,2,0.3) !important; transform: translateY(-2px); }
+.pre-bento [class*="text-xl"],
+.pre-bento [class*="font-semibold"],
+.pre-bento h3 { color: var(--pl-ink) !important; letter-spacing: -0.01em; }
+.pre-bento [class*="text-neutral"],
+.pre-bento [class*="text-sm"],
+.pre-bento p { color: var(--pl-ink-2) !important; }
+.pre-bento .pre-card-icon svg,
+.pre-bento > div > div > svg,
+.pre-bento [class*="h-12"] svg { color: #F98D42 !important; }
+.pre-bento [class*="group-hover"] button,
+.pre-bento [class*="pointer-events-none"] { color: #F98D42 !important; }
+
+/* ── Steps: big orange numerals ──────────────────────────────────────────── */
+.pre-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: s; }
+.pre-steps li {
+  padding: 24px 22px !important;
+  border-radius: 20px !important;
+  background: var(--pl-surf) !important;
+  border: 1px solid var(--pl-line) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+.pre-step-n {
+  display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.04em;
+  color: transparent !important;
+  background: linear-gradient(180deg, #FA9E5C, #C10801);
+  -webkit-background-clip: text; background-clip: text;
+  margin-bottom: 12px;
+}
+.pre-steps h3 { font-size: 15.5px !important; font-weight: 750; color: var(--pl-ink) !important; margin-bottom: 6px; }
+.pre-steps p { font-size: 13.4px !important; line-height: 1.62; color: var(--pl-ink-2) !important; }
+@media (max-width: 900px) { .pre-steps { grid-template-columns: 1fr; } }
+
+/* ── Privacy: an orange-rimmed feature panel ─────────────────────────────── */
+.pre-privacy { }
+.pre-privacy-inner {
+  max-width: 780px; margin: 0 auto; text-align: center;
+  padding: clamp(36px, 6vw, 64px) clamp(24px, 5vw, 56px) !important;
+  border-radius: 28px;
+  background:
+    radial-gradient(70% 50% at 50% 0%, rgba(232,80,2,0.1), transparent 66%),
+    var(--pl-surf);
+  border: 1px solid rgba(232, 80, 2, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 30px 80px -30px rgba(232,80,2,0.25);
+}
+.pre-privacy-inner .pre-h2 { margin-inline: auto; }
+.pre-privacy-inner .pre-lede { max-width: 60ch; margin-inline: auto; }
+.pre-card-icon--lg {
+  width: 52px; height: 52px; margin: 0 auto 18px;
+  border-radius: 16px 16px 16px 7px;
+}
+.pre-card-icon--lg svg { width: 24px; height: 24px; }
+.pre-checks {
+  display: grid; gap: 12px; max-width: 44ch;
+  margin: 24px auto 0; text-align: left;
+}
+.pre-checks li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13.5px; line-height: 1.55; color: var(--pl-ink-2);
+}
+.pre-checks svg { color: #F98D42; flex-shrink: 0; margin-top: 2px; }
+
+/* ── FAQ: borderless accordion ──────────────────────────────────────────── */
+.pre-faqs { display: grid; gap: 8px; max-width: 760px; }
+.pre-faq {
+  border-radius: 16px !important;
+  background: var(--pl-surf) !important;
+  border: 1px solid var(--pl-line) !important;
+  overflow: hidden;
+  transition: border-color 0.16s ease;
+}
+.pre-faq.is-open { border-color: rgba(232,80,2,0.28) !important; }
+.pre-faq > button {
+  width: 100%; padding: 16px 18px !important;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: none; border: 0; cursor: pointer;
+  font-size: 14px; font-weight: 650; color: var(--pl-ink) !important;
+  text-align: left;
+}
+.pre-faq > button svg { color: var(--pl-ink-3); transition: transform 0.2s ease, color 0.2s ease; flex-shrink: 0; }
+.pre-faq.is-open > button svg { transform: rotate(180deg); color: #F98D42; }
+.pre-faq-body { padding: 0 18px; }
+.pre-faq-body p { padding-bottom: 16px; font-size: 13.5px; line-height: 1.65; color: var(--pl-ink-2); }
+
+/* ── Closing CTA ────────────────────────────────────────────────────────── */
+.pre-cta {
+  max-width: 1120px; margin: 0 auto;
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 4vw, 40px) clamp(80px, 12vw, 140px) !important;
+}
+.pre-cta-inner {
+  position: relative;
+  text-align: center;
+  padding: clamp(44px, 7vw, 80px) clamp(24px, 5vw, 56px) !important;
+  border-radius: 32px;
+  background:
+    radial-gradient(80% 120% at 50% 130%, #E85002 0%, #7a2a00 34%, transparent 70%),
+    #0E0C0B;
+  border: 1px solid rgba(232, 80, 2, 0.3);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 40px 100px -30px rgba(232,80,2,0.4);
+}
+.pre-cta-inner .pre-h2 { margin-inline: auto; color: #fff; }
+.pre-cta-inner .pre-lede { max-width: 48ch; margin: 14px auto 0; color: rgba(255,255,255,0.72) !important; }
+.pre-cta-inner .pre-card-icon--lg {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.22);
+  color: #fff;
+}
+.pre-cta-fine {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 18px; font-size: 12px; color: rgba(255,255,255,0.66);
+}
+.pre-cta-fine svg { color: #FFCFA8; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.pre-btn--outline, .pre-btn--solid {
+  border-radius: 999px !important;
+}
+.pre-btn--solid {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: var(--pl-ink) !important;
+}
+.pre-btn--solid:hover { background: rgba(255,255,255,0.1) !important; }
+.pre-ihb {
+  border-radius: 999px !important;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.pre-foot {
+  max-width: 1120px; margin: 0 auto;
+  padding: 28px clamp(20px, 4vw, 40px) 40px !important;
+  border-top: 1px solid var(--pl-line);
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  color: var(--pl-ink-3);
+  font-size: 12px;
+}
+.pre-foot .clario-logo svg:last-child path { fill: rgba(255,255,255,0.7); }
+.pre-foot-links { display: flex; gap: 18px; flex: 1; }
+.pre-foot-links a { color: var(--pl-ink-3); font-size: 12.5px; }
+.pre-foot-links a:hover { color: var(--pl-ink); }
+
+/* ── Section reveal helpers keep their scroll margin under the fixed nav ── */
+.pre-section, .pre-hero { scroll-margin-top: 96px; }
+
+/* Privacy panel — brighter, clearer orange rim */
+.pre-privacy-inner {
+  background:
+    radial-gradient(60% 45% at 50% 0%, rgba(232, 80, 2, 0.16), transparent 62%),
+    #16141A !important;
+  border: 1px solid rgba(232, 80, 2, 0.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 30px 90px -28px rgba(232,80,2,0.35) !important;
+}
+.pre-privacy-inner .pre-h2 { color: #F9F9F9 !important; }
+.pre-privacy-inner .pre-lede { color: rgba(249,249,249,0.7) !important; }
+.pre-checks li { color: rgba(249,249,249,0.82) !important; }
+.pre-checks svg { color: #FF9A3D !important; }
+.pre-privacy-inner .pre-card-icon--lg {
+  background: rgba(232, 80, 2, 0.16) !important;
+  border-color: rgba(232, 80, 2, 0.34) !important;
+  color: #FF9A3D !important;
+}
+
+/* explicit auth input text visibility override — field and text in every state.
+   Tokenised: the fallbacks are the original dark values, so dark is unchanged
+   and the light theme in §21b only has to define --a-field / --a-ink. This
+   block outranks `.auth-panel .n-input` (0,2,1 vs 0,2,0), which is why it has
+   to read the tokens too — hardcoding here is what kept the fields black on
+   the white card. */
+.auth-panel .n-input::selection { background: rgba(232, 80, 2, 0.3); color: var(--a-ink, #F9F9F9); }
+.auth-panel input[type="text"],
+.auth-panel input[type="password"],
+.auth-panel input[type="email"],
+.auth-panel input[type="text"]:focus,
+.auth-panel input[type="password"]:focus,
+.auth-panel input[type="email"]:focus,
+.auth-panel input[type="text"]:hover,
+.auth-panel input[type="password"]:hover {
+  color: var(--a-ink, #F9F9F9) !important;
+  background: var(--a-field, #111111) !important;
+  -webkit-text-fill-color: var(--a-ink, #F9F9F9) !important;
+}
+/* kill Chrome autofill's white wash */
+.auth-panel input:-webkit-autofill,
+.auth-panel input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--a-ink, #F9F9F9) !important;
+  -webkit-box-shadow: 0 0 0 40px var(--a-field, #111111) inset !important;
+  caret-color: var(--a-ink, #F9F9F9);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   26 · PRELANDING HERO v2 — shader gradient → liquid-glass bar rack → content
+   Stack, back to front:
+     .pre-stage-shader   WebGL gradient (the light source)
+     .pre-bars           vertical glass slats; backdrop-filter refracts the shader
+     .pre-stage-veil     legibility wash so type never fights the gradient
+     .pre-hero-inner     the content column
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pre-hero {
+  position: relative;
+  min-height: auto;
+  padding: 0;
+  overflow: visible;
+  display: block;
+}
+
+/* ── The stage: everything luminous lives in here ───────────────────────── */
+.pre-stage {
+  position: relative;
+  isolation: isolate;                 /* own stacking context for backdrop-filter */
+  overflow: hidden;
+  min-height: clamp(760px, 96vh, 1040px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #09090A;
+}
+
+.pre-stage-shader {
+  position: absolute; inset: 0;
+  z-index: 1;                          /* above the ember, below the rack */
+  opacity: 0;
+  mix-blend-mode: screen;              /* adds light, never subtracts it */
+  transition: opacity 1.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.pre-stage-shader.is-ready { opacity: 0.85; }
+.pre-stage-shader canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* CSS stand-in that paints instantly, then hands over to the shader */
+.pre-stage-ember {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(112% 58% at 50% 92%, rgba(255, 146, 54, 0.78) 0%, rgba(214, 72, 2, 0.44) 26%, rgba(120, 34, 0, 0.2) 48%, transparent 70%),
+    radial-gradient(52% 24% at 50% 86%, rgba(255, 214, 170, 0.6) 0%, transparent 62%),
+    #09090A;
+  transition: opacity 1.2s ease;
+}
+/* the ember is the base bloom and always paints; the shader only adds to it */
+
+/* ── The bar rack ───────────────────────────────────────────────────────── */
+.pre-bars {
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  bottom: 0;
+  width: min(1560px, 108vw);
+  height: 72%;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(5px, 0.72vw, 11px);
+  padding: 0 clamp(8px, 1.4vw, 22px);
+  pointer-events: none;
+}
+
+.pre-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 18px 18px 0 0;
+  /* the glass itself — liquid-glass.js writes backdrop-filter onto this */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.085) 0%,
+    rgba(255, 255, 255, 0.032) 42%,
+    rgba(255, 255, 255, 0.012) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 1px 0 0 rgba(255, 255, 255, 0.13),
+    inset -1px 0 0 rgba(255, 255, 255, 0.07),
+    0 -6px 30px -8px rgba(255, 150, 70, 0.16),
+    0 22px 48px -18px rgba(0, 0, 0, 0.7);
+  transform-origin: bottom center;
+  will-change: transform;
+}
+/* crown highlight — the lit top edge of a real slab */
+.pre-bar::after {
+  content: '';
+  position: absolute; inset: 0 0 auto 0;
+  height: 42%;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), transparent);
+  pointer-events: none;
+}
+.pre-bar { position: relative; }
+
+/* Bars fade toward the edges so the rack reads as one object, not a fence */
+.pre-bars::after {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, #09090A 0%, transparent 12%, transparent 88%, #09090A 100%);
+}
+
+/* ── Legibility veil ────────────────────────────────────────────────────── */
+.pre-stage-veil {
+  position: absolute; inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    /* crown: black behind the headline, released fast so the rack stays lit */
+    linear-gradient(180deg,
+      rgba(9, 9, 10, 0.98) 0%, rgba(9, 9, 10, 0.93) 18%, rgba(9, 9, 10, 0.62) 30%,
+      rgba(9, 9, 10, 0.22) 42%, transparent 54%),
+    /* side vignette keeps the bloom centred */
+    linear-gradient(90deg, #09090A 0%, rgba(9, 9, 10, 0.42) 8%, transparent 24%,
+      transparent 76%, rgba(9, 9, 10, 0.42) 92%, #09090A 100%);
+}
+
+/* ── Content column ─────────────────────────────────────────────────────── */
+.pre-hero-inner {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(112px, 15vh, 168px) 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pre-display {
+  font-family: 'Space Grotesk', 'Nunito', system-ui, sans-serif;
+  font-optical-sizing: auto;
+  font-size: clamp(2.9rem, 7.4vw, 5.6rem);
+  line-height: 0.96;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #FFFFFF;
+  margin: 22px 0 0;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+.pre-display em {
+  font-style: normal;
+  background: linear-gradient(180deg, #FFC58E 0%, #F16001 62%, #C10801 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pre-sub {
+  margin: 22px 0 0;
+  max-width: 58ch;
+  font-size: clamp(0.98rem, 1.22vw, 1.14rem);
+  line-height: 1.65;
+  color: rgba(249, 249, 249, 0.66);
+}
+
+.pre-actions { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+.pre-trust {
+  margin: 26px 0 0; padding: 0; list-style: none;
+  display: flex; gap: 22px; flex-wrap: wrap; justify-content: center;
+  font-size: 12.5px; color: rgba(249, 249, 249, 0.5);
+}
+.pre-trust li { display: inline-flex; align-items: center; gap: 6px; }
+.pre-trust { text-shadow: 0 1px 10px rgba(9, 9, 10, 0.9); }
+.pre-trust svg { color: var(--brand); }
+
+/* ── Product panel — the real UI, framed in glass, sunk into the rack ───── */
+.pre-console {
+  position: relative;
+  z-index: 4;
+  width: min(1080px, calc(100% - 48px));
+  margin: clamp(48px, 6vh, 78px) auto 0;
+  border-radius: 20px 20px 0 0;
+  padding: 10px 10px 0;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 -1px 0 rgba(255, 255, 255, 0.09),
+    0 40px 90px -30px rgba(0, 0, 0, 0.85);
+}
+.pre-console-win {
+  border-radius: 13px 13px 0 0;
+  background: #101012;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 0;
+  overflow: hidden;
+}
+.pre-console-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+.pre-console-dots { display: flex; gap: 6px; }
+.pre-console-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.13); }
+.pre-console-title {
+  margin-left: 6px; font-size: 11.5px; font-weight: 600;
+  color: rgba(249, 249, 249, 0.42); letter-spacing: 0.01em;
+}
+.pre-console-body { padding: 18px; display: grid; gap: 14px; }
+
+/* mini stat row */
+.pre-mini-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pre-mini {
+  border-radius: 13px; padding: 14px 15px;
+  background: #18181A; border: 1px solid rgba(255, 255, 255, 0.055);
+  text-align: left;
+}
+.pre-mini--accent { background: var(--brand); border-color: transparent; }
+.pre-mini-k {
+  display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(249, 249, 249, 0.42); margin-bottom: 7px;
+}
+.pre-mini--accent .pre-mini-k { color: rgba(255, 255, 255, 0.76); }
+.pre-mini-v {
+  display: block; font-size: clamp(1.1rem, 1.7vw, 1.42rem); font-weight: 700;
+  letter-spacing: -0.02em; color: #F9F9F9; font-variant-numeric: tabular-nums;
+}
+.pre-mini--accent .pre-mini-v { color: #fff; }
+
+/* mini chart */
+.pre-mini-chart {
+  border-radius: 13px; padding: 15px 16px 12px;
+  background: #18181A; border: 1px solid rgba(255, 255, 255, 0.055);
+}
+.pre-mini-chart-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.pre-mini-chart-head b { font-size: 12.5px; font-weight: 650; color: #F9F9F9; }
+.pre-mini-chart-head span { font-size: 11px; color: var(--brand); font-weight: 600; }
+.pre-plot {
+  display: flex; align-items: flex-end; gap: clamp(3px, 0.6vw, 7px);
+  height: clamp(76px, 11vh, 108px);
+}
+.pre-plot i {
+  flex: 1; border-radius: 3px 3px 2px 2px;
+  background: #333336;
+  transform-origin: bottom;
+}
+.pre-plot i.on { background: linear-gradient(180deg, #F98D42, #E85002); }
+
+@media (max-width: 720px) {
+  .pre-mini-tiles { grid-template-columns: 1fr; }
+  .pre-bars { height: 62%; gap: 4px; }
+  .pre-console-body { padding: 13px; }
+}
+
+/* ── Floating capability tags — reposition for the taller stage ─────────── */
+.pre-tags { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+
+/* ── Reduced motion / transparency ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pre-bar, .pre-plot i { animation: none !important; transition: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .pre-bar { background: rgba(255, 255, 255, 0.06); backdrop-filter: none !important; }
+}
+
+/* ── Expanded footer ────────────────────────────────────────────────────── */
+.pre-foot {
+  display: block;
+  max-width: 1120px; margin: 0 auto;
+  padding: 64px 24px 40px;
+  border-top: 1px solid var(--pl-line, rgba(255, 255, 255, 0.08));
+}
+.pre-foot-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  gap: 40px 28px;
+  padding-bottom: 44px;
+}
+.pre-foot-brand { max-width: 30ch; }
+.pre-foot-brand p {
+  margin: 16px 0 0; font-size: 13px; line-height: 1.65;
+  color: rgba(249, 249, 249, 0.46);
+}
+.pre-foot-col h4 {
+  margin: 0 0 14px; font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  color: rgba(249, 249, 249, 0.38);
+}
+.pre-foot-col a {
+  display: block; padding: 5px 0;
+  font-size: 13px; color: rgba(249, 249, 249, 0.66);
+  text-decoration: none; transition: color 0.15s ease;
+}
+.pre-foot-col a:hover { color: #F9F9F9; }
+.pre-foot-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  padding-top: 26px;
+  border-top: 1px solid var(--pl-line, rgba(255, 255, 255, 0.08));
+  font-size: 12px; color: rgba(249, 249, 249, 0.4);
+}
+.pre-foot-note { display: inline-flex; align-items: center; gap: 7px; }
+.pre-foot-note svg { color: var(--brand); }
+
+@media (max-width: 860px) {
+  .pre-foot-top { grid-template-columns: 1fr 1fr; }
+  .pre-foot-brand { grid-column: 1 / -1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   21b · AUTH — LIGHT THEME
+   Every colour in §21 reads `var(--a-*, <dark value>)`, so this block only has
+   to define tokens. Follows the system by default; an explicit [data-theme]
+   wins either way.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .auth-shell,
+  :root:not([data-theme="dark"]) .auth-shell * {
+    --a-ground:   #F4F1EA;
+    --a-card:     #FFFFFF;
+    --a-card-bd:  rgba(20, 22, 26, 0.10);
+    --a-ink:      #14161A;
+    --a-ink-2:    #5A5C60;
+    --a-ink-3:    #8A8C90;
+    --a-field:    #F7F6F3;
+    --a-field-bd: rgba(20, 22, 26, 0.14);
+    --a-raised:   #FFFFFF;
+    --a-raised-h: #F1EFEA;
+    --a-hair:     rgba(20, 22, 26, 0.10);
+  }
+}
+[data-theme="light"] .auth-shell,
+[data-theme="light"] .auth-shell * {
+  --a-ground:   #F4F1EA;
+  --a-card:     #FFFFFF;
+  --a-card-bd:  rgba(20, 22, 26, 0.10);
+  --a-ink:      #14161A;
+  --a-ink-2:    #5A5C60;
+  --a-ink-3:    #8A8C90;
+  --a-field:    #F7F6F3;
+  --a-field-bd: rgba(20, 22, 26, 0.14);
+  --a-raised:   #FFFFFF;
+  --a-raised-h: #F1EFEA;
+  --a-hair:     rgba(20, 22, 26, 0.10);
+}
+
+/* the few places that need structure, not just a colour, once it goes light */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .auth-aside {
+    background:
+      radial-gradient(70% 50% at 12% 0%, rgba(232, 80, 2, 0.16), transparent 70%),
+      var(--a-ground) !important;
+  }
+  :root:not([data-theme="dark"]) .auth-panel {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 2px 6px rgba(20, 22, 26, 0.06),
+      0 34px 80px -30px rgba(20, 22, 26, 0.22) !important;
+  }
+  :root:not([data-theme="dark"]) .auth-panel .n-input {
+    box-shadow: inset 0 1px 3px rgba(20, 22, 26, 0.07) !important;
+  }
+  :root:not([data-theme="dark"]) .auth-panel .n-input:focus {
+    box-shadow: inset 0 1px 3px rgba(20, 22, 26, 0.07), 0 0 0 3px rgba(232, 80, 2, 0.16) !important;
+  }
+  :root:not([data-theme="dark"]) .auth-panel .auth-oauth {
+    box-shadow: 0 1px 2px rgba(20, 22, 26, 0.08) !important;
+  }
+  :root:not([data-theme="dark"]) .auth-error {
+    color: #B42318 !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+    border: 1px solid rgba(239, 68, 68, 0.24) !important;
+  }
+}
+[data-theme="light"] .auth-aside {
+  background:
+    radial-gradient(70% 50% at 12% 0%, rgba(232, 80, 2, 0.16), transparent 70%),
+    var(--a-ground) !important;
+}
+[data-theme="light"] .auth-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 6px rgba(20, 22, 26, 0.06),
+    0 34px 80px -30px rgba(20, 22, 26, 0.22) !important;
+}
+[data-theme="light"] .auth-panel .n-input { box-shadow: inset 0 1px 3px rgba(20, 22, 26, 0.07) !important; }
+[data-theme="light"] .auth-panel .n-input:focus {
+  box-shadow: inset 0 1px 3px rgba(20, 22, 26, 0.07), 0 0 0 3px rgba(232, 80, 2, 0.16) !important;
+}
+[data-theme="light"] .auth-panel .auth-oauth { box-shadow: 0 1px 2px rgba(20, 22, 26, 0.08) !important; }
+[data-theme="light"] .auth-error {
+  color: #B42318 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.24) !important;
+}
+
+/* ── R60/R62 · AUTH light-theme corrections ────────────────────────────
+   clario.css forces the WHOLE logo `fill:#fff !important` — that hid the
+   wordmark on the cream aside and greyed out the orange mark. Undo both. */
+.auth-aside .clario-logo svg:first-child path,
+.auth-aside .clario-logo svg:first-child * {
+  fill: var(--logo-mark, #FF5F00) !important; color: var(--logo-mark, #FF5F00) !important;
+}
+[data-theme="light"] .auth-aside .clario-logo svg:last-child path,
+[data-theme="light"] .auth-aside .clario-logo svg:last-child *,
+[data-theme="light"] .auth-aside .rail-wordmark {
+  fill: #14161A !important; color: #14161A !important;
+}
+.auth-aside .clario-logo { transform: scale(1.16); transform-origin: left center; }
+.auth-display-line { display: block; overflow: hidden; }
+.auth-display-line > span { display: block; }
+[data-theme="light"] .auth-panel {
+  background: linear-gradient(158deg, #FFFFFF 0%, #FFF4EC 50%, #FFDCC6 120%) !important;
+  border-color: rgba(232, 80, 2, 0.18) !important;
+}
+/* keep the fields legible on the tinted card */
+[data-theme="light"] .auth-panel .n-input { background: #FFFFFF !important; }
+[data-theme="light"] .auth-panel .auth-oauth { background: #FFFFFF !important; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .auth-aside .clario-logo svg:last-child path,
+  :root:not([data-theme="dark"]) .auth-aside .clario-logo svg:last-child *,
+  :root:not([data-theme="dark"]) .auth-aside .rail-wordmark {
+    fill: #14161A !important; color: #14161A !important;
+  }
+  :root:not([data-theme="dark"]) .auth-panel {
+    background: linear-gradient(158deg, #FFFFFF 0%, #FFF4EC 50%, #FFDCC6 120%) !important;
+    border-color: rgba(232, 80, 2, 0.18) !important;
+  }
+  :root:not([data-theme="dark"]) .auth-panel .n-input,
+  :root:not([data-theme="dark"]) .auth-panel .auth-oauth { background: #FFFFFF !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   34 · SHADER CARD BACKDROPS — a few cards only (accent tile, health score)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tile, .hs { position: relative; overflow: hidden; isolation: isolate; }
+
+.tile-shader, .hs-shader {
+  position: absolute !important; inset: 0; z-index: 0;
+  pointer-events: none; border-radius: inherit;
+}
+.tile-shader canvas, .hs-shader canvas {
+  position: absolute !important; inset: 0;
+  width: 100% !important; height: 100% !important; display: block;
+}
+
+/* lift real content above the canvas */
+.tile--accent > *:not(.tile-shader),
+.hs > *:not(.hs-shader) { position: relative; z-index: 1; }
+
+/* accent tile — the shader IS the fill; solid orange base for before it mounts */
+.tile--accent, [data-theme="dark"] .tile--accent { background: #C73C00 !important; }
+
+/* Financial Health is a plain card again (no shader background) */
+[data-theme="dark"] .hs { background: #161618 !important; border-color: rgba(255,255,255,0.08) !important; }
+:root:not([data-theme="dark"]) .hs { background: #FFFFFF !important; border-color: rgba(20,18,15,0.09) !important; }
+
+/* ── Wordmark is now text (Unbounded), not an SVG path ──────────────────── */
+.clario-wordmark { font-family: 'Unbounded', ui-rounded, system-ui, sans-serif; }
+.rail-brand { color: var(--text) !important; }
+.rail-wordmark.clario-wordmark,
+.rail-brand .clario-wordmark { color: var(--text) !important; }
+.auth-aside .clario-wordmark { color: #fff !important; }
+[data-theme="light"] .auth-aside .clario-wordmark,
+:root:not([data-theme="dark"]) .auth-aside .clario-wordmark { color: #14161A !important; }
+.mr .clario-wordmark, .pre-nav .clario-wordmark { color: currentColor; }
+
+/* Monthly-income strip: flat, taller, labels visible (overrides the groove) */
+.dc-strip.dc-strip--months {
+  height: 98px !important;
+  overflow: visible !important;
+  background: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 2px 18px !important;
+  margin: 14px 0 20px !important;
+}
+.dc-strip--months .dc-mbar { box-shadow: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   35 · MOBILE  (≤1000px) — the rail is an off-canvas drawer, not the peek rail
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1000px) {
+  /* keep .app-frame as the flex row so .app-main stays height-constrained and
+     <main> remains the scroll container (topbar must not scroll away) */
+  .app-frame .app-sidebar {
+    position: fixed !important;
+    left: 0; top: 0; bottom: 0;
+    width: min(300px, 86vw) !important;
+    flex: none !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 1200;
+    background: var(--shell-bg) !important;
+  }
+  .app-frame .app-sidebar.open { transform: translateX(0) !important; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.45); }
+  /* inside the drawer the rail is a normal full-height panel with labels */
+  .app-frame .app-sidebar .rail,
+  .app-frame .app-sidebar[data-collapsed="true"] .rail {
+    position: relative !important;
+    width: 100% !important; height: 100% !important;
+    transition: none !important; box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .app-frame .app-sidebar .rail-label,
+  .app-frame .app-sidebar .rail-group-label,
+  .app-frame .app-sidebar .rail-wordmark,
+  .app-frame .app-sidebar .rail-more-caret { display: block !important; opacity: 1 !important; }
+  .app-frame .app-sidebar .rail-btn { justify-content: flex-start !important; gap: 11px !important; padding: 0 12px !important; }
+
+  .app-frame .app-main { margin: 0 !important; border-radius: 0 !important; width: 100% !important; }
+  .topbar { padding: 12px 14px 6px !important; gap: 6px; }
+  .topbar-search { flex: 1 1 auto !important; min-width: 0 !important; }
+  .topbar-search span { display: none !important; }
+  .topbar-search kbd { display: none !important; }
+
+  /* content: single column, comfortable padding */
+  .tile-row, .dash-grid, .dash-pair,
+  .dash-insight-list, .wf-cards { grid-template-columns: 1fr !important; }
+  :root { --page-pad-x: 16px; }
+}
+@media (max-width: 560px) {
+  .n-page-header h1, .dash-greet { font-size: 1.55rem !important; }
+  .dc-figure, .tile-figure, .bo-amount { font-size: clamp(1.7rem, 8vw, 2.2rem) !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   36 · RESPONSIVE — deliberate layout per breakpoint (not desktop-shrunk)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Container: max-width and side padding step down with the viewport */
+@media (max-width: 1600px) { :root { --page-max-w: 1380px; } }
+@media (max-width: 1440px) { :root { --page-max-w: 1240px; --page-pad-x: 28px; } }
+@media (max-width: 1200px) { :root { --page-max-w: 1040px; --page-pad-x: 24px; } }
+@media (max-width: 1024px) { :root { --page-pad-x: 22px; } }
+@media (max-width: 640px)  { :root { --page-pad-x: 16px; --page-pad-y: 16px; } }
+
+/* No element may push the content wider than the well */
+.app-main, .app-main > main, .app-page-in { max-width: 100%; }
+.app-page-in { overflow-x: clip; }
+img, svg, video, canvas, table { max-width: 100%; }
+.rec-body, .n-table-wrapper, .skc-well { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── ≤1120px — small laptop / tablet landscape: the right rail drops below ── */
+@media (max-width: 1120px) {
+  .dash-grid { grid-template-columns: 1fr !important; }
+  .dash-aside { flex-direction: row !important; flex-wrap: wrap !important; align-items: stretch !important; }
+  .dash-aside > * { flex: 1 1 300px; min-width: 0; }
+  .tile-row--4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ── ≤900px — tablet portrait ── */
+@media (max-width: 900px) {
+  .dash-aside { flex-direction: column !important; }
+  .dash-aside > * { flex: none; }
+  .dash-pair { grid-template-columns: 1fr !important; }
+  .tile-row { grid-template-columns: 1fr 1fr !important; }
+  .tile-row > :first-child { grid-column: 1 / -1 !important; }
+  .dash-insight-list { grid-template-columns: 1fr 1fr !important; }
+  .charts-tabs { overflow-x: auto; }
+  .cf-head, .bo-head, .rec-head, .dc-head { flex-wrap: wrap; row-gap: 8px; }
+}
+
+/* ── ≤620px — mobile: one column, comfortable spacing, touch targets ── */
+@media (max-width: 620px) {
+  .tile-row, .tile-row--4, .dash-pair, .dash-insight-list,
+  .dash-status, .wf-cards { grid-template-columns: 1fr !important; }
+  .tile-row > :first-child, .tile-row--4 > :first-child { grid-column: auto !important; }
+  .tile, .n-card, .dc, .cf, .hs, .wal, .rec, .charts-panel,
+  .dash-insight, .dash-journal, .dash-aside-card { border-radius: 16px !important; }
+  .tile { padding: 16px 16px 18px !important; }
+  .n-page-header { margin-bottom: 22px !important; }
+  .n-page-header h1, .dash-greet { font-size: clamp(1.45rem, 6vw, 1.7rem) !important; }
+  .dc-figure, .tile-figure, .bo-amount { font-size: clamp(1.6rem, 7.5vw, 2.1rem) !important; }
+  /* touch targets ≥ ~40px */
+  .n-btn, .n-btn-sm, .topbar-btn, .topbar-avatar, .rail-btn,
+  .cf-range button, .dc-range button, .charts-tab, .a11y-seg button { min-height: 40px; }
+  .topbar-search { min-height: 40px; }
+  .cf-chart, .skc-well, .bo-chart { min-height: 200px !important; height: auto !important; }
+  .rec .n-table th, .rec .n-table td { padding-left: 14px !important; padding-right: 14px !important; }
+  /* modals: full-width sheet */
+  .n-modal, [class*="modal-card"] { width: calc(100vw - 24px) !important; max-width: 100% !important; }
+}
+
+/* Touch devices: no hover-only affordances; use :active feedback */
+@media (hover: none) {
+  .tile:hover, .n-card:hover, .dc-out:hover, .bo-out:hover { transform: none !important; }
+  .n-btn:active, .rail-btn:active, .topbar-btn:active { transform: translateY(1px) scale(0.99); }
+}
+
+/* prelanding: never let the hero visual create horizontal scroll */
+.mr, .mr-section, .mr-container { max-width: 100vw; overflow-x: clip; }
+@media (max-width: 900px) {
+  .mr-hero-sphere, .mr-hero-layout > .mr-hero-visual { max-width: 100% !important; right: auto !important; width: 100% !important; }
+}
+
+/* ── Login: centre the card in the viewport (was riding too low) ─────────── */
+.auth-main { display: flex !important; align-items: center !important; justify-content: center !important; }
+.auth-right-frame {
+  display: flex !important;
+  align-items: center !important; justify-content: center !important;
+  min-height: 100dvh; width: 100%;
+  padding: clamp(20px, 4vh, 48px) clamp(20px, 4vw, 56px) !important;
+}
+.auth-panel {
+  width: 100%; max-width: 460px !important;
+  margin: auto !important;
+  padding: 32px 34px 30px !important;
+}
+@media (max-width: 480px) {
+  .auth-panel { padding: 26px 22px 24px !important; }
+  .auth-head h1 { font-size: 22px !important; }
+}
+
+/* Login: on narrow screens the aside is hidden — don't leave the card on the
+   dark orange frame in light mode; use the warm ground instead. */
+@media (max-width: 900px) {
+  [data-theme="light"] .auth-right-frame,
+  :root:not([data-theme="dark"]) .auth-right-frame {
+    background:
+      radial-gradient(90% 60% at 50% 0%, rgba(232, 80, 2, 0.10), transparent 60%),
+      var(--a-ground, #F4F1EA) !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AUTH — clean orange/black frame, no WebGL  (round 53)
+   ══════════════════════════════════════════════════════════════════════ */
+/* the animated ShaderGradient water-plane is back behind the card (theme-aware).
+   The CSS orange→black slab on .auth-right-frame stays as the fallback for when
+   WebGL / the library isn't available. */
+.auth-shader-bg {
+  display: block !important;
+  position: absolute !important;
+  inset: clamp(12px, 2.2vw, 26px) !important;
+  z-index: 0 !important;
+  border-radius: clamp(20px, 3vw, 34px) !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+.auth-shader-bg canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+.auth-right-frame { position: relative !important; overflow: hidden !important; }
+.auth-panel { position: relative; z-index: 1; }
+
+.auth-main {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+}
+.auth-right-frame {
+  display: flex !important;
+  align-items: center !important;            /* card centred — shader shows top & bottom */
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100dvh;
+  /* generous, mostly-relative padding so the shader always frames the card */
+  padding: clamp(40px, 9vh, 120px) clamp(36px, 9vw, 132px) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  /* plain near-black — the rounded shader is the only visual; no rectangular
+     gradient slab behind it */
+  background: #0A0A0B !important;
+}
+.auth-panel {
+  margin: auto !important;
+  width: 100% !important;
+  max-width: 384px !important;
+}
+@media (max-width: 1180px) {
+  .auth-right-frame { padding: clamp(32px, 7vh, 72px) clamp(28px, 7vw, 72px) !important; }
+  .auth-panel { max-width: 352px !important; }
+}
+
+/* a touch tighter + more finished */
+.auth-form { gap: 14px !important; }
+.auth-panel .n-input { height: 46px !important; border-radius: 12px !important; }
+.auth-panel .auth-oauth { height: 46px !important; border-radius: 12px !important; }
+.auth-panel .auth-submit { height: 48px !important; border-radius: 12px !important; }
+.auth-legal { opacity: 0.7; font-size: 11.5px; }
+
+@media (max-width: 940px) {
+  /* aside hidden — frame becomes the whole screen, keep it warm */
+  .auth-right-frame { padding-inline: clamp(18px, 6vw, 40px) !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AUTH — tighten the (tall) sign-up card so it stops over-expanding
+   ══════════════════════════════════════════════════════════════════════ */
+.auth-right-frame {
+  padding-block: clamp(20px, 4vh, 44px) !important;
+}
+.auth-panel {
+  max-width: 396px !important;
+  padding: 24px 26px 22px !important;
+}
+.auth-head h1 { font-size: 24px !important; margin-bottom: 2px !important; }
+.auth-head p { font-size: 13px !important; }
+.auth-form { gap: 11px !important; }
+.auth-panel .n-input { height: 42px !important; }
+.auth-panel .auth-oauth { height: 42px !important; }
+.auth-panel .auth-submit { height: 44px !important; margin-top: 2px !important; }
+.auth-divider { margin: 12px 0 !important; }
+.auth-panel .n-label { font-size: 10.5px !important; margin-bottom: 4px !important; }
+.auth-foot { margin-top: 14px !important; font-size: 13px !important; }
+.auth-trust-container { margin-top: 12px !important; }
+.auth-panel [class*="never"], .auth-panel .auth-trust { padding: 7px 12px !important; font-size: 12px !important; }
+.auth-legal { margin-top: 8px !important; }
+/* password-strength meter: keep it slim */
+.auth-panel .auth-strength, .auth-panel [class*="strength"] { margin-top: 6px !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   DASHBOARD — sidebar active-key fix, profile menu, Help page  (round 58)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* the active row had an ::after tab that poked out past the rail and bled
+   over the content whenever the rail floated (hover-peek). Drop it — the
+   orange key stands on its own, fully inside the 12px gutter. */
+.rail-btn.is-active::after { display: none !important; }
+.rail-btn.is-active {
+  border-radius: 11px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 6px 14px -8px rgba(232, 80, 2, 0.6) !important;
+}
+@keyframes rail-pill-in { from {} to {} }   /* neutralised */
+
+/* profile menu — a clear divider before the destructive action */
+.topbar-menu-sep {
+  height: 1px; margin: 5px 6px;
+  background: var(--hairline, rgba(0, 0, 0, 0.08));
+}
+.topbar-menu-avatar { border-radius: 50% !important; overflow: hidden !important; }
+.topbar-menu-avatar > span { width: 100% !important; height: 100% !important; border-radius: inherit !important; }
+
+/* ── Help page ─────────────────────────────────────────────────────────── */
+.help-page { display: grid; gap: 24px; max-width: 960px; }
+.help-hero { display: flex; align-items: flex-start; gap: 14px; }
+.help-hero-ic {
+  flex-shrink: 0; display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: 12px;
+  background: var(--brand) !important; color: #fff;
+  box-shadow: 0 6px 16px -8px rgba(232, 80, 2, 0.6);
+}
+.help-hero h1 { margin: 2px 0 4px; font-size: 1.5rem; letter-spacing: -0.02em; }
+.help-hero p { margin: 0; color: var(--text-2); max-width: 62ch; line-height: 1.55; }
+
+.help-section-label {
+  margin: 8px 0 -8px; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3);
+}
+
+/* getting-started cards */
+.help-grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.help-card { display: grid; gap: 8px; align-content: start; padding: 18px !important; }
+.help-card-ic {
+  display: grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 9px;
+  background: color-mix(in srgb, var(--brand) 16%, transparent);
+  color: var(--brand); margin-bottom: 2px;
+}
+.help-card h3 { margin: 0; font-size: 0.95rem; }
+.help-card p { margin: 0; color: var(--text-2); font-size: 0.86rem; line-height: 1.55; }
+.help-card .n-btn { margin-top: 6px; justify-self: start; }
+
+/* signal list */
+.help-signals { padding: 6px !important; }
+.help-signal {
+  display: grid; grid-template-columns: auto 1fr; gap: 12px;
+  padding: 14px 12px;
+}
+.help-signal + .help-signal { border-top: 1px solid var(--hairline); }
+.help-signal-ic {
+  flex-shrink: 0; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 9px;
+  background: var(--surface-2); color: var(--text-2);
+}
+.help-signal h3 { margin: 0 0 3px; font-size: 0.9rem; }
+.help-signal p { margin: 0; color: var(--text-2); font-size: 0.85rem; line-height: 1.55; }
+
+.help-faq { padding: 6px !important; }
+.help-faq-row + .help-faq-row { border-top: 1px solid var(--hairline); }
+.help-faq-q {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; padding: 14px 12px; border: 0; background: none; cursor: pointer;
+  font-size: 0.92rem; font-weight: 600; color: var(--text); text-align: left;
+}
+.help-faq-q svg { flex-shrink: 0; color: var(--text-3); transition: transform 0.2s ease; }
+.help-faq-row.is-open .help-faq-q svg { transform: rotate(180deg); }
+.help-faq-a { margin: 0; padding: 0 12px 16px; color: var(--text-2); font-size: 0.88rem; line-height: 1.6; max-width: 68ch; }
+
+.help-keys { display: flex; align-items: flex-start; gap: 16px; }
+.help-keys-ic {
+  flex-shrink: 0; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--surface-2); color: var(--text-2);
+}
+.help-keys dl { margin: 0; display: grid; gap: 10px; flex: 1; }
+.help-keys dl > div { display: flex; align-items: baseline; gap: 14px; }
+.help-keys dt { flex-shrink: 0; }
+.help-keys kbd {
+  font: 600 0.75rem 'Geist Mono', ui-monospace, monospace;
+  padding: 3px 7px; border-radius: 6px;
+  background: var(--surface-2); border: 1px solid var(--hairline);
+  color: var(--text);
+}
+.help-keys dd { margin: 0; color: var(--text-2); font-size: 0.88rem; }
+
+.help-contact { display: flex; align-items: flex-start; gap: 14px; }
+.help-contact h3 { margin: 0 0 3px; font-size: 0.95rem; }
+.help-contact p { margin: 0; color: var(--text-2); font-size: 0.87rem; line-height: 1.55; }
+.help-contact a { color: var(--brand); font-weight: 600; }
+
+@media (max-width: 560px) {
+  .help-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DASHBOARD FIXES  (round 59)
+   fixed top bar · clean peek panel · badge · tile figures · card gradient
+   · slow line motion on the 2nd tile
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── top bar is now a real flex child of .app-main (out of the scroller),
+      so it never scrolls away. Make it opaque and give it a base line. ── */
+.app-main > .topbar {
+  position: relative !important;
+  flex-shrink: 0 !important;
+  background: var(--well-bg) !important;
+  z-index: 20;
+}
+.app-main > .topbar::after {
+  content: ""; position: absolute; left: 22px; right: 22px; bottom: 0; height: 1px;
+  background: var(--hairline);
+  transform: none;
+}
+.app-main > main { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; }
+
+/* ── peek rail: was a near-black slab floating over the content ("black
+      thing covering the sidebar"). Make it the surface colour, full height,
+      with a clean edge so it reads as a panel, not a blob. ── */
+.app-frame .app-sidebar.is-peek .rail {
+  background: var(--surface) !important;
+  box-shadow: 1px 0 0 var(--hairline), 18px 0 40px -20px rgba(0, 0, 0, 0.55) !important;
+  border-radius: 0 14px 14px 0 !important;
+  height: 100% !important;
+}
+[data-theme="dark"] .app-frame .app-sidebar.is-peek .rail { background: #17161a !important; }
+
+/* ── rail badge in the collapsed strip: a small count dot on the icon,
+      not a pill that spills out of the 72px rail ── */
+.app-sidebar[data-collapsed="true"]:not(.is-peek) .rail-badge {
+  position: absolute !important;
+  top: 4px; right: 4px;
+  min-width: 15px !important; height: 15px;
+  padding: 0 3px !important;
+  display: grid; place-items: center;
+  font-size: 9.5px !important;
+  border: 1.5px solid var(--well-bg) !important;
+}
+.app-sidebar[data-collapsed="true"]:not(.is-peek) .rail-item { position: relative; }
+
+/* ── headline figures: tighter, and sized so a lakh value never crowds ── */
+.tile-figure {
+  font-size: clamp(1.5rem, 1.1rem + 0.9vw, 1.9rem) !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+}
+.tile--accent .tile-figure { font-size: clamp(1.55rem, 1.1rem + 1vw, 2rem) !important; }
+.tile-figure .money, .tile-figure > * { font-variant-numeric: tabular-nums; }
+
+/* ── orange card: a real gradient fill (works with or without the WebGL) ── */
+.tile--accent,
+[data-theme="dark"] .tile--accent,
+:root:not([data-theme="dark"]) .tile--accent {
+  background:
+    radial-gradient(120% 90% at 12% 0%, #FF7A2E 0%, transparent 55%),
+    linear-gradient(150deg, #F2610C 0%, #E24E02 46%, #B83D00 100%) !important;
+}
+
+/* ── 2nd / 3rd stat tiles now carry <FloatingPaths> as a flowing background ── */
+.tile--white, .tile--gray { position: relative; overflow: hidden; isolation: isolate; }
+.tile--white::before { content: none !important; }        /* old hairline drift retired */
+
+.tile-fp {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  color: var(--brand);
+  /* keep a bit of falloff so the figure stays clean, but let it read */
+  -webkit-mask-image: linear-gradient(200deg, #000 0%, #000 55%, rgba(0, 0, 0, 0.35) 100%);
+          mask-image: linear-gradient(200deg, #000 0%, #000 55%, rgba(0, 0, 0, 0.35) 100%);
+}
+.tile-fp .fp-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* DARK card → bright orange strokes, clearly visible */
+[data-theme="dark"] .tile-fp,
+[data-theme="dark"] .wal-networth .tile-fp { color: #FF8A3D; opacity: 1; }
+
+/* LIGHT card → dark strokes (orange vanishes on the near-white card) */
+:root:not([data-theme="dark"]) .tile-fp,
+:root:not([data-theme="dark"]) .wal-networth .tile-fp {
+  color: #262626;
+  opacity: 0.22;
+}
+
+.tile--white > *:not(.tile-fp),
+.tile--gray  > *:not(.tile-fp) { position: relative; z-index: 1; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   SHELL — hard lock so ONLY <main> scrolls  (round 60)
+   the sidebar + top bar were riding the page scroll; clamp every ancestor
+   to the viewport and pin the rail.
+   ══════════════════════════════════════════════════════════════════════ */
+.app-shell {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+.app-frame {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: stretch !important;
+}
+.app-frame > .app-sidebar { height: 100dvh !important; align-self: stretch !important; }
+.app-frame > .app-main {
+  height: calc(100dvh - 20px) !important;
+  max-height: calc(100dvh - 20px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.app-main > .topbar { flex: 0 0 auto !important; }
+.app-main > .connection-banner,
+.app-main > [class*="banner"] { flex: 0 0 auto !important; }
+.app-main > main {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* pin the desktop rail — immune to any ancestor-height regression */
+.app-frame .app-sidebar[data-collapsed="true"] .rail {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100dvh !important;
+}
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar .rail,
+  .app-frame .app-sidebar[data-collapsed="true"] .rail {
+    position: relative !important;
+    height: 100% !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TOP BAR — pin it (round 61)
+   flex-in-column still let it scroll on some layouts. Fix it to the
+   viewport like the rail; pad the scroller so nothing hides under it.
+   ══════════════════════════════════════════════════════════════════════ */
+:root { --topbar-h: 62px; }
+
+.app-main > .topbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: var(--sidebar-w-min) !important;
+  right: 0 !important;
+  height: var(--topbar-h) !important;
+  min-height: var(--topbar-h) !important;
+  z-index: 90 !important;                 /* above every in-page sticky header */
+  background: var(--well-bg) !important;
+  border-radius: 0 !important;
+  padding: 0 24px !important;
+  box-shadow: 0 1px 0 var(--hairline) !important;
+}
+.app-main > .topbar::after { display: none !important; }
+
+/* the scroller owns the full column height; pad it clear of the fixed bar */
+.app-main > main {
+  padding-top: 0 !important;
+}
+.app-main > main > .app-page-in { padding-top: var(--page-pad-y) !important; }
+
+/* in-page sticky headers (tables, filter bars) must stop BELOW the fixed bar,
+   not scroll up behind it */
+.app-main > main thead,
+.app-main > main [class*="sticky"],
+.app-main > main [style*="position: sticky"],
+.app-main > main [style*="position:sticky"] {
+  top: var(--topbar-h) !important;
+}
+
+/* while the rail hover-expands over the bar, slide its contents clear */
+.app-frame .app-sidebar.is-peek ~ .app-main > .topbar {
+  padding-left: calc(var(--sidebar-w) - var(--sidebar-w-min) + 24px) !important;
+}
+
+@media (max-width: 1000px) {
+  /* on mobile the topbar is a normal in-flow row at the top of the column
+     (flex:0 0 auto) and <main> scrolls under it — no fixed positioning */
+  .app-main > .topbar {
+    position: relative !important;
+    top: auto !important; left: auto !important; right: auto !important; width: 100% !important;
+    border-radius: 0 !important;
+    height: auto !important; min-height: 0 !important;
+    flex: 0 0 auto !important;
+  }
+  .app-main > main { padding-top: 0 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR — pin the brand row; only the nav list scrolls  (round 62)
+   opening "More" made the rail taller than the viewport and the logo
+   scrolled off the top.
+   ══════════════════════════════════════════════════════════════════════ */
+.rail { position: relative; }
+.rail-top {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  margin-bottom: 12px !important;
+  padding-top: 4px !important;
+  background: transparent !important;   /* the rail behind it is --well-bg */
+}
+[data-theme="dark"] .app-sidebar.is-peek .rail-top { background: transparent !important; }
+.app-sidebar[data-collapsed="true"]:not(.is-peek) .rail-top {
+  background: transparent !important;
+}
+/* the last group (Help · Settings) sticks to the bottom instead of being
+   pushed off by a long "More" list */
+.rail-spacer { min-height: 12px !important; }
+.rail > .rail-group:last-child {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 3 !important;
+  padding-top: 8px !important;
+  padding-bottom: 4px !important;
+  background: transparent !important;
+}
+[data-theme="dark"] .app-sidebar.is-peek .rail > .rail-group:last-child { background: transparent !important; }
+.app-sidebar[data-collapsed="true"]:not(.is-peek) .rail > .rail-group:last-child {
+  background: transparent !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR — permanent, no hover-peek  (round 63)
+   the floating peek panel kept reading as "a black thing over the content".
+   Desktop = a fixed 236px sidebar, always labelled. Mobile = the drawer.
+   ══════════════════════════════════════════════════════════════════════ */
+:root { --sidebar-w: 232px; }
+
+.app-frame .app-sidebar {
+  width: var(--sidebar-w) !important;
+  flex: 0 0 var(--sidebar-w) !important;
+  height: 100dvh !important;
+  overflow: visible !important;
+}
+/* the rail is fixed so it never rides the page scroll; its 232px slot is held
+   by .app-sidebar above */
+.app-frame .app-sidebar .rail,
+.app-frame .app-sidebar[data-collapsed="false"] .rail {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: var(--sidebar-w) !important;
+  height: 100dvh !important;
+  padding: 14px 12px 12px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  transition: none !important;
+}
+/* labels + wordmark always shown */
+.app-frame .app-sidebar .rail-label,
+.app-frame .app-sidebar .rail-group-label,
+.app-frame .app-sidebar .rail-wordmark,
+.app-frame .app-sidebar .rail-more-caret {
+  display: block !important;
+  opacity: 1 !important;
+}
+.app-frame .app-sidebar .rail-btn {
+  justify-content: flex-start !important;
+  gap: 11px !important;
+  padding: 0 12px !important;
+  width: 100% !important;
+}
+
+/* neutralise every peek / collapsed rule from earlier rounds */
+.app-frame .app-sidebar.is-peek .rail,
+.app-frame .app-sidebar[data-collapsed="true"] .rail { width: var(--sidebar-w) !important; }
+.app-sidebar[data-collapsed="true"]:not(.is-peek) .rail-badge {
+  position: static !important; top: auto; right: auto;
+}
+.rail-tip { display: none !important; }
+
+/* the fixed top bar starts at the sidebar's right edge */
+.app-main > .topbar { left: var(--sidebar-w) !important; }
+.app-frame .app-sidebar.is-peek ~ .app-main > .topbar { padding-left: 24px !important; }
+
+/* brand row + bottom group stay pinned; middle nav scrolls (kept from r62) */
+.rail-top {
+  position: sticky !important; top: 0 !important; z-index: 3 !important;
+  background: var(--shell-bg) !important;
+  margin-bottom: 12px !important; padding-top: 4px !important;
+}
+.rail > .rail-group:last-child {
+  position: sticky !important; bottom: 0 !important; z-index: 3 !important;
+  background: var(--shell-bg) !important;
+  padding-top: 8px !important; padding-bottom: 4px !important;
+}
+
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar .rail,
+  .app-frame .app-sidebar[data-collapsed="false"] .rail {
+    position: relative !important;
+    width: 100% !important; height: 100% !important;
+  }
+  .app-frame .app-sidebar { width: min(300px, 86vw) !important; flex: none !important; }
+  .app-main > .topbar { left: 0 !important; }
+  .rail-top, .rail > .rail-group:last-child { background: transparent !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 65 — chart groove border, idle cursor, sidebar brand plate
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* the 1px ring around the daily-spend strip read as a stray border */
+.bo-bars, .dc-strip, .mm-bars {
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 12px 0 !important;
+}
+
+/* idle cursor hide — must outrank the `cursor: pointer !important` rules
+   scattered through the button/nav layers, so it lives at the end and is
+   scoped one level deeper than `html.cursor-idle *` in index.css */
+html.cursor-idle body,
+html.cursor-idle body *,
+html.cursor-idle body *::before,
+html.cursor-idle body *::after { cursor: none !important; }
+
+/* the sticky brand row was painting a solid plate (a white box in light
+   mode). Let it show the sidebar through and blur what scrolls under it. */
+.rail-top,
+.rail > .rail-group:last-child {
+  background: transparent !important;
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR — real click-toggle collapse  (round 66)
+   [data-collapsed="true"] (set by the header toggle, remembered) shrinks
+   the fixed rail to an icon strip. No hover-expand, no floating panel.
+   ══════════════════════════════════════════════════════════════════════ */
+.app-frame .app-sidebar {
+  transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              flex-basis 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-frame .app-sidebar[data-collapsed="true"] {
+  width: var(--sidebar-w-min) !important;
+  flex: 0 0 var(--sidebar-w-min) !important;
+}
+.app-frame .app-sidebar[data-collapsed="true"] .rail,
+.app-frame .app-sidebar[data-collapsed="true"][data-collapsed] .rail {
+  width: var(--sidebar-w-min) !important;
+  padding: 14px 10px 12px !important;
+  transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1), padding 0.24s ease;
+}
+/* hide the text, centre the icons */
+.app-frame .app-sidebar[data-collapsed="true"] .rail-label,
+.app-frame .app-sidebar[data-collapsed="true"] .rail-group-label,
+.app-frame .app-sidebar[data-collapsed="true"] .rail-wordmark,
+.app-frame .app-sidebar[data-collapsed="true"] .rail-more-caret {
+  display: none !important;
+}
+.app-frame .app-sidebar[data-collapsed="true"] .rail-btn {
+  justify-content: center !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+.app-frame .app-sidebar[data-collapsed="true"] .rail-top {
+  flex-direction: column !important;
+  gap: 10px !important;
+  align-items: center !important;
+  padding: 2px 0 0 !important;
+}
+.app-frame .app-sidebar[data-collapsed="true"] .rail-badge {
+  position: absolute !important;
+  top: 3px; right: 3px;
+  min-width: 15px !important; height: 15px !important;
+  padding: 0 3px !important; font-size: 9px !important;
+  border: 1.5px solid var(--shell-bg) !important;
+}
+.app-frame .app-sidebar[data-collapsed="true"] .rail-item { position: relative; }
+.app-frame .app-sidebar[data-collapsed="true"] .rail-group-label { height: 8px; }
+
+/* the fixed top bar follows the rail's right edge */
+.app-sidebar[data-collapsed="true"] ~ .app-main > .topbar {
+  left: var(--sidebar-w-min) !important;
+}
+
+/* the header toggle is always visible; arrow flips when collapsed */
+.rail-collapse { display: grid !important; }
+.is-collapsed .rail-collapse svg { transform: rotate(180deg); }
+
+@media (max-width: 1000px) {
+  /* mobile: the drawer is always full — ignore the collapse pref */
+  .app-frame .app-sidebar[data-collapsed="true"] {
+    width: min(300px, 86vw) !important; flex: none !important;
+  }
+  .app-frame .app-sidebar[data-collapsed="true"] .rail { width: 100% !important; padding: 14px 12px 12px !important; }
+  .app-frame .app-sidebar[data-collapsed="true"] .rail-label,
+  .app-frame .app-sidebar[data-collapsed="true"] .rail-wordmark,
+  .app-frame .app-sidebar[data-collapsed="true"] .rail-group-label { display: block !important; }
+  .app-sidebar[data-collapsed="true"] ~ .app-main > .topbar { left: 0 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR — hover to expand, no toggle button, no floating panel (round 67)
+   The 72px slot never changes, so content never reflows. On hover the
+   fixed rail widens to 232px over the content — but painted in the SAME
+   dark as the sidebar strip, full height, square edge, no shadow, so it
+   reads as the strip widening, not a box appearing.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* the toggle icon is gone — it isn't rendered, but hide it belt-and-braces */
+.rail-collapse { display: none !important; }
+
+/* OVERLAY model: the 72px slot and the topbar NEVER move — nothing reflows,
+   so the hover animation is cheap (only the fixed rail repaints). On hover
+   the rail widens over a strip of content, but painted in the exact same
+   --well-bg, so it reads as the rail widening, not a panel appearing. */
+.app-frame .app-sidebar,
+.app-frame .app-sidebar[data-collapsed="true"],
+.app-frame .app-sidebar[data-collapsed="false"],
+.app-frame .app-sidebar.is-peek {
+  width: var(--sidebar-w-min) !important;
+  flex: 0 0 var(--sidebar-w-min) !important;
+  transition: none !important;
+}
+.app-main > .topbar,
+.app-sidebar.is-peek ~ .app-main > .topbar {
+  position: absolute !important;
+  transition: none !important;
+}
+
+/* the fixed rail — width is the ONLY thing that animates */
+.app-frame .app-sidebar .rail {
+  position: fixed !important;
+  top: 10px !important;
+  left: 8px !important;
+  height: calc(100dvh - 20px) !important;
+  width: calc(var(--sidebar-w-min) - 16px) !important;
+  z-index: 45 !important;
+  background: var(--well-bg) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 20px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 14px 10px 12px !important;
+  will-change: width;
+  transition: width 0.17s cubic-bezier(0.33, 1, 0.68, 1),
+              padding 0.17s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.app-frame .app-sidebar.is-peek .rail {
+  width: calc(var(--sidebar-w) - 16px) !important;
+  padding: 14px 12px 12px !important;
+  box-shadow: 20px 0 44px -22px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* labels: hidden at rest (rail is a fixed 72px so no layout shift), in on hover */
+.app-frame .app-sidebar:not(.is-peek) .rail-label,
+.app-frame .app-sidebar:not(.is-peek) .rail-group-label,
+.app-frame .app-sidebar:not(.is-peek) .rail-wordmark,
+.app-frame .app-sidebar:not(.is-peek) .rail-more-caret {
+  display: none !important;
+  opacity: 0 !important;
+}
+.app-frame .app-sidebar.is-peek .rail-label,
+.app-frame .app-sidebar.is-peek .rail-group-label,
+.app-frame .app-sidebar.is-peek .rail-wordmark,
+.app-frame .app-sidebar.is-peek .rail-more-caret {
+  display: block !important;
+  opacity: 1 !important;
+  white-space: nowrap;
+  transition: opacity 0.16s ease 0.05s;
+}
+
+/* icons: centred at rest, left-aligned on hover */
+.app-frame .app-sidebar:not(.is-peek) .rail-btn {
+  justify-content: center !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+.app-frame .app-sidebar.is-peek .rail-btn {
+  justify-content: flex-start !important;
+  padding: 0 12px !important;
+  gap: 11px !important;
+}
+.app-frame .app-sidebar:not(.is-peek) .rail-top { justify-content: center !important; }
+.app-frame .app-sidebar:not(.is-peek) .rail-badge {
+  position: absolute !important;
+  top: 3px; right: 3px;
+  min-width: 15px !important; height: 15px !important;
+  padding: 0 3px !important; font-size: 9px !important;
+  border: 1.5px solid var(--shell-bg) !important;
+}
+.app-frame .app-sidebar .rail-item { position: relative; }
+
+@media (max-width: 1000px) {
+  /* mobile: full-width drawer, no hover behaviour */
+  .app-frame .app-sidebar,
+  .app-frame .app-sidebar[data-collapsed="true"],
+  .app-frame .app-sidebar[data-collapsed="false"]:not(.is-peek) {
+    width: min(300px, 86vw) !important; flex: none !important;
+  }
+  .app-frame .app-sidebar .rail {
+    position: relative !important; width: 100% !important; height: 100% !important;
+    z-index: auto !important; padding: 14px 12px 12px !important;
+    border-right: 0 !important; transition: none !important;
+  }
+  .app-frame .app-sidebar .rail-label,
+  .app-frame .app-sidebar .rail-group-label,
+  .app-frame .app-sidebar .rail-wordmark { opacity: 1 !important; pointer-events: auto !important; }
+  .app-frame .app-sidebar .rail-btn { justify-content: flex-start !important; padding: 0 12px !important; gap: 11px !important; }
+  .app-main > .topbar { left: 0 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 68 — sidebar/topbar colour match + rounded panels + chip border
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* sidebar was --shell-bg (a shade lighter than the --well-bg topbar/well).
+   Match it, inset it 8px, and round it so it reads as a panel like the well. */
+.app-frame .app-sidebar .rail {
+  left: 8px !important;
+  top: 10px !important;
+  height: calc(100dvh - 20px) !important;
+  width: calc(var(--sidebar-w-min) - 16px) !important;
+  background: var(--well-bg) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--recess, none) !important;
+}
+.app-frame .app-sidebar.is-peek .rail {
+  width: calc(var(--sidebar-w) - 16px) !important;
+}
+.rail-top,
+.rail > .rail-group:last-child {
+  background: var(--well-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* the top bar: same colour, inset from the top/right, rounded top corners so
+   it caps the content well cleanly */
+.app-main > .topbar {
+  top: 10px !important;
+  right: 10px !important;
+  background: var(--well-bg) !important;
+  border-radius: 20px 20px 0 0 !important;
+  box-shadow: none !important;
+}
+.app-main > .topbar::after { display: none !important; }
+.app-main > main { padding-top: 0 !important; }
+
+/* the content well: round it to match, hairline to define the edge */
+.app-frame .app-main {
+  border-radius: 20px !important;
+  border: 1px solid var(--hairline) !important;
+}
+
+/* icon chips on cards carried a hard 1px border — soften to just a tint */
+.dc-chip, .bo-chip, .cf-chip, .mm-chip,
+.dc-out, .bo-out, .dc-acc-icon, .tile-out,
+.tile-figure ~ * .dc-chip {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  background: color-mix(in srgb, var(--text) 6%, transparent) !important;
+}
+
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar .rail {
+    left: 0 !important; top: 0 !important;
+    height: 100% !important; width: 100% !important;
+    border: 0 !important; border-radius: 0 !important;
+  }
+  .app-main > .topbar { top: 0 !important; right: 0 !important; border-radius: 0 !important; }
+  .app-main > main { padding-top: 0 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 69 — kill the white boxes behind logo/Help, lighten hover anim
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* .rail-top and the bottom group are sticky INSIDE the rail, which is already
+   --well-bg — so an opaque bg on them just paints a lighter rectangle. Make
+   them transparent; they inherit the rail behind them = seamless. */
+.rail-top,
+.rail > .rail-group:last-child,
+[data-theme="dark"] .rail-top,
+[data-theme="dark"] .rail > .rail-group:last-child,
+.app-sidebar[data-collapsed="true"] .rail-top,
+.app-sidebar[data-collapsed="true"] .rail > .rail-group:last-child,
+.app-sidebar.is-peek .rail-top,
+.app-sidebar.is-peek .rail > .rail-group:last-child {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+/* if the rail ever scrolls (More open on a short screen), fade the content
+   out under the pinned rows instead of a hard box */
+.rail-top::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%;
+  height: 14px; pointer-events: none;
+  background: linear-gradient(var(--well-bg), transparent);
+}
+
+/* rail hover: no box-shadow flash, snappier curve */
+.app-frame .app-sidebar.is-peek .rail {
+  box-shadow: 16px 0 40px -24px rgba(0, 0, 0, 0.35) !important;
+}
+.app-frame .app-sidebar .rail {
+  transition: width 0.16s ease, padding 0.16s ease !important;
+  box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 70 — SIDEBAR: PERMANENT, FULL, STATIC. supersedes r63-r69.
+   No hover-expand, no collapse, no animation, nothing to overlap.
+   ══════════════════════════════════════════════════════════════════════ */
+:root { --sidebar-w: 236px; }
+
+/* the slot is always 236px — content starts after it, always */
+.app-frame .app-sidebar,
+.app-frame .app-sidebar[data-collapsed],
+.app-frame .app-sidebar.is-peek {
+  width: var(--sidebar-w) !important;
+  flex: 0 0 var(--sidebar-w) !important;
+  transition: none !important;
+  overflow: visible !important;
+}
+
+/* the rail: a fixed, rounded panel the same colour as the content well */
+.app-frame .app-sidebar .rail,
+.app-frame .app-sidebar[data-collapsed] .rail,
+.app-frame .app-sidebar.is-peek .rail {
+  position: fixed !important;
+  left: 10px !important;
+  top: 10px !important;
+  height: calc(100dvh - 20px) !important;
+  width: calc(var(--sidebar-w) - 20px) !important;
+  z-index: 40 !important;
+  background: var(--well-bg) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 20px !important;
+  box-shadow: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 16px 12px 12px !important;
+  transition: none !important;
+}
+
+/* the top bar starts at the sidebar's right edge, always */
+.app-main > .topbar,
+.app-sidebar[data-collapsed] ~ .app-main > .topbar,
+.app-sidebar.is-peek ~ .app-main > .topbar {
+  position: sticky !important;
+  flex-shrink: 0 !important;
+  top: 0 !important;
+  left: auto !important;
+  right: auto !important; width: 100% !important;
+  height: var(--topbar-h) !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 24px !important;
+  border-radius: 20px 20px 0 0 !important;
+  background: var(--well-bg) !important;
+  z-index: 90 !important;
+}
+.app-main > .topbar::after { display: none !important; }
+
+/* the scroller owns the remaining height; no padding needed */
+.app-main > main { padding-top: 0 !important; }
+
+/* every nav row: labelled, left-aligned, full width — no icon-only state.
+   [data-collapsed] in the selector so specificity beats the r67 :not(.is-peek). */
+.app-frame .app-sidebar[data-collapsed] .rail-label,
+.app-frame .app-sidebar[data-collapsed] .rail-group-label,
+.app-frame .app-sidebar[data-collapsed] .rail-wordmark,
+.app-frame .app-sidebar[data-collapsed] .rail-more-caret,
+.app-frame .app-sidebar:not(.is-peek) .rail-label,
+.app-frame .app-sidebar:not(.is-peek) .rail-group-label,
+.app-frame .app-sidebar:not(.is-peek) .rail-wordmark,
+.app-frame .app-sidebar:not(.is-peek) .rail-more-caret {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.app-frame .app-sidebar[data-collapsed] .rail-group-label { height: auto !important; }
+.app-frame .app-sidebar[data-collapsed] .rail-btn,
+.app-frame .app-sidebar:not(.is-peek) .rail-btn {
+  justify-content: flex-start !important;
+  padding: 0 12px !important;
+  gap: 11px !important;
+  width: 100% !important;
+}
+.app-frame .app-sidebar[data-collapsed] .rail-top,
+.app-frame .app-sidebar:not(.is-peek) .rail-top {
+  justify-content: flex-start !important;
+  flex-direction: row !important;
+}
+.app-frame .app-sidebar[data-collapsed] .rail-badge {
+  position: static !important;
+  min-width: auto !important; height: auto !important;
+  padding: 2px 7px !important; font-size: 10.5px !important; border: 0 !important;
+}
+.app-frame .app-sidebar .rail-top {
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 2px 4px 0 !important;
+  background: transparent !important;
+}
+.app-frame .app-sidebar .rail-badge {
+  position: static !important;
+  min-width: auto !important; height: auto !important;
+  padding: 2px 7px !important; font-size: 10.5px !important;
+  border: 0 !important;
+}
+.rail-collapse { display: none !important; }
+.rail-top::after { display: none !important; }
+
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar,
+  .app-frame .app-sidebar[data-collapsed],
+  .app-frame .app-sidebar.is-peek {
+    width: min(300px, 86vw) !important; flex: none !important;
+  }
+  .app-frame .app-sidebar .rail {
+    position: relative !important;
+    left: 0 !important; top: 0 !important;
+    width: 100% !important; height: 100% !important;
+    border: 0 !important; border-radius: 0 !important;
+    padding: 14px 12px 12px !important;
+  }
+  .app-main > .topbar { left: 0 !important; padding-left: 14px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 71 — sidebar scroll fix (opaque brand row, same colour = no box)
+   ══════════════════════════════════════════════════════════════════════ */
+/* transparent .rail-top let scrolling nav rows show through behind the logo.
+   Paint it the EXACT rail colour (--well-bg): opaque enough to hide what
+   scrolls under it, identical colour so there is no visible box or seam. */
+.rail-top,
+[data-theme="dark"] .rail-top,
+.app-sidebar[data-collapsed] .rail-top,
+.app-sidebar[data-collapsed] .rail > .rail-group:last-child,
+.rail > .rail-group:last-child,
+[data-theme="dark"] .rail > .rail-group:last-child {
+  background: var(--well-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.rail-top {
+  padding-top: 6px !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 6px !important;
+}
+.rail > .rail-group:last-child {
+  padding-top: 12px !important;
+  padding-bottom: 6px !important;
+}
+/* soft fade where content passes under the pinned rows */
+.rail-top::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: 0; right: 0; top: 100%;
+  height: 16px;
+  background: linear-gradient(var(--well-bg), transparent) !important;
+  pointer-events: none;
+}
+.rail > .rail-group:last-child::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 100%;
+  height: 16px;
+  background: linear-gradient(transparent, var(--well-bg));
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 72 — the rail hangs below the fold (100dvh != innerHeight),
+   hiding the Help row. Pin it top+bottom instead of setting a height.
+   ══════════════════════════════════════════════════════════════════════ */
+.app-frame .app-sidebar .rail,
+.app-frame .app-sidebar[data-collapsed] .rail,
+.app-frame .app-sidebar.is-peek .rail {
+  top: 10px !important;
+  bottom: 10px !important;
+  height: auto !important;
+  max-height: none !important;
+}
+@media (max-width: 1000px) {
+  .app-frame .app-sidebar .rail {
+    top: 0 !important; bottom: 0 !important; height: 100% !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 73 — remove every border / divider inside the chart panel
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* the line above IN / OUT / NET */
+.bo-foot, .cf-foot, .dc-alloc {
+  border-top: 0 !important;
+}
+
+/* the boxes around the month rows (Aug · best month, Jul, Oct, Nov …) */
+.charts-panel .dc-alloc li,
+.dc-alloc li,
+.charts-panel .dc-accounts li {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 7px 4px !important;
+}
+.charts-panel .dc-alloc li + li,
+.dc-alloc li:hover {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+/* the pct pills inside those rows — keep the tint, drop any outline */
+.dc-alloc-pct, .bo-legend-pct {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* any stray divider on the chart body / legend rows */
+.charts-body, .charts-body > div,
+.bo-legend li, .bo-legend {
+  border: 0 !important;
+}
+
+/* the daily-spend strip already had its ring removed (r65) — reassert */
+.bo-bars, .dc-strip, .mm-bars, .cf-chart {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 74 — top-nav gap + remaining chart-card border
+   ══════════════════════════════════════════════════════════════════════ */
+/* .app-frame .app-main { margin: 0 !important; border-radius: 0 !important; } */
+/* .app-frame .app-main { margin: 0 !important; border-radius: 0 !important; } */
+/* .app-frame .app-main { margin: 0 !important; border-radius: 0 !important; } */
+/* .app-frame .app-main { margin: 0 !important; border-radius: 0 !important; } */
+.app-main > .topbar,
+.app-sidebar[data-collapsed] ~ .app-main > .topbar,
+.app-sidebar.is-peek ~ .app-main > .topbar {
+  position: sticky !important;
+  flex-shrink: 0 !important;
+  top: 0 !important;
+  left: auto !important;
+  right: auto !important; width: 100% !important;
+  height: var(--topbar-h) !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 24px !important;
+  border-radius: 20px 20px 0 0 !important;
+  background: var(--well-bg) !important;
+  z-index: 90 !important;
+  box-shadow: none !important;
+}
+.app-main > main { padding-top: 0 !important; }
+@media (max-width: 1000px) {
+  .app-main > .topbar {
+    position: sticky !important; top: 0 !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    padding: 12px 14px !important;
+  }
+  .app-main > main { padding-top: 0 !important; }
+}
+.charts-tabs {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+
+.bo-foot, .cf-foot, .dc-alloc,
+.bo-legend, .bo-legend li {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* round 74b — nuke the residual sub-pixel border on the chart section */
+.charts-panel .charts-body .bo,
+.charts-panel .charts-body .cf,
+.charts-panel .charts-body .dc,
+.charts-panel .charts-body .mm,
+.charts-panel .charts-body > div,
+.charts-panel .charts-body > div > * {
+  border: 0 !important;
+  border-width: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 75 — topbar curved top edge back + plain profile avatar
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* curved top corners, still flush to the top (no gap) */
+/* .app-main > .topbar { */
+/*   border-radius: 18px 18px 0 0 !important; */
+/* } */
+@media (max-width: 1000px) {
+/* .app-main > .topbar { border-radius: 18px 18px 0 0 !important; } */
+}
+
+/* profile avatar — a normal rounded photo, no orange ring/glow, no hover
+   or press interaction */
+.topbar-avatar,
+.topbar-avatar:hover,
+.topbar-avatar:active,
+.topbar-avatar:focus,
+.topbar-avatar:focus-visible {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
+  transition: none !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+.topbar-avatar > span {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: transparent !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 76 — wallet cards get a skewed / tilted card treatment
+   ══════════════════════════════════════════════════════════════════════ */
+.wcard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+  transform-style: preserve-3d;
+  transition: box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s ease;
+  will-change: transform;
+}
+/* the accent — a bright edge on the left, skewed */
+.wcard::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--brand);
+  transform: skewX(-12deg);
+  transform-origin: top left;
+  box-shadow: 0 0 16px -2px var(--brand);
+}
+/* diagonal gloss that slides across on hover — the "skew" sheen */
+.wcard-sheen {
+  position: absolute;
+  inset: -40% -10%;
+  z-index: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    color-mix(in srgb, var(--brand) 12%, transparent) 50%,
+    transparent 58%
+  );
+  transform: translateX(-40%) skewX(-14deg);
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.wcard:hover {
+  transform: perspective(1100px) rotateX(3.5deg) rotateY(-6deg) translateY(-6px);
+  box-shadow:
+    -16px 22px 44px -20px rgba(0, 0, 0, 0.6),
+    0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent);
+  border-color: transparent;
+}
+.wcard:hover .wcard-sheen { transform: translateX(60%) skewX(-14deg); }
+@media (prefers-reduced-motion: reduce) {
+  .wcard, .wcard:hover { transform: none; transition: none; }
+  .wcard-sheen { display: none; }
+}
+@media (hover: none) {
+  .wcard:hover { transform: none; }
+}
+
+/* the Net-worth banner — a proper dark hero with the flowing paths */
+.wal-networth {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline);
+  box-shadow: 0 12px 34px -22px rgba(0, 0, 0, 0.55);
+}
+.wal-networth .tile-fp { opacity: 0.9; }
+:root:not([data-theme="dark"]) .wal-networth .tile-fp { opacity: 0.4; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   ROUND 78 — restore prelanding body-scroll (global overflow:hidden on
+   html/body was killing it). The dashboard shell now pins itself.
+   ══════════════════════════════════════════════════════════════════════ */
+.app-shell {
+  position: fixed !important;
+  inset: 0 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+/* the prelanding page (.mr) scrolls the body */
+/* prelanding: let the WINDOW scroll (normal document flow) so Lenis' default
+   wrapper works and every scroll-driven transform stays smooth */
+html:has(.mr), body:has(.mr) {
+  height: auto !important;
+  min-height: 100%;
+  /* `clip` (not `hidden`): `overflow-x: hidden` forces the browser to promote
+     `overflow-y` to `auto`, which makes <body> a scroll container and breaks
+     every `position: sticky` pin on the page (§2 gather headline). `clip` is
+     the one value that lets `overflow-y: visible` actually stay visible. */
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+/* ── Lenis smooth-scroll (prelanding only) ── */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTH (final) — a clean WHITE card, centred on the dark orange-shader frame.
+   Login is dark-only (frame + aside), but the card itself stays white like the
+   reference. Everything below wins the cascade (last block, data-theme + !important).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* the whole auth screen is locked to the viewport — nothing scrolls.
+   .auth-shell is position:fixed inset:0 (the true viewport); children take
+   height:100% of THAT, not 100dvh (which over-reports ~34px in-app and pushes
+   the card below the fold). */
+.auth-shell { position: fixed !important; inset: 0 !important; height: 100vh !important; overflow: hidden !important; }
+.auth-main  { height: 100vh !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.auth-aside { height: 100vh !important; min-height: 0 !important; overflow: hidden !important; }
+.auth-right-frame {
+  height: 100vh !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: clamp(14px, 2.5vh, 32px) clamp(28px, 7vw, 100px) !important;
+}
+/* the card never exceeds the inset shader panel — it stays inside the rounded
+   orange area with a gutter above/below. On the taller sign-up form the card
+   itself scrolls internally; the page never does. */
+.auth-panel {
+  /* cap against the fixed shell (true viewport), NOT 100dvh which over-reports
+     in-app and lets the card run off the bottom. The tall sign-up form scrolls
+     inside the card; the page never scrolls. */
+  max-height: calc(100vh - 24px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(20, 22, 26, 0.25) transparent;
+}
+.auth-panel::-webkit-scrollbar { width: 6px; }
+.auth-panel::-webkit-scrollbar-thumb { background: rgba(20, 22, 26, 0.22); border-radius: 999px; }
+
+/* the shader is a single rounded panel with an even black gutter on all four
+   sides; the canvas inherits the radius so the corners cut cleanly.
+   width/height MUST be auto — an old `width:100%` makes the right/bottom
+   insets no-ops and the panel overflows the frame (clipped corners). */
+.auth-shader-bg {
+  inset: clamp(10px, 1.5vw, 18px) !important;   /* big BG — nearly fills the frame */
+  width: auto !important;
+  height: auto !important;
+  border-radius: clamp(18px, 2.4vw, 26px) !important;
+}
+.auth-shader-bg canvas {
+  border-radius: inherit !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* the card */
+[data-theme="dark"] .auth-panel,
+.auth-panel {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(20, 22, 26, 0.07) !important;
+  border-radius: 22px !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.10),
+    0 44px 96px -44px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .auth-panel, [data-theme="dark"] .auth-panel *,
+.auth-panel, .auth-panel * { color: #14161A !important; }
+
+/* muted greys */
+[data-theme="dark"] .auth-panel .auth-head p, .auth-panel .auth-head p,
+[data-theme="dark"] .auth-panel .n-label,   .auth-panel .n-label,
+.auth-panel .auth-divider, .auth-panel .auth-foot span,
+.auth-panel .auth-trust, .auth-panel [class*="never"],
+.auth-back, .auth-back svg { color: #5B6470 !important; }
+
+/* links + strength/brand accents stay orange */
+.auth-panel .auth-link, .auth-panel .auth-link--strong,
+.auth-foot .auth-link, .auth-panel a[href] { color: var(--brand) !important; }
+.auth-panel .auth-link:hover, .auth-foot .auth-link:hover { color: var(--brand-from, #F16001) !important; }
+
+/* inputs + oauth button — light on the white card */
+[data-theme="dark"] .auth-panel .n-input, .auth-panel .n-input,
+[data-theme="dark"] .auth-panel .auth-oauth, .auth-panel .auth-oauth {
+  background: #F5F6F8 !important;
+  border: 1px solid rgba(20, 22, 26, 0.10) !important;
+  color: #14161A !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .auth-panel .n-input::placeholder,
+.auth-panel input.n-input::placeholder,
+.auth-panel .n-input::placeholder {
+  color: #98A0AC !important;
+  -webkit-text-fill-color: #98A0AC !important;
+  opacity: 1 !important;
+}
+.auth-panel .n-input:focus {
+  background: #FFFFFF !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(232, 80, 2, 0.16) !important;
+}
+
+/* primary CTA — orange, white text (beats the blanket color rule above) */
+.auth-panel .n-btn-primary,
+.auth-panel .n-btn-primary * {
+  background: var(--brand) !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+}
+.auth-panel .n-btn-primary:hover { background: var(--brand-from, #F16001) !important; }
+
+/* trust badge — light chip on the white card */
+.auth-panel .auth-trust,
+.auth-panel .clario-trust {
+  background: #F5F6F8 !important;
+  border: 1px solid rgba(20, 22, 26, 0.08) !important;
+  color: #5B6470 !important;
+}
+
+/* ── inputs: max-specificity override — the dark-theme auth rules from earlier
+   rounds keep forcing white text / dark fields via -webkit-text-fill-color ── */
+html[data-theme="dark"] .auth-shell .auth-panel input.n-input,
+html .auth-shell .auth-panel input.n-input {
+  background: #F5F6F8 !important;
+  color: #14161A !important;
+  -webkit-text-fill-color: #14161A !important;
+  border: 1px solid rgba(20, 22, 26, 0.10) !important;
+}
+html[data-theme="dark"] .auth-shell .auth-panel input.n-input:focus,
+html .auth-shell .auth-panel input.n-input:focus {
+  background: #FFFFFF !important;
+  border-color: var(--brand) !important;
+}
+html[data-theme="dark"] .auth-shell .auth-panel input.n-input::placeholder,
+html .auth-shell .auth-panel input.n-input::placeholder {
+  color: #9AA1AD !important;
+  -webkit-text-fill-color: #9AA1AD !important;
+  opacity: 1 !important;
+}
+html[data-theme="dark"] .auth-shell .auth-panel .auth-oauth,
+html .auth-shell .auth-panel .auth-oauth,
+html[data-theme="dark"] .auth-shell .auth-panel .auth-oauth *,
+html .auth-shell .auth-panel .auth-oauth * {
+  background: #F5F6F8 !important;
+  color: #14161A !important;
+  -webkit-text-fill-color: #14161A !important;
+}
+html .auth-shell .auth-panel .auth-oauth { border: 1px solid rgba(20, 22, 26, 0.10) !important; }
+

@@ -7,7 +7,10 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, XCircle } from 'lucide-react';
+import {
+  CircleNotch as Loader2,
+  XCircle as XCircle,
+} from '@phosphor-icons/react';
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();

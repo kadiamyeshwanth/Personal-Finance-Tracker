@@ -1,28 +1,41 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Plus, Trash2, Edit2, ArrowUpRight, ArrowDownRight, PieChart, Building2 } from 'lucide-react';
+import {
+  TrendUp as TrendingUp,
+  Plus as Plus,
+  Trash as Trash2,
+  PencilSimple as Edit2,
+  ArrowUpRight as ArrowUpRight,
+  ArrowDownRight as ArrowDownRight,
+  ChartPie as PieChart,
+  Buildings as Building2,
+  ChartLineUp, Bank, ArrowsClockwise, CurrencyBtc, Vault,
+  ShieldCheck, Coins, House, Briefcase,
+} from '@phosphor-icons/react';
 import { fetchInvestments, addInvestment, updateInvestment, deleteInvestment } from '../api/investments';
 import PageHeader from '../components/ui/PageHeader';
+import BrandLogo from '../components/ui/BrandLogo';
+import { queryStates } from '../components/ui/States';
 import toast from 'react-hot-toast';
 
 const TYPES = [
-  { key: 'stocks',      label: 'Stocks',        emoji: '📈' },
-  { key: 'mutual_fund', label: 'Mutual Fund',   emoji: '🏦' },
-  { key: 'sip',         label: 'SIP',           emoji: '🔄' },
-  { key: 'crypto',      label: 'Crypto',        emoji: '₿'  },
-  { key: 'fd',          label: 'Fixed Deposit', emoji: '🏛️' },
-  { key: 'ppf',         label: 'PPF / NPS',     emoji: '🎯' },
-  { key: 'gold',        label: 'Gold',          emoji: '🥇' },
-  { key: 'real_estate', label: 'Real Estate',   emoji: '🏘️' },
-  { key: 'other',       label: 'Other',         emoji: '💼' },
+  { key: 'stocks',      label: 'Stocks',        Icon: ChartLineUp },
+  { key: 'mutual_fund', label: 'Mutual Fund',   Icon: Bank },
+  { key: 'sip',         label: 'SIP',           Icon: ArrowsClockwise },
+  { key: 'crypto',      label: 'Crypto',        Icon: CurrencyBtc },
+  { key: 'fd',          label: 'Fixed Deposit', Icon: Vault },
+  { key: 'ppf',         label: 'PPF / NPS',     Icon: ShieldCheck },
+  { key: 'gold',        label: 'Gold',          Icon: Coins },
+  { key: 'real_estate', label: 'Real Estate',   Icon: House },
+  { key: 'other',       label: 'Other',         Icon: Briefcase },
 ];
 
-const COLORS = ['#2383e2','#0f7b6c','#9065b0','#c4554d','#d9730d','#6366f1','#059669','#dc2626','#7c3aed'];
+const COLORS = ['var(--brand)','var(--brand)','var(--brand)','var(--red)','var(--red)','var(--brand)','var(--brand)','var(--red)','var(--brand)'];
 const fmt    = (n) => `₹${Math.abs(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const getType = (key) => TYPES.find(t => t.key === key) || TYPES[TYPES.length - 1];
 
-const BLANK = { name: '', type: 'mutual_fund', investedAmount: '', currentValue: '', units: '', purchaseDate: new Date().toISOString().slice(0,10), notes: '', symbol: '', color: '#2383e2' };
+const BLANK = { name: '', type: 'mutual_fund', investedAmount: '', currentValue: '', units: '', purchaseDate: new Date().toISOString().slice(0,10), notes: '', symbol: '', color: 'var(--brand)' };
 
 const InvestmentsPage = () => {
   const qc = useQueryClient();
@@ -31,9 +44,8 @@ const InvestmentsPage = () => {
   const [form, setForm]         = useState(BLANK);
   const [filterType, setFilterType] = useState('all');
 
-  const { data: { data: investments = [], summary = {} } = {}, isLoading } = useQuery({
-    queryKey: ['investments'], queryFn: fetchInvestments,
-  });
+  const invQuery = useQuery({ queryKey: ['investments'], queryFn: fetchInvestments });
+  const { data: { data: investments = [], summary = {} } = {}, isLoading } = invQuery;
 
   const addMut = useMutation({
     mutationFn: addInvestment,
@@ -80,6 +92,19 @@ const InvestmentsPage = () => {
         </button>
       </PageHeader>
 
+      {queryStates({
+        query: invQuery,
+        isEmpty: !isLoading && investments.length === 0,
+        label: 'Loading your portfolio',
+        empty: {
+          icon: <ChartLineUp size={26} weight="fill" />,
+          title: 'No investments yet',
+          body: 'Track stocks, mutual funds, SIPs, crypto, FDs and gold in one place.',
+          action: <button className="n-btn n-btn-primary n-btn-sm" onClick={() => { setEditing(null); setForm(BLANK); setShowForm(true); }}><Plus size={14} weight="bold" /> Add your first holding</button>,
+        },
+      }) || (
+      <>
+
       {/* Summary cards */}
       {investments.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
@@ -106,10 +131,10 @@ const InvestmentsPage = () => {
           {/* Filter tabs */}
           {investments.length > 0 && (
             <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <button onClick={() => setFilterType('all')} style={{ padding: '4px 10px', borderRadius: 'var(--r)', border: `1px solid ${filterType === 'all' ? 'var(--accent)' : 'var(--border)'}`, background: filterType === 'all' ? 'rgba(35,131,226,0.1)' : 'var(--bg)', cursor: 'pointer', fontSize: '12px', color: filterType === 'all' ? 'var(--accent)' : 'var(--text-2)' }}>All</button>
+              <button onClick={() => setFilterType('all')} style={{ padding: '5px 11px', borderRadius: '999px', border: `1px solid ${filterType === 'all' ? 'var(--brand)' : 'var(--border)'}`, background: filterType === 'all' ? 'var(--brand-bg)' : 'var(--bg)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: filterType === 'all' ? 'var(--brand)' : 'var(--text-2)' }}>All</button>
               {TYPES.filter(t => investments.some(i => i.type === t.key)).map(t => (
-                <button key={t.key} onClick={() => setFilterType(t.key)} style={{ padding: '4px 10px', borderRadius: 'var(--r)', border: `1px solid ${filterType === t.key ? 'var(--accent)' : 'var(--border)'}`, background: filterType === t.key ? 'rgba(35,131,226,0.1)' : 'var(--bg)', cursor: 'pointer', fontSize: '12px', color: filterType === t.key ? 'var(--accent)' : 'var(--text-2)' }}>
-                  {t.emoji} {t.label}
+                <button key={t.key} onClick={() => setFilterType(t.key)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 11px', borderRadius: '999px', border: `1px solid ${filterType === t.key ? 'var(--brand)' : 'var(--border)'}`, background: filterType === t.key ? 'var(--brand-bg)' : 'var(--bg)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: filterType === t.key ? 'var(--brand)' : 'var(--text-2)' }}>
+                  <t.Icon size={13} weight="fill" /> {t.label}
                 </button>
               ))}
             </div>
@@ -118,7 +143,9 @@ const InvestmentsPage = () => {
           {isLoading ? <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-3)' }}>Loading…</div> :
            filtered.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>📈</div>
+              <span style={{ width: 44, height: 44, borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--brand-bg)', marginBottom: '14px' }}>
+                <ChartLineUp size={22} weight="fill" style={{ color: 'var(--brand)' }} />
+              </span>
               <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>No investments yet</div>
               <div style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px' }}>Start tracking your portfolio — stocks, mutual funds, SIPs, FDs and more.</div>
               <button className="n-btn n-btn-primary n-btn-sm" onClick={() => { setEditing(null); setForm(BLANK); setShowForm(true); }}><Plus size={14} /> Add first investment</button>
@@ -132,9 +159,7 @@ const InvestmentsPage = () => {
                 return (
                   <motion.div key={inv._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                     style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: 'var(--r-md)', background: `${inv.color}20`, border: `1px solid ${inv.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
-                      {t.emoji}
-                    </div>
+                    <BrandLogo name={inv.name} symbol={inv.symbol} type={inv.type} size={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {inv.name} {inv.symbol && <span style={{ fontSize: '11px', color: 'var(--text-3)', background: 'var(--bg-secondary)', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border)' }}>{inv.symbol}</span>}
@@ -175,7 +200,7 @@ const InvestmentsPage = () => {
                 return (
                   <div key={t.key} style={{ padding: '10px 8px', borderRadius: 'var(--r)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>{t.emoji} {t.label}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-2)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><t.Icon size={13} weight="fill" /> {t.label}</span>
                       <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>{pct}%</span>
                     </div>
                     <div style={{ height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden', marginBottom: '4px' }}>
@@ -192,6 +217,8 @@ const InvestmentsPage = () => {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Add/Edit Modal */}
       <AnimatePresence>
@@ -221,8 +248,8 @@ const InvestmentsPage = () => {
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {TYPES.map(t => (
                       <button key={t.key} onClick={() => setForm(p => ({ ...p, type: t.key }))}
-                        style={{ padding: '5px 10px', borderRadius: 'var(--r)', border: `1px solid ${form.type === t.key ? 'var(--accent)' : 'var(--border)'}`, background: form.type === t.key ? 'rgba(35,131,226,0.1)' : 'var(--bg)', cursor: 'pointer', fontSize: '12px', color: form.type === t.key ? 'var(--accent)' : 'var(--text-2)' }}>
-                        {t.emoji} {t.label}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '999px', border: `1px solid ${form.type === t.key ? 'var(--brand)' : 'var(--border)'}`, background: form.type === t.key ? 'var(--brand-bg)' : 'var(--bg)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: form.type === t.key ? 'var(--brand)' : 'var(--text-2)' }}>
+                        <t.Icon size={13} weight="fill" /> {t.label}
                       </button>
                     ))}
                   </div>

@@ -1,8 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ErrorState, OfflineState } from '../components/ui/States';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Wallet, X } from 'lucide-react';
+import {
+  Plus as Plus,
+  Trash as Trash2,
+  Wallet as Wallet,
+  X as X,
+} from '@phosphor-icons/react';
 import { fetchBudgets, saveBudget, deleteBudget } from '../api/budgets';
 import { fetchTransactions } from '../api/transactions';
 import { useAuth } from '../context/AuthContext';
@@ -15,7 +21,8 @@ const BudgetsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ category: EXPENSE_CATEGORIES[0], limit: '' });
 
-  const { data: budgets = [], isLoading: bl } = useQuery({ queryKey: ['budgets'],      queryFn: fetchBudgets });
+  let budgetsQ;
+  const { data: budgets = [], isLoading: bl } = (budgetsQ = useQuery({ queryKey: ['budgets'],      queryFn: fetchBudgets }));
   const { data: allTxns = [] }                = useQuery({ queryKey: ['transactions'], queryFn: fetchTransactions });
   const expenses = allTxns.filter(t => !t.isRecurring && t.type === 'expense');
 
@@ -43,6 +50,12 @@ const BudgetsPage = () => {
 
   return (
     <div>
+      {/* A failed request must not look like an empty list. */}
+      {budgetsQ?.isError && (
+        navigator.onLine === false
+          ? <OfflineState onRetry={() => budgetsQ.refetch()} compact />
+          : <ErrorState error={budgetsQ.error} onRetry={() => budgetsQ.refetch()} compact />
+      )}
       <PageHeader
         icon={Wallet}
         title="Budgets"
@@ -61,7 +74,7 @@ const BudgetsPage = () => {
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '20px', marginBottom: '24px', background: 'var(--bg-secondary)' }}>
+            <div className="pg-form">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <span style={{ fontWeight: 600, fontSize: '14px' }}>Set or update a budget</span>
                 <button onClick={() => setShowForm(false)} className="n-btn n-btn-ghost n-btn-sm" style={{ padding: '3px' }}><X size={14} /></button>
@@ -94,7 +107,7 @@ const BudgetsPage = () => {
       {/* Budget list */}
       {bl ? (
         <div style={{ color: 'var(--text-3)', fontSize: '13px' }}>Loading…</div>
-      ) : enriched.length === 0 ? (
+      ) : (enriched.length === 0 && !budgetsQ?.isError) ? (
         <div className="n-empty">
           <div className="n-empty-icon"><Wallet size={28} strokeWidth={1.2} /></div>
           <p style={{ fontWeight: 500, color: 'var(--text-2)', fontSize: '14px' }}>No budgets set</p>
@@ -104,7 +117,7 @@ const BudgetsPage = () => {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+        <div className="pg-list">
           {enriched.map((b, idx) => {
             const over = b.pct >= 100;
             const warn = b.pct >= 80 && !over;

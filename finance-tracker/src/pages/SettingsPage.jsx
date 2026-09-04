@@ -3,15 +3,38 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
-  Settings, User, Lock, Trash2, AlertTriangle,
-  Eye, EyeOff, CheckCircle2, Shield, Database,
-  CreditCard, Target, Wallet, Moon, Sun, X, Sparkles,
-  MessageSquare, Copy, RefreshCw, ExternalLink, CheckCheck, Zap,
-} from 'lucide-react';
+  GearSix as Settings,
+  User as User,
+  Lock as Lock,
+  Trash as Trash2,
+  Warning as AlertTriangle,
+  Eye as Eye,
+  EyeSlash as EyeOff,
+  CheckCircle as CheckCircle2,
+  Shield as Shield,
+  Database as Database,
+  CreditCard as CreditCard,
+  Target as Target,
+  Wallet as Wallet,
+  Moon as Moon,
+  Sun as Sun,
+  X as X,
+  Sparkle as Sparkles,
+  ChatText as MessageSquare,
+  Copy as Copy,
+  ArrowsClockwise as RefreshCw,
+  ArrowSquareOut as ExternalLink,
+  Checks as CheckCheck,
+  Lightning as Zap,
+} from '@phosphor-icons/react';
 import { getUserStats, updateProfile, changePassword, deleteAccount, clearAllData } from '../api/users';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import PageHeader from '../components/ui/PageHeader';
+import Avatar from '../components/ui/Avatar';
+import { getAvatar, setAvatar, fileToSquareDataURL } from '../lib/profile';
+import { getA11y, setA11y } from '../lib/a11y';
+import { PersonArmsSpread, TextAa } from '@phosphor-icons/react';
 import client from '../api/client';
 
 // ── Password Strength Indicator ───────────────────────────────────────────────
@@ -119,12 +142,12 @@ const Section = ({ icon: Icon, title, subtitle, children, accentColor }) => (
 
 // ── Finance Avatar Section ────────────────────────────────────────────────────
 const AVATARS = {
-  'Silent Saver':     { emoji: '🐢', color: '#4cc38a', desc: 'You save quietly and consistently. Keep it up!' },
-  'Chaos Spender':    { emoji: '🌪️', color: '#e06c75', desc: 'Your spending is unpredictable. Try setting stricter budgets.' },
-  'Budget Ninja':     { emoji: '🥷', color: '#4a9eff', desc: 'You stay within budget like a pro. Impressive discipline!' },
-  'Balanced Spender': { emoji: '⚖️', color: '#e5a445', desc: 'You balance spending and saving well. Great equilibrium!' },
-  'Impulse Buyer':    { emoji: '⚡', color: '#b48eff', desc: 'You love spontaneous purchases. Use the 24-hour rule!' },
-  'Luxury Addict':    { emoji: '💎', color: '#f472b6', desc: 'You enjoy the finer things. Budget for it intentionally!' },
+  'Silent Saver':     { emoji: '🐢', color: 'var(--brand)', desc: 'You save quietly and consistently. Keep it up!' },
+  'Chaos Spender':    { emoji: '🌪️', color: 'var(--red)', desc: 'Your spending is unpredictable. Try setting stricter budgets.' },
+  'Budget Ninja':     { emoji: '🥷', color: 'var(--brand)', desc: 'You stay within budget like a pro. Impressive discipline!' },
+  'Balanced Spender': { emoji: '⚖️', color: 'var(--red)', desc: 'You balance spending and saving well. Great equilibrium!' },
+  'Impulse Buyer':    { emoji: '⚡', color: 'var(--brand)', desc: 'You love spontaneous purchases. Use the 24-hour rule!' },
+  'Luxury Addict':    { emoji: '💎', color: 'var(--red)', desc: 'You enjoy the finer things. Budget for it intentionally!' },
 };
 
 const AvatarSection = () => {
@@ -139,7 +162,7 @@ const AvatarSection = () => {
 
   const av = AVATARS[personality];
   return (
-    <Section icon={Sparkles} title="Finance Personality" subtitle="Your AI-detected financial archetype" accentColor="#6366f1">
+    <Section icon={Sparkles} title="Finance Personality" subtitle="Your AI-detected financial archetype" accentColor="var(--brand)">
       {loading ? (
         <div className="n-skeleton" style={{ height: '60px', borderRadius: 'var(--r-md)' }} />
       ) : personality && av ? (
@@ -377,6 +400,31 @@ const SettingsPage = () => {
 
   // Profile form
   const [username, setUsername] = useState(currentUser?.username || '');
+  const [avatar, setAvatarState] = useState(getAvatar);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const fileRef = React.useRef(null);
+
+  const pickAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setAvatarBusy(true);
+    try {
+      const dataUrl = await fileToSquareDataURL(file, 256);
+      setAvatar(dataUrl);
+      setAvatarState(dataUrl);
+      toast.success('Profile photo updated');
+    } catch (err) {
+      toast.error(err.message || 'Could not use that image');
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+  const removeAvatar = () => { setAvatar(null); setAvatarState(null); toast.success('Profile photo removed'); };
+
+  // Accessibility preferences
+  const [a11y, setA11yState] = useState(getA11y);
+  const patchA11y = (patch) => setA11yState(setA11y(patch));
 
   // Password form
   const [showCurrent, setShowCurrent] = useState(false);
@@ -457,14 +505,7 @@ const SettingsPage = () => {
         padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
         marginBottom: '32px', background: 'var(--bg)',
       }}>
-        <div style={{
-          width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0,
-          background: 'linear-gradient(135deg, #2383e2, #6366f1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '22px', fontWeight: 700, color: '#fff',
-        }}>
-          {initials}
-        </div>
+        <Avatar name={currentUser?.username} size={52} radius={14} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)' }}>{currentUser?.username}</div>
           <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>{currentUser?.email}</div>
@@ -492,7 +533,22 @@ const SettingsPage = () => {
       </div>
 
       {/* Profile */}
-      <Section icon={User} title="Profile" subtitle="Update your display name">
+      <Section icon={User} title="Profile" subtitle="Your photo and display name">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+          <Avatar name={currentUser?.username} size={64} radius={16} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input ref={fileRef} type="file" accept="image/*" onChange={pickAvatar} style={{ display: 'none' }} />
+              <button type="button" className="n-btn n-btn-default n-btn-sm" disabled={avatarBusy} onClick={() => fileRef.current?.click()}>
+                {avatarBusy ? 'Processing…' : avatar ? 'Change photo' : 'Upload photo'}
+              </button>
+              {avatar && (
+                <button type="button" className="n-btn n-btn-danger-ghost n-btn-sm" onClick={removeAvatar}>Remove</button>
+              )}
+            </div>
+            <span style={{ fontSize: '11.5px', color: 'var(--text-3)' }}>JPG or PNG. Square works best — it's cropped to a circle and stored on this device.</span>
+          </div>
+        </div>
         <form onSubmit={handleProfileSave} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
             <label className="n-label">Username</label>
@@ -596,8 +652,57 @@ const SettingsPage = () => {
         </div>
       </Section>
 
+      {/* Accessibility */}
+      <Section icon={PersonArmsSpread} title="Accessibility" subtitle="Adjust motion, text size and contrast. Applied instantly and remembered on this device.">
+        <div className="a11y-list">
+          <label className="a11y-row">
+            <div>
+              <b>Reduce motion</b>
+              <span>Turn off page transitions, parallax and looping animations.</span>
+            </div>
+            <button type="button" role="switch" aria-checked={a11y.reduceMotion}
+              className={`a11y-switch${a11y.reduceMotion ? ' is-on' : ''}`}
+              onClick={() => patchA11y({ reduceMotion: !a11y.reduceMotion })}><i /></button>
+          </label>
+
+          <div className="a11y-row">
+            <div>
+              <b><TextAa size={14} weight="fill" style={{ verticalAlign: '-2px', marginRight: 4 }} />Text size</b>
+              <span>Scale the whole interface up for easier reading.</span>
+            </div>
+            <div className="a11y-seg">
+              {[['default', 'Default'], ['large', 'Large'], ['xlarge', 'Larger']].map(([v, l]) => (
+                <button key={v} type="button" aria-pressed={a11y.textSize === v}
+                  className={a11y.textSize === v ? 'is-on' : ''}
+                  onClick={() => patchA11y({ textSize: v })}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          <label className="a11y-row">
+            <div>
+              <b>High contrast</b>
+              <span>Stronger borders and darker text for better legibility.</span>
+            </div>
+            <button type="button" role="switch" aria-checked={a11y.highContrast}
+              className={`a11y-switch${a11y.highContrast ? ' is-on' : ''}`}
+              onClick={() => patchA11y({ highContrast: !a11y.highContrast })}><i /></button>
+          </label>
+
+          <label className="a11y-row">
+            <div>
+              <b>Always underline links</b>
+              <span>Don't rely on colour alone to mark links.</span>
+            </div>
+            <button type="button" role="switch" aria-checked={a11y.underlineLinks}
+              className={`a11y-switch${a11y.underlineLinks ? ' is-on' : ''}`}
+              onClick={() => patchA11y({ underlineLinks: !a11y.underlineLinks })}><i /></button>
+          </label>
+        </div>
+      </Section>
+
       {/* Security Info */}
-      <Section icon={Shield} title="Security" subtitle="Account security information" accentColor="#2383e2">
+      <Section icon={Shield} title="Security" subtitle="Account security information" accentColor="var(--brand)">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[
             { label: 'Authentication', value: 'JWT (7-day tokens)' },
@@ -614,7 +719,7 @@ const SettingsPage = () => {
       </Section>
 
       {/* Danger Zone */}
-      <Section icon={AlertTriangle} title="Danger Zone" subtitle="Irreversible actions — proceed with caution" accentColor="#c4554d">
+      <Section icon={AlertTriangle} title="Danger Zone" subtitle="Irreversible actions — proceed with caution" accentColor="var(--red)">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',

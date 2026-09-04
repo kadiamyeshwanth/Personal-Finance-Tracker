@@ -7,7 +7,16 @@
  */
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Upload, Scan, CheckCircle2, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  X as X,
+  Camera as Camera,
+  UploadSimple as Upload,
+  Scan as Scan,
+  CheckCircle as CheckCircle2,
+  ArrowCounterClockwise as RotateCcw,
+  Warning as AlertTriangle,
+  CircleNotch as Loader2,
+} from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 
 // Lazy-load Tesseract to avoid bundling it if not used
@@ -156,6 +165,7 @@ const ReceiptScannerModal = ({ onClose, onExtracted }) => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         style={{
           background: 'var(--bg)',
           border: '1px solid var(--border)',

@@ -3,9 +3,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
-  RefreshCcw, Plus, Trash2, Edit3, X, AlertCircle,
-  CheckCircle2, PauseCircle, Bell, Calendar, TrendingDown,
-} from 'lucide-react';
+  ArrowsClockwise as RefreshCcw,
+  Plus as Plus,
+  Trash as Trash2,
+  PencilSimple as Edit3,
+  X as X,
+  WarningCircle as AlertCircle,
+  CheckCircle as CheckCircle2,
+  PauseCircle as PauseCircle,
+  Bell as Bell,
+  Calendar as Calendar,
+  TrendDown as TrendingDown,
+} from '@phosphor-icons/react';
 import { fetchSubscriptions, addSubscription, updateSubscription, deleteSubscription } from '../api/subscriptions';
 import PageHeader from '../components/ui/PageHeader';
 

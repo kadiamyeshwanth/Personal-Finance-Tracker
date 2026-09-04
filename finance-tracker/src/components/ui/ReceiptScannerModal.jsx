@@ -16,6 +16,7 @@ import {
   ArrowCounterClockwise as RotateCcw,
   Warning as AlertTriangle,
   CircleNotch as Loader2,
+  Lightbulb,
 } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 
@@ -346,7 +347,7 @@ const ReceiptScannerModal = ({ onClose, onExtracted }) => {
                 </div>
 
                 <div style={{ marginTop: '16px', padding: '10px 12px', background: 'var(--blue-bg)', borderRadius: 'var(--r-md)', border: '1px solid rgba(35,131,226,0.15)', fontSize: '12px', color: 'var(--blue)' }}>
-                  💡 Works best with clear, well-lit photos. Supports printed receipts, handwritten bills, and UPI screenshots.
+                  <Lightbulb size={13} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5, color: 'var(--brand)' }} />Works best with clear, well-lit photos. Supports printed receipts, handwritten bills, and UPI screenshots.
                 </div>
               </motion.div>
             )}

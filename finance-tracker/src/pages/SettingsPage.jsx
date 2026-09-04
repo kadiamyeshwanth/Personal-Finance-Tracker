@@ -26,7 +26,13 @@ import {
   ArrowSquareOut as ExternalLink,
   Checks as CheckCheck,
   Lightning as Zap,
+  DeviceMobile,
+  GearSix,
+  Wrench,
+  Export,
+  Warning,
 } from '@phosphor-icons/react';
+import { getPersonalityVisual } from '../lib/personality';
 import { getUserStats, updateProfile, changePassword, deleteAccount, clearAllData } from '../api/users';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -141,14 +147,10 @@ const Section = ({ icon: Icon, title, subtitle, children, accentColor }) => (
 );
 
 // ── Finance Avatar Section ────────────────────────────────────────────────────
-const AVATARS = {
-  'Silent Saver':     { emoji: '🐢', color: 'var(--brand)', desc: 'You save quietly and consistently. Keep it up!' },
-  'Chaos Spender':    { emoji: '🌪️', color: 'var(--red)', desc: 'Your spending is unpredictable. Try setting stricter budgets.' },
-  'Budget Ninja':     { emoji: '🥷', color: 'var(--brand)', desc: 'You stay within budget like a pro. Impressive discipline!' },
-  'Balanced Spender': { emoji: '⚖️', color: 'var(--red)', desc: 'You balance spending and saving well. Great equilibrium!' },
-  'Impulse Buyer':    { emoji: '⚡', color: 'var(--brand)', desc: 'You love spontaneous purchases. Use the 24-hour rule!' },
-  'Luxury Addict':    { emoji: '💎', color: 'var(--red)', desc: 'You enjoy the finer things. Budget for it intentionally!' },
-};
+/* The local map here was keyed on the display title ('Silent Saver') while the
+   endpoint returns `type` ('saver'), so the lookup never matched and this card
+   silently rendered its empty state for every user. It now shares the same
+   type-keyed map as the Dashboard and Wrapped. */
 
 const AvatarSection = () => {
   const [personality, setPersonality] = React.useState(null);
@@ -160,18 +162,18 @@ const AvatarSection = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const av = AVATARS[personality];
+  const av = personality ? getPersonalityVisual(personality) : null;
   return (
     <Section icon={Sparkles} title="Finance Personality" subtitle="Your AI-detected financial archetype" accentColor="var(--brand)">
       {loading ? (
         <div className="n-skeleton" style={{ height: '60px', borderRadius: 'var(--r-md)' }} />
       ) : personality && av ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: `${av.color}15`, border: `1px solid ${av.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>
-            {av.emoji}
+          <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'var(--brand-bg, rgba(232,80,2,0.10))', border: '1px solid rgba(232,80,2,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <av.Icon size={26} weight="fill" style={{ color: 'var(--brand)' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: av.color, marginBottom: '4px' }}>{personality}</div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--brand)', marginBottom: '4px' }}>{av.label}</div>
             <div style={{ fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.5 }}>{av.desc}</div>
           </div>
           <a href="/ai-insights" style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
@@ -233,25 +235,25 @@ const SMSSetupSection = () => {
   const APPS = [
     {
       name: 'SMS Forwarder (Android)',
-      icon: '📱',
+      Icon: DeviceMobile,
       steps: ['Install "SMS Forwarder" by Bogdan Melnychuk from Play Store', 'Open app → tap "+" → Select "HTTP" filter', 'Set URL to your webhook URL below', 'Set Method to POST, Body format: JSON', 'Add filter: Sender contains "HDFC" OR "SBI" OR "ICICI" OR "GPay" etc.', 'Save and enable the rule'],
       url: 'https://play.google.com/store/apps/details?id=com.bogdan.sms',
     },
     {
       name: 'MacroDroid (Advanced)',
-      icon: '⚙️',
+      Icon: GearSix,
       steps: ['Install MacroDroid from Play Store', 'Create new Macro → Trigger: SMS Received', 'Add filter: From number contains bank SMS sender', 'Add Action: HTTP Request', 'Set URL = your webhook URL, Method = POST', 'Set body: {"message": "{sms_body}", "from": "{sms_sender}"}'],
       url: 'https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid',
     },
     {
       name: 'Tasker (Power Users)',
-      icon: '🔧',
+      Icon: Wrench,
       steps: ['Install Tasker from Play Store', 'Profile → Event → Phone → SMS → From: bank sender', 'Task: Net → HTTP Request → Method: POST', 'URL = your webhook URL', 'Body: {"message":"%SMSRB","from":"%SMSRF"}', 'Test with a bank OTP or transaction SMS'],
       url: 'https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm',
     },
     {
       name: 'Auto Forward SMS',
-      icon: '📤',
+      Icon: Export,
       steps: ['Install "Auto Forward SMS" from Play Store', 'Add new rule → HTTP Webhook', 'Paste your webhook URL', 'Set sender filter to your bank names', 'Enable the rule and test it'],
       url: 'https://play.google.com/store/search?q=auto+forward+sms&c=apps',
     },
@@ -295,7 +297,8 @@ const SMSSetupSection = () => {
               </button>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '5px' }}>
-              ⚠️ Keep this URL private — anyone with it can add transactions to your account
+              <Warning size={12} weight="fill" style={{ verticalAlign: '-2px', marginRight: 4, color: 'var(--red)' }} />
+              Keep this URL private — anyone with it can add transactions to your account
             </div>
           </div>
 
@@ -315,7 +318,7 @@ const SMSSetupSection = () => {
                     borderColor: activeApp === i ? 'var(--accent)' : 'var(--border)',
                     color: activeApp === i ? 'var(--accent)' : 'var(--text-2)',
                   }}>
-                  {app.icon} {app.name}
+                  <app.Icon size={14} weight="fill" style={{ marginRight: 6, verticalAlign: '-2px' }} />{app.name}
                 </button>
               ))}
             </div>
@@ -324,7 +327,7 @@ const SMSSetupSection = () => {
             <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
-                  {APPS[activeApp].icon} {APPS[activeApp].name}
+                  {React.createElement(APPS[activeApp].Icon, { size: 15, weight: 'fill', style: { marginRight: 7, verticalAlign: '-2px' } })}{APPS[activeApp].name}
                 </span>
                 <a href={APPS[activeApp].url} target="_blank" rel="noreferrer"
                   style={{ fontSize: '12px', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>

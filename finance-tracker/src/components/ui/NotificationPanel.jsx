@@ -56,7 +56,7 @@ const useClientAlerts = () => {
     // Goal alerts
     goals.forEach(g => {
       const pct = Math.min((g.currentAmount / g.targetAmount) * 100, 100);
-      if (pct >= 100) notes.push({ id: `goal-done-${g._id}`, type: 'success', icon: CheckCircle2, title: `Goal achieved — ${g.name}`, desc: `You've reached your ₹${g.targetAmount.toLocaleString('en-IN')} target. 🎉`, time: null, link: '/goals' });
+      if (pct >= 100) notes.push({ id: `goal-done-${g._id}`, type: 'success', icon: CheckCircle2, title: `Goal achieved — ${g.name}`, desc: `You've reached your ₹${g.targetAmount.toLocaleString('en-IN')} target.`, time: null, link: '/goals' });
       else if (pct >= 90) notes.push({ id: `goal-close-${g._id}`, type: 'info', icon: Target, title: `Almost there — ${g.name}`, desc: `${pct.toFixed(0)}% funded · ₹${(g.targetAmount - g.currentAmount).toLocaleString('en-IN')} to go`, time: null, link: '/goals' });
     });
 

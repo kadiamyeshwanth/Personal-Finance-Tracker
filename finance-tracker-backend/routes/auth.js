@@ -182,14 +182,24 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // ── Google OAuth ──────────────────────────────────────────────────────────
+// These routes exist whether or not Google is configured, so an unconfigured
+// deploy sends the user back to the login screen with a reason instead of
+// throwing an unhandled error from Passport.
+const googleUnavailable = (req, res) =>
+  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=oauth_unavailable`);
+
 // Step 1 — Redirect to Google consent screen
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
-);
+router.get('/google', (req, res, next) => {
+  if (!passport.isGoogleEnabled) return googleUnavailable(req, res);
+  return passport.authenticate('google', { scope: ['profile', 'email'], session: false })(req, res, next);
+});
 
 // Step 2 — Google redirects back here with code
 router.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=oauth` }),
+  (req, res, next) => {
+    if (!passport.isGoogleEnabled) return googleUnavailable(req, res);
+    return passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=oauth` })(req, res, next);
+  },
   (req, res) => {
     // req.user is populated by Passport on success
     const token       = signToken(req.user);

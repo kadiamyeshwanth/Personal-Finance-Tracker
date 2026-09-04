@@ -105,7 +105,7 @@ router.get('/me', protect, async (req, res) => {
 // ── POST /api/auth/forgot-password ────────────────────────────────────────
 // Generates a reset token, stores its SHA-256 hash, sends/logs the link
 const crypto = require('crypto');
-const { sendResetEmail } = require('../utils/mailer');
+const { sendResetEmail, isMailerConfigured } = require('../utils/mailer');
 
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -129,6 +129,15 @@ router.post('/forgot-password', async (req, res) => {
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl    = `${frontendUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+
+    // In production with no SMTP configured, fail loudly rather than telling
+    // the user a link is on its way that will never arrive.
+    if (!isMailerConfigured() && process.env.NODE_ENV === 'production') {
+      console.error('[forgot-password] SMTP not configured — cannot send reset email.');
+      return res.status(503).json({
+        error: 'Password reset is temporarily unavailable. Please contact support.',
+      });
+    }
 
     await sendResetEmail(user.email, resetUrl);
 

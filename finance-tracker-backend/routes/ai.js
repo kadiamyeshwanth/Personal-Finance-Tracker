@@ -8,43 +8,61 @@ const Transaction = require('../models/Transaction');
 const Budget      = require('../models/Budget');
 const Goal        = require('../models/Goal');
 const Subscription= require('../models/Subscription');
-const { generateResponse } = require('../utils/chatEngine');
+const { ask, NAME: MIRA } = require('../utils/mira');
 const { getPersonality }   = require('../utils/personalityEngine');
 
 router.use(protect);
 
 // ── POST /api/ai/chat ────────────────────────────────────────────────────────
+// Ask Mira. Fully local: the message never leaves this server.
+//
+// `memory` is the entity set from the previous turn, echoed back by the client.
+// Keeping it in the request rather than server-side state means the endpoint
+// stays stateless and horizontally scalable, and a refresh simply starts over.
 router.post('/chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, memory } = req.body;
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message is required.' });
     }
+    if (message.length > 500) {
+      return res.status(400).json({ error: 'That question is too long — try a shorter one.' });
+    }
 
-    // Fetch user's data for context
+    // Fetch the user's data for context
     const [transactions, budgets, goals, subscriptions] = await Promise.all([
-      Transaction.find({ userId: req.user.id, isRecurring: false }).sort({ date: -1 }).limit(500),
-      Budget.find({ userId: req.user.id }),
-      Goal.find({ userId: req.user.id }),
-      Subscription.find({ userId: req.user.id }),
+      Transaction.find({ userId: req.user.id, isRecurring: false }).sort({ date: -1 }).limit(2000).lean(),
+      Budget.find({ userId: req.user.id }).lean(),
+      Goal.find({ userId: req.user.id }).lean(),
+      Subscription.find({ userId: req.user.id }).lean(),
     ]);
 
-    // Add monthlyEquivalent to subscriptions
+    // Normalise billing cycles to a monthly figure so totals are comparable
     const enrichedSubs = subscriptions.map(s => ({
-      ...s.toObject(),
-      monthlyEquivalent: s.billingCycle === 'yearly' ? s.amount / 12 : s.billingCycle === 'weekly' ? s.amount * 4.33 : s.amount,
+      ...s,
+      monthlyEquivalent: s.billingCycle === 'yearly' ? s.amount / 12
+        : s.billingCycle === 'weekly' ? s.amount * 4.33
+        : s.amount,
     }));
 
-    const reply = generateResponse(message, {
+    const result = ask(message, {
       transactions, budgets, goals, subscriptions: enrichedSubs,
+      memory: memory || {}, now: new Date(),
     });
 
     res.json({
-      message: reply,
+      message:   result.text,
+      assistant: MIRA,
+      intent:    result.intent,
+      source:    result.source,     // 'mira' = answered from data, 'legacy' = general advice
+      data:      result.data,       // the figures behind the answer, for charts/links
+      // Echo the resolved entities so the next turn can say "what about August?"
+      memory:    result.entities,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ai/chat]', err);
+    res.status(500).json({ error: 'Something went wrong answering that.' });
   }
 });
 

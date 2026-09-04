@@ -346,7 +346,7 @@ const BudgetMock = () => (
 
 const AskMock = () => (
   <div className="mr-mock">
-    <div className="mr-mock-bar"><i /><i /><i /><span>Ask Clario</span></div>
+    <div className="mr-mock-bar"><i /><i /><i /><span>Ask Mira</span></div>
     <div className="mr-mock-body">
       <div className="mr-chat">
         <div className="mr-msg mr-msg--me">Why was September worse than August?</div>
@@ -618,7 +618,7 @@ function OrbitChip({ i, item, count, spin }) {
       )}
       {item.type === 'chat' && (
         <>
-          <span className="mr-orbit-k">Ask Clario</span>
+          <span className="mr-orbit-k">Ask Mira</span>
           <span className="mr-orbit-msg mr-orbit-msg--me">{item.q}</span>
           <span className="mr-orbit-msg">{item.a}</span>
         </>
@@ -756,7 +756,7 @@ function FeatSection() {
               <RowsMock />
             </FeatCard>
             <FeatCard progress={p} depth={66} bg="glow" tall i={2} icon={ChatCircleDots}
-              label="Ask Clario" title="Ask your own data a question"
+              label="Ask Mira" title="Ask your own data a question"
               body="Plain questions, answered from your transactions — not generic advice.">
               <AskMock />
             </FeatCard>

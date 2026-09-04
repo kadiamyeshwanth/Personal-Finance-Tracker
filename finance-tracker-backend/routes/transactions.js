@@ -4,6 +4,8 @@ const Notification = require('../models/Notification');
 const protect = require('../middleware/protect');
 const { suggestCategory } = require('../utils/categorizer');
 const { detectFlags } = require('../utils/fraudDetector');
+const { validate } = require('../middleware/validate');
+const { transactionSchema } = require('../schemas/validation');
 
 // All routes below require a valid JWT
 router.use(protect);
@@ -96,7 +98,7 @@ router.get('/summary', async (req, res) => {
 
 
 // ADD a new transaction
-router.post('/add', async (req, res) => {
+router.post('/add', validate(transactionSchema), async (req, res) => {
   try {
     const { type, category, amount, date, description, merchant, tags, isRecurring, frequency } = req.body;
 
@@ -189,7 +191,11 @@ router.delete('/:id', async (req, res) => {
 });
 
 // UPDATE transaction by ID
-router.post('/update/:id', async (req, res) => {
+// PATCH /api/transactions/:id is the canonical route (RESTful).
+// POST /api/transactions/update/:id is kept as a deprecated alias so a client
+// build deployed before this change keeps working; remove it once every
+// frontend in the wild is on the new path.
+const updateTransaction = async (req, res) => {
   try {
     const transaction = await Transaction.findOne({ _id: req.params.id, userId: req.user.id });
     if (!transaction) return res.status(404).json({ error: 'Transaction not found.' });
@@ -200,16 +206,24 @@ router.post('/update/:id', async (req, res) => {
     transaction.date        = Date.parse(req.body.date);
     transaction.description = req.body.description;
     transaction.merchant    = req.body.merchant || transaction.merchant || '';
-    transaction.tags        = Array.isArray(req.body.tags) ? req.body.tags
-                              : (req.body.tags ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : transaction.tags || []);
+    transaction.tags        = Array.isArray(req.body.tags) ? req.body.tags : (transaction.tags || []);
     transaction.isRecurring = req.body.isRecurring || false;
-    transaction.frequency   = req.body.frequency || 'once';
+    transaction.frequency   = req.body.isRecurring ? (req.body.frequency || 'monthly') : 'once';
 
     await transaction.save();
     res.json({ message: 'Transaction updated!', transaction });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+};
+
+router.patch('/:id', validate(transactionSchema), updateTransaction);
+
+// Deprecated — use PATCH /api/transactions/:id
+router.post('/update/:id', validate(transactionSchema), (req, res, next) => {
+  res.set('Deprecation', 'true');
+  res.set('Link', '</api/transactions/:id>; rel="successor-version"');
+  return updateTransaction(req, res, next);
 });
 
 

@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const Budget = require('../models/Budget');
 const protect = require('../middleware/protect');
+const { validate } = require('../middleware/validate');
+const { budgetSchema } = require('../schemas/validation');
 
 // All routes below require a valid JWT
 router.use(protect);
@@ -16,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // ADD or UPDATE a budget (upsert by userId + category)
-router.post('/add', async (req, res) => {
+router.post('/add', validate(budgetSchema), async (req, res) => {
   try {
     const { category, limit } = req.body;
 

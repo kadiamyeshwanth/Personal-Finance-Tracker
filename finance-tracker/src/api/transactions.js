@@ -44,7 +44,7 @@ export const addTransaction = async (payload) => {
 
 // ── Update an existing transaction ─────────────────────────────────────────
 export const updateTransaction = async ({ id, ...payload }) => {
-  const { data } = await apiClient.post(`/transactions/update/${id}`, payload);
+  const { data } = await apiClient.patch(`/transactions/${id}`, payload);
   return data;
 };
 

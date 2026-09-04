@@ -13,6 +13,7 @@
  */
 const cron = require('node-cron');
 const Transaction = require('../models/Transaction');
+const { detectFlags } = require('../utils/fraudDetector');
 
 const runRecurringJob = async () => {
   const today = new Date();
@@ -80,6 +81,9 @@ const runRecurringJob = async () => {
         isRecurring: false,  // This is the actual instance, NOT a template
         frequency:   'once',
         source:      'recurring_cron',
+        flags:       tmpl.type === 'expense'
+          ? await detectFlags({ userId: tmpl.userId, amount: tmpl.amount, category: tmpl.category, type: tmpl.type, date: today })
+          : [],
       });
 
       await newTxn.save();

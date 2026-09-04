@@ -15,6 +15,7 @@ const router  = express.Router();
 const auth    = require('../middleware/protect');
 const Transaction  = require('../models/Transaction');
 const { suggestCategory } = require('../utils/categorizer');
+const { detectFlags } = require('../utils/fraudDetector');
 
 // ── Date parser — handles multiple bank formats ───────────────────────────────
 const parseDate = (str) => {
@@ -90,20 +91,23 @@ router.post('/csv', auth, async (req, res) => {
     const lineNo = (i) => i + 2;
     const label  = (row) => String(row?.description || row?.date || '').trim().slice(0, 60);
 
-    rows.forEach((row, i) => {
+    // detectFlags hits the DB per row, so the loop is sequential rather than
+    // forEach — see the await inside.
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       try {
         // Parse date
         const date = parseDate(row.date);
         if (!date) {
           errors.push({ row: lineNo(i), reason: `Unrecognised date "${String(row.date ?? '').slice(0, 30)}"`, description: label(row) });
-          return;
+          continue;
         }
 
         // Parse amount
         const amount = parseFloat(String(row.amount || '').replace(/[₹,\s]/g, ''));
         if (!amount || amount <= 0 || !isFinite(amount)) {
           errors.push({ row: lineNo(i), reason: `Invalid amount "${String(row.amount ?? '').slice(0, 30)}"`, description: label(row) });
-          return;
+          continue;
         }
 
         const type = row.type === 'income' ? 'income' : 'expense';
@@ -112,7 +116,7 @@ router.post('/csv', auth, async (req, res) => {
         const key = `${date.toISOString().split('T')[0]}|${amount}|${type}`;
         if (existingKeys.has(key)) {
           skipped.push({ row: lineNo(i), reason: 'Duplicate — already in your transactions', description: label(row) });
-          return;
+          continue;
         }
 
         // Auto-categorize
@@ -131,7 +135,13 @@ router.post('/csv', auth, async (req, res) => {
           description,
           merchant:    description.split(' ')[0] || '',   // use first word as merchant hint
           tags:        ['csv-import'],
-          flags:       [],
+          // Behavioural flags used to be left empty on import, so the personality
+          // engine and the roast saw no impulse/late-night signal for anything
+          // that arrived by CSV — the same spending produced a different verdict
+          // depending on how it was entered.
+          flags:       type === 'expense'
+            ? await detectFlags({ userId: req.user.id, amount, category, type, date })
+            : [],
           isRecurring: false,
           source:      'csv_import',
           _row:        lineNo(i),   // stripped before insert; used to map failures back to rows
@@ -142,7 +152,7 @@ router.post('/csv', auth, async (req, res) => {
       } catch (rowErr) {
         errors.push({ row: lineNo(i), reason: rowErr.message || 'Could not parse row', description: label(row) });
       }
-    });
+    }
 
     // Bulk insert
     if (toInsert.length > 0) {

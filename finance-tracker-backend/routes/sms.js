@@ -21,6 +21,7 @@ const protect  = require('../middleware/protect');
 const User     = require('../models/User');
 const Transaction = require('../models/Transaction');
 const { suggestCategory } = require('../utils/categorizer');
+const { detectFlags } = require('../utils/fraudDetector');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -185,7 +186,12 @@ router.post('/webhook/:token', async (req, res) => {
       description: parsed.description,
       merchant:    parsed.merchant,
       tags:        ['sms-auto'],
-      flags:       [],
+      // Same reason as the CSV importer: without these the personality engine
+      // never sees impulse or late-night behaviour for SMS-imported spending,
+      // which is the majority of it for anyone using the Android forwarder.
+      flags:       parsed.type === 'expense'
+        ? await detectFlags({ userId: user._id, amount: parsed.amount, category: parsed.category, type: parsed.type, date: parsed.date })
+        : [],
       isRecurring: false,
       source:      'sms_webhook',
       smsSender:   sender,

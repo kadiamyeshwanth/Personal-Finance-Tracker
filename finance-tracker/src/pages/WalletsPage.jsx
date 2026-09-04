@@ -26,7 +26,11 @@ const WALLET_TYPES = [
   { value: 'investment', label: 'Investment' },
 ];
 
-const WALLET_COLORS = ['var(--brand)','var(--brand)','var(--brand)','var(--red)','var(--red)','var(--brand)','var(--brand)','var(--brand)'];
+// Same bug as InvestmentsPage's COLORS — only var(--brand) and var(--red)
+// repeated across 8 slots, so the swatch picker offered just 2 real colours.
+// var(--brand) stays first (matches EMPTY_FORM's default below); the rest
+// reuse the same curated palette as the Reports donut chart for consistency.
+const WALLET_COLORS = ['var(--brand)', '#F0A65A', '#B5533A', '#7C8B5A', '#4C8C8C', '#8A6D9E', '#C98A3C', '#6E6E6E'];
 
 const getTypeConfig = (type) => WALLET_TYPES.find(t => t.value === type) || WALLET_TYPES[1];
 

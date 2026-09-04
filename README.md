@@ -43,7 +43,7 @@ Everything runs **without any paid AI API** — all intelligence is local, rule-
 
 ### UI/UX &nbsp;·&nbsp; Front‑End &nbsp;·&nbsp; Brand
 
-**by [Abhinay](https://github.com/Abhinay) — the design & front‑end half of this project**
+**Design & front‑end by [Abhinay](https://github.com/Abhinay)**
 
 <img src="https://img.shields.io/badge/Design_System-Clario-E85002?style=for-the-badge" />
 <img src="https://img.shields.io/badge/Motion-Framer_Motion_+_Lenis-0055FF?style=for-the-badge&logo=framer&logoColor=white" />
@@ -52,10 +52,10 @@ Everything runs **without any paid AI API** — all intelligence is local, rule-
 
 </div>
 
-> This half of the repo is a **UI‑only redesign**. Every route, API call, hook and
-> feature is byte‑for‑byte the same as what [@kadiamyeshwanth](https://github.com/kadiamyeshwanth)
-> shipped — only the pixels, the motion and the affordances changed. The product
-> went from **"Money Tracker"** to **Clario**.
+> This is a **UI‑only redesign** of the platform above. Every route, API call, hook
+> and feature is byte‑for‑byte the same as what shipped before — only the pixels,
+> the motion and the affordances changed. The product went from **"Money Tracker"**
+> to **Clario**.
 
 ---
 
@@ -277,14 +277,6 @@ Everything respects `prefers-reduced-motion`, `prefers-reduced-transparency` and
 | 3–4 | Auth screens, settings, the long‑tail pages (analytics, budgets, goals, journal…) |
 | 4–6 | The marketing landing page — hero, silk sphere, scroll sections, bento, testimonials, footer |
 | 6–7 | Motion polish, `prefers-*` passes, responsive breakpoints, performance (off‑screen pausing, cascade cleanup), bug‑fix rounds |
-
----
-
-<div align="center">
-
-*Everything below this line is the original project & backend, by **[Kadiam Yeshwanth](https://github.com/kadiamyeshwanth)** — unchanged.*
-
-</div>
 
 ---
 

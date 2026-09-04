@@ -31,7 +31,14 @@ const TYPES = [
   { key: 'other',       label: 'Other',         Icon: Briefcase },
 ];
 
-const COLORS = ['var(--brand)','var(--brand)','var(--brand)','var(--red)','var(--red)','var(--brand)','var(--brand)','var(--red)','var(--brand)'];
+// Was 6x var(--brand) + 3x var(--red) — only 2 distinct colours across 9
+// swatches, so the picker looked broken (same dot repeated) and every
+// investment ended up one of only two possible tags regardless of which dot
+// was clicked. Keeps var(--brand) as the first/default swatch (matches the
+// existing default in BLANK below) and fills the rest with the same curated
+// palette already used for the Reports donut chart, so investment tags and
+// report segments read as the same colour language across the app.
+const COLORS = ['var(--brand)', '#F0A65A', '#B5533A', '#7C8B5A', '#4C8C8C', '#8A6D9E', '#C98A3C', '#6E6E6E', '#8C4A2F'];
 const fmt    = (n) => `₹${Math.abs(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const getType = (key) => TYPES.find(t => t.key === key) || TYPES[TYPES.length - 1];
 
@@ -220,14 +227,31 @@ const InvestmentsPage = () => {
       </>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal
+          Was `motion.div` with BOTH a static `style.transform: translate(-50%,-50%)`
+          (to self-centre) AND an animated `scale` via initial/animate/exit. Framer
+          Motion manages `transform` itself once any motion value touches it, and
+          does not compose with a transform string coming from `style` — it
+          replaces it outright. The panel's centring offset was silently discarded
+          (confirmed: the live computed transform was a pure scale matrix with a
+          zero translation component), leaving the box's top-left corner pinned to
+          the exact centre of the screen instead of being shifted back to centre
+          the box itself. For a form this tall, that pushed the Cancel/Save row
+          well past the bottom of the viewport — and because the box is
+          `position: fixed`, no amount of page scrolling could ever reach it.
+          Centring via flexbox on a plain wrapper sidesteps the conflict entirely:
+          nothing here needs a `transform` for layout, so there's nothing left for
+          Framer Motion's own `scale` to clash with. maxHeight + overflowY is a
+          safety net so a future taller form scrolls inside the modal instead of
+          ever being able to render off-screen again. */}
       <AnimatePresence>
         {showForm && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => { setShowForm(false); setEditing(null); }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }} />
+            <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '480px', maxWidth: 'calc(100vw - 32px)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
+              style={{ pointerEvents: 'auto', width: '480px', maxWidth: '100%', maxHeight: '100%', overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-float)' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <TrendingUp size={14} style={{ color: 'var(--accent)' }} />
                 <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{editing ? 'Edit Investment' : 'Add Investment'}</span>
@@ -295,6 +319,7 @@ const InvestmentsPage = () => {
                 </div>
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

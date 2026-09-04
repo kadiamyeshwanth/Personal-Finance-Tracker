@@ -15,6 +15,14 @@ const transactionSchema = new Schema({
     flags:       [{ type: String }],                                 // system flags: 'late-night', 'impulse', 'duplicate', 'abnormal'
     isRecurring: { type: Boolean, default: false },
     frequency:   { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly', 'once'], default: 'once' },
+
+    // ── Provenance ────────────────────────────────────────────────────────────
+    // How this transaction got here. Written by the SMS webhook and the CSV
+    // importer; absent on rows typed in by hand. Without these declared, strict
+    // mode silently dropped them and GET /api/sms/history could never match.
+    source:      { type: String, enum: ['manual', 'sms_webhook', 'csv_import', 'recurring_cron'], default: 'manual', index: true },
+    smsSender:   { type: String, trim: true, default: '' },   // originating sender ID, e.g. "VM-HDFCBK"
+    smsRaw:      { type: String, default: '' },               // original SMS text, truncated to 500 chars
 }, {
     timestamps: true,
 });

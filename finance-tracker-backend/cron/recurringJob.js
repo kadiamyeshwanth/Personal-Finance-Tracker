@@ -79,6 +79,7 @@ const runRecurringJob = async () => {
         description: `[Auto] ${tmpl.description || tmpl.category}`,
         isRecurring: false,  // This is the actual instance, NOT a template
         frequency:   'once',
+        source:      'recurring_cron',
       });
 
       await newTxn.save();

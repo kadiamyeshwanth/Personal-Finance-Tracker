@@ -252,9 +252,12 @@ router.post('/token/regenerate', protect, async (req, res) => {
 // Returns the last 30 auto-imported SMS transactions for this user
 router.get('/history', protect, async (req, res) => {
   try {
+    // Match on `source` (set since the provenance fields were added to the
+    // schema) OR the legacy 'sms-auto' tag, so rows imported before that fix
+    // still show up in the user's history.
     const txns = await Transaction.find({
       userId: req.user.id,
-      source: 'sms_webhook',
+      $or: [{ source: 'sms_webhook' }, { tags: 'sms-auto' }],
     }).sort({ createdAt: -1 }).limit(30).lean();
 
     res.json(txns);

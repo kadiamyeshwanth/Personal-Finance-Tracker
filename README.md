@@ -124,11 +124,11 @@ characters** (*"One month. One honest picture."*) · a detailed bento section ·
 
 ### Walkthrough
 
-Full screen‑recording of the redesigned app (54 s, 1080p) — plays inline on GitHub:
+Full screen‑recording of the redesigned app (54 s, 1080p):
 
-https://github.com/kadiamyeshwanth/Personal-Finance-Tracker/raw/abhinay-frontend-uiux/docs/redesign/walkthrough.mp4
+<video src="https://github.com/kadiamyeshwanth/Personal-Finance-Tracker/raw/main/docs/redesign/walkthrough.mp4" controls muted width="900"></video>
 
-<sub>Doesn't load? Download it: [`docs/redesign/walkthrough.mp4`](docs/redesign/walkthrough.mp4)</sub>
+<sub>Player not loading? Open it directly: [`docs/redesign/walkthrough.mp4`](docs/redesign/walkthrough.mp4)</sub>
 
 ---
 

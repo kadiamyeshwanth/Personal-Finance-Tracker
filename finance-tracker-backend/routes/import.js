@@ -79,25 +79,41 @@ router.post('/csv', auth, async (req, res) => {
     );
 
     let inserted = 0;
-    let skipped  = 0;
-    let failed   = 0;
     const toInsert = [];
+    // Per-row outcomes so the UI can tell the user exactly which rows didn't
+    // make it and why — "Imported 45 of 50" on its own is not actionable.
+    const errors  = [];   // rows that could not be parsed
+    const skipped = [];   // rows deliberately not imported (duplicates)
 
-    for (const row of rows) {
+    // `row` index is 0-based; +2 converts it to the line number the user sees
+    // in their spreadsheet (1-based, plus the header row).
+    const lineNo = (i) => i + 2;
+    const label  = (row) => String(row?.description || row?.date || '').trim().slice(0, 60);
+
+    rows.forEach((row, i) => {
       try {
         // Parse date
         const date = parseDate(row.date);
-        if (!date) { failed++; continue; }
+        if (!date) {
+          errors.push({ row: lineNo(i), reason: `Unrecognised date "${String(row.date ?? '').slice(0, 30)}"`, description: label(row) });
+          return;
+        }
 
         // Parse amount
         const amount = parseFloat(String(row.amount || '').replace(/[₹,\s]/g, ''));
-        if (!amount || amount <= 0) { skipped++; continue; }
+        if (!amount || amount <= 0 || !isFinite(amount)) {
+          errors.push({ row: lineNo(i), reason: `Invalid amount "${String(row.amount ?? '').slice(0, 30)}"`, description: label(row) });
+          return;
+        }
 
         const type = row.type === 'income' ? 'income' : 'expense';
 
         // Duplicate check
         const key = `${date.toISOString().split('T')[0]}|${amount}|${type}`;
-        if (existingKeys.has(key)) { skipped++; continue; }
+        if (existingKeys.has(key)) {
+          skipped.push({ row: lineNo(i), reason: 'Duplicate — already in your transactions', description: label(row) });
+          return;
+        }
 
         // Auto-categorize
         const description = String(row.description || '').trim();
@@ -105,45 +121,72 @@ router.post('/csv', auth, async (req, res) => {
 
         toInsert.push({
           userId:      req.user.id,
+          // `username` is required by the Transaction schema — omitting it made
+          // every insertMany() below fail validation, so no CSV row ever landed.
+          username:    req.user.username,
           type,
           amount,
           date,
           category,
           description,
           merchant:    description.split(' ')[0] || '',   // use first word as merchant hint
-          tags:        [],
+          tags:        ['csv-import'],
           flags:       [],
           isRecurring: false,
           source:      'csv_import',
+          _row:        lineNo(i),   // stripped before insert; used to map failures back to rows
         });
 
         // Add to seen set to prevent duplicates within same import batch
         existingKeys.add(key);
-      } catch {
-        failed++;
+      } catch (rowErr) {
+        errors.push({ row: lineNo(i), reason: rowErr.message || 'Could not parse row', description: label(row) });
       }
-    }
+    });
 
     // Bulk insert
     if (toInsert.length > 0) {
+      const docs = toInsert.map(({ _row, ...doc }) => doc);
       try {
-        const result = await Transaction.insertMany(toInsert, { ordered: false });
+        const result = await Transaction.insertMany(docs, { ordered: false });
         inserted = result.length;
       } catch (bulkErr) {
-        // ordered:false — partial success is possible
-        inserted = bulkErr.result?.nInserted || 0;
-        failed  += toInsert.length - inserted;
+        // ordered:false — Mongo/Mongoose inserts what it can and reports the rest.
+        inserted = bulkErr.insertedDocs?.length ?? bulkErr.result?.nInserted ?? 0;
+
+        // Map each write/validation failure back to its original CSV line.
+        const failures = [
+          ...(bulkErr.writeErrors || []),
+          ...Object.values(bulkErr.errors || {}),
+        ];
+        if (failures.length > 0) {
+          failures.forEach((f) => {
+            const idx = f.index ?? f.err?.index;
+            const src = idx != null ? toInsert[idx] : null;
+            errors.push({
+              row:         src?._row ?? null,
+              reason:      (f.errmsg || f.message || 'Database rejected the row').slice(0, 140),
+              description: src?.description || '',
+            });
+          });
+        } else if (inserted < docs.length) {
+          errors.push({ row: null, reason: bulkErr.message?.slice(0, 140) || 'Bulk insert failed', description: '' });
+        }
       }
     }
 
-    skipped += (rows.length - toInsert.length - failed);
-
     res.json({
       inserted,
-      skipped:  Math.max(0, skipped),
-      failed,
-      total:    rows.length,
-      message:  `Imported ${inserted} of ${rows.length} transactions`,
+      skipped: skipped.length,
+      failed:  errors.length,
+      total:   rows.length,
+      // Capped so a badly-formatted 1000-row file can't return a giant payload.
+      errors:      errors.slice(0, 50),
+      skippedRows: skipped.slice(0, 50),
+      truncated:   errors.length > 50 || skipped.length > 50,
+      message: inserted === rows.length
+        ? `Imported all ${inserted} transactions`
+        : `Imported ${inserted} of ${rows.length} transactions`,
     });
   } catch (err) {
     console.error('[import/csv]', err);

@@ -31,6 +31,88 @@ const loadTesseract = async () => {
   return Tesseract;
 };
 
+// ── Worker reuse ──────────────────────────────────────────────────────────────
+// The worker was previously created and terminated per scan, which re-fetched
+// and re-initialised the ~15MB English model every single time — the main
+// reason scanning felt slow, especially on phones. Keep one worker alive across
+// scans, and only tear it down after a spell of inactivity so an idle tab isn't
+// holding the model in memory forever.
+let workerPromise = null;
+let idleTimer     = null;
+const WORKER_IDLE_MS = 2 * 60 * 1000;
+
+// The logger is bound at creation, so it dispatches through a mutable hook that
+// whichever scan is currently running installs.
+let onProgress = null;
+
+const getWorker = async () => {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  if (!workerPromise) {
+    workerPromise = (async () => {
+      const Tess = await loadTesseract();
+      return Tess.createWorker('eng', 1, {
+        logger: (m) => { if (onProgress) onProgress(m); },
+      });
+    })().catch((err) => {
+      workerPromise = null;   // let the next attempt retry a failed init
+      throw err;
+    });
+  }
+  return workerPromise;
+};
+
+const releaseWorkerWhenIdle = () => {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(async () => {
+    const p = workerPromise;
+    workerPromise = null;
+    idleTimer = null;
+    try { (await p)?.terminate(); } catch { /* already gone */ }
+  }, WORKER_IDLE_MS);
+};
+
+// ── Image downscaling ─────────────────────────────────────────────────────────
+// A modern phone camera produces a 12MP image. Tesseract gains nothing above
+// roughly 1600px on the long edge for receipt text, and the extra pixels cost
+// seconds of CPU and a lot of memory — which is what makes older devices choke
+// or crash. Downscale first, in a canvas, before handing anything to OCR.
+const MAX_EDGE  = 1600;
+const MAX_BYTES = 15 * 1024 * 1024;   // 15MB — refuse absurd inputs outright
+
+const downscaleImage = (file) =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      const longest = Math.max(img.width, img.height);
+      if (longest <= MAX_EDGE) {           // already small enough
+        URL.revokeObjectURL(url);
+        resolve(file);
+        return;
+      }
+      const scale = MAX_EDGE / longest;
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob(
+        (blob) => resolve(blob || file),   // fall back to the original on failure
+        'image/jpeg',
+        0.9,
+      );
+    };
+
+    // Unreadable/corrupt image — let Tesseract produce the error message.
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+
 // ── Amount parser — extracts the largest ₹ amount from OCR text ──────────────
 const parseAmount = (text) => {
   // Look for ₹ or Rs or INR followed by a number
@@ -88,6 +170,7 @@ const parseMerchant = (text) => {
 const ReceiptScannerModal = ({ onClose, onExtracted }) => {
   const [phase, setPhase]           = useState('upload');    // upload | scanning | result | error
   const [progress, setProgress]     = useState(0);
+  const [statusLabel, setStatusLabel] = useState('');   // which OCR phase we're in
   const [preview, setPreview]       = useState(null);         // image data URL
   const [extracted, setExtracted]   = useState(null);         // { amount, date, merchant, rawText }
   const fileRef   = useRef();
@@ -103,19 +186,26 @@ const ReceiptScannerModal = ({ onClose, onExtracted }) => {
 
     setPhase('scanning');
     setProgress(0);
+    setStatusLabel('Preparing image…');
 
     try {
-      const Tess = await loadTesseract();
-      const worker = await Tess.createWorker('eng', 1, {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            setProgress(Math.round((m.progress || 0) * 100));
-          }
-        },
-      });
+      // Shrink before OCR — this is the single biggest win on mobile.
+      const optimised = await downscaleImage(file);
 
-      const { data: { text } } = await worker.recognize(file);
-      await worker.terminate();
+      // Route this scan's progress events to our state. First run also has to
+      // fetch the language model, so report that phase honestly instead of
+      // sitting at 0% while ~15MB downloads.
+      onProgress = (m) => {
+        if (m.status === 'recognizing text') {
+          setStatusLabel('Reading text…');
+          setProgress(Math.round((m.progress || 0) * 100));
+        } else if (m.status) {
+          setStatusLabel('Loading OCR engine…');
+        }
+      };
+
+      const worker = await getWorker();
+      const { data: { text } } = await worker.recognize(optimised);
 
       // Parse extracted text
       const amount   = parseAmount(text);
@@ -127,20 +217,35 @@ const ReceiptScannerModal = ({ onClose, onExtracted }) => {
     } catch (err) {
       console.error('[OCR]', err);
       setPhase('error');
+    } finally {
+      onProgress = null;
+      // Keep the worker warm for a follow-up scan, then let it go.
+      releaseWorkerWhenIdle();
     }
   }, []);
 
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (file) processImage(file);
-  };
+  // Reject oversized files before they reach the decoder — a 40MB image can
+  // exhaust memory on a mobile browser while it is still being decoded, well
+  // before OCR gets a chance to run.
+  const acceptFile = useCallback((file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      toast.error(`That image is ${(file.size / 1024 / 1024).toFixed(1)}MB. Please use one under 15MB.`);
+      return;
+    }
+    processImage(file);
+  }, [processImage]);
+
+  const handleFile = (e) => acceptFile(e.target.files?.[0]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) processImage(file);
-    else toast.error('Please drop an image file');
-  }, [processImage]);
+    acceptFile(e.dataTransfer.files?.[0]);
+  }, [acceptFile]);
 
   const handleUse = () => {
     if (onExtracted) {
@@ -261,7 +366,12 @@ const ReceiptScannerModal = ({ onClose, onExtracted }) => {
                   <div style={{ width: '200px', height: '4px', background: 'var(--progress-track)', borderRadius: '2px', overflow: 'hidden' }}>
                     <motion.div style={{ height: '100%', background: 'var(--accent)', borderRadius: '2px' }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>{progress}% — reading text…</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+                    {/* Only show a percentage once OCR is actually running —
+                        during engine load the number would sit at 0 and read
+                        as a hang. */}
+                    {progress > 0 ? `${progress}% — ${statusLabel}` : statusLabel}
+                  </div>
                 </div>
               </motion.div>
             )}

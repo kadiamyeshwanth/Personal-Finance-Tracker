@@ -95,34 +95,40 @@ used with discipline:
 > Old build ("Money Tracker") is still live: **https://personal-finance-tracker-jet-delta.vercel.app**
 > Captures live in [`docs/redesign/`](docs/redesign).
 
-### Login
-
-| Before | After |
-|---|---|
-| ![before login](docs/redesign/before-login.png) | ![after login](docs/redesign/after-login.png) |
-| A single dark card floating in a black void. Generic blue links, a grey button, a Lucide line‑chart glyph for a logo. | A split screen: the promise on the left, a flat white card on the right, floating on a rounded **ShaderGradient** orange water‑plane. Dark‑only, viewport‑locked, one accent colour. |
-
-### Dashboard
-
-| Before | After (light) | After (dark) |
-|---|---|---|
-| ![before dashboard](docs/redesign/before-dashboard.png) | ![after dashboard light](docs/redesign/after-dashboard-light.png) | ![after dashboard dark](docs/redesign/after-dashboard-dark.png) |
-| Flat dark grid, a 💰 emoji as the section icon, blue "View all" links, every figure the same weight. | A **bento** of surfaces — the balance tile carries the brand fill and a subtle shader, "Monthly income" a flowing line texture, an **Ask Clario** assistant card. One switchable charts panel, a **Financial Health** ring, colour only on money. Same layout light or dark. |
-
-### The landing page (all new)
+### The new landing page
 
 A bleed‑edge silk **sphere hero** that shrinks on scroll · a logo marquee · a
 scroll‑driven case slider · a **pinned headline that assembles from scattered
 characters** (*"One month. One honest picture."*) · a detailed bento section · a
 3‑step "see it move" sequence · big testimonials · a footer globe cresting the edge.
 
+![landing hero](docs/redesign/after-landing-hero.jpg)
+
+| Capture section | Proof |
+|---|---|
+| ![capture](docs/redesign/after-landing-capture.jpg) | ![proof](docs/redesign/after-landing-proof.jpg) |
+
+### Login — before → after
+
+| Before ("Money Tracker") | After (Clario) |
+|---|---|
+| ![before login](docs/redesign/before-login.png) | ![after login](docs/redesign/after-login.png) |
+| One dark card in a black void. Blue links, grey button, a Lucide line‑chart glyph for a logo. | Split screen: the promise on the left, a flat white card on the right, floating on a rounded **ShaderGradient** orange water‑plane. Dark‑only, viewport‑locked, one accent colour. |
+
+### Dashboard — before → after
+
+| Before | After (light) | After (dark) |
+|---|---|---|
+| ![before dashboard](docs/redesign/before-dashboard.png) | ![after dash light](docs/redesign/after-dashboard-light.png) | ![after dash dark](docs/redesign/after-dashboard-dark.png) |
+| Flat dark grid, a 💰 emoji for the section icon, blue "View all" links, every figure the same weight. | A **bento** of surfaces — the balance tile carries the brand fill + a subtle shader, "Monthly income" a flowing line texture, an **Ask Clario** assistant card. One switchable charts panel, a **Financial Health** ring, colour only on money. Same layout light or dark. |
+
 ### Walkthrough
 
-A full screen‑recording of the redesigned app (54 s, 1080p):
+Full screen‑recording of the redesigned app (54 s, 1080p) — plays inline on GitHub:
 
 https://github.com/kadiamyeshwanth/Personal-Finance-Tracker/raw/abhinay-frontend-uiux/docs/redesign/walkthrough.mp4
 
-<sub>If the player doesn't load, download it directly: [`docs/redesign/walkthrough.mp4`](docs/redesign/walkthrough.mp4)</sub>
+<sub>Doesn't load? Download it: [`docs/redesign/walkthrough.mp4`](docs/redesign/walkthrough.mp4)</sub>
 
 ---
 

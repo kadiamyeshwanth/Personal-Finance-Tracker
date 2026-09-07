@@ -3716,11 +3716,25 @@ html, body { overflow-x: hidden; overscroll-behavior: none; }
 /* Nested-in-panel graphs: also flatten the portfolio card's header chrome. */
 .charts-body .dc--portfolio .dc-head { margin-bottom: 8px; }
 
-/* ── R63 · page enter — CSS keyframe, can't stall like the old framer one ── */
+/* ── R63 · page enter — CSS keyframe, can't stall like the old framer one ──
+   ── R80 · slide uses margin-top, not transform — see why below ──
+   `transform: none` at 100% still leaves a LIVE containing block behind:
+   per spec, an element keeps generating one for `position: fixed`
+   descendants for as long as *any* keyframe of an animation assigned to it
+   references `transform` — regardless of the value currently resolved —
+   and `animation: … both` never gets removed after it finishes, so every
+   page carries this forever while mounted. Every modal in the app renders
+   inside this wrapper, so their "Cancel"/"×" buttons were positioned
+   correctly (`position: fixed` painted where CSS said) but were silently
+   NOT the top-most element for click purposes — pointer events landed on
+   this wrapper's own scrollable content instead and were swallowed with no
+   console error, no visual sign anything was wrong.
+   margin-top produces the identical slide-up-while-fading-in look without
+   ever touching a containing-block-creating property. */
 .app-page-in { animation: app-page-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes app-page-in {
-  from { opacity: 0; transform: translateY(7px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; margin-top: 7px; }
+  to   { opacity: 1; margin-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-page-in { animation: none; }
@@ -3939,7 +3953,13 @@ html[data-reduce-motion] .ai-tip-caret { animation: none; }
   transition: opacity var(--tskel-reveal-dur) var(--tskel-ease),
               filter  var(--tskel-reveal-dur) var(--tskel-ease);
 }
-.t-skel.is-revealed .t-skel-content { opacity: 1; filter: blur(0); }
+/* filter: none, not blur(0) — see the R80 note on .app-page-in above. A
+   zero-radius blur looks identical to no filter at all, but per spec it is
+   still "a filter", which keeps generating a containing block for any
+   position:fixed descendant (every modal on the page) for as long as this
+   settled, revealed state holds — which, once a page finishes loading, is
+   effectively forever. */
+.t-skel.is-revealed .t-skel-content { opacity: 1; filter: none; }
 .t-skel-skeleton {
   position: absolute; left: 0; right: 0; top: 0;
   min-height: 100%;

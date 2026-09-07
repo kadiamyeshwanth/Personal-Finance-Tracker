@@ -128,10 +128,24 @@ const LoginPage = () => {
     if (!forgotEmail) { setForgotError('Please enter your email.'); return; }
     setForgotLoading(true); setForgotError('');
     try {
-      await apiClient.post('/auth/forgot-password', { email: forgotEmail });
+      // This call has no default timeout on apiClient, and the one backend
+      // path it can take — actually sending the email — has hung for minutes
+      // in practice rather than erroring, leaving the button on "Sending…"
+      // forever with no way out but a page reload. A bounded timeout here
+      // turns that into a clear, recoverable error. 45s comfortably covers a
+      // cold-start free-tier backend (Render warns of "50 seconds or more"
+      // only on the very first request after idling; this is rarely the
+      // first request of a session) while still failing well before the
+      // multi-minute hang an unresponsive mail transport can cause.
+      await apiClient.post('/auth/forgot-password', { email: forgotEmail }, { timeout: 45000 });
       setForgotSent(true);
     } catch (err) {
-      setForgotError(err.response?.data?.error || 'Something went wrong.');
+      const timedOut = err.code === 'ECONNABORTED' || /timeout/i.test(err.message || '');
+      setForgotError(
+        timedOut
+          ? "This is taking longer than expected. The server may be waking up — please try again in a moment."
+          : (err.response?.data?.error || 'Something went wrong.')
+      );
     } finally {
       setForgotLoading(false);
     }

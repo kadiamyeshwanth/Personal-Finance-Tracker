@@ -183,10 +183,16 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
   <AnimatePresence>
     {open && (
       <>
+        {/* Same fix as InvestmentsPage's Add/Edit modal — a static `transform`
+            in `style` and Framer Motion's own animated `scale`/`y` on the same
+            element don't compose; FM silently drops the manual centring
+            offset once it owns `transform`. Flexbox centring needs no
+            transform at all, so nothing is left for FM to clash with. */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,15,15,0.5)', backdropFilter: 'blur(4px)' }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
         <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
-          style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '500px', maxWidth: 'calc(100vw - 32px)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '28px', boxShadow: 'var(--shadow-float)' }}>
+          style={{ pointerEvents: 'auto', width: '500px', maxWidth: '100%', maxHeight: '100%', overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '28px', boxShadow: 'var(--shadow-float)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ marginBottom: '10px' }}><Fire size={34} weight="fill" style={{ color: 'var(--brand)' }} /></div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>Roast My Spending</div>
@@ -210,6 +216,7 @@ const RoastModal = ({ open, onClose, roasts, loading }) => (
           )}
           <button onClick={onClose} className="n-btn n-btn-default n-btn-sm" style={{ width: '100%' }}>Close</button>
         </motion.div>
+        </div>
       </>
     )}
   </AnimatePresence>
@@ -289,7 +296,10 @@ const AIInsightsPage = () => {
   const [roastLoading, setRoastLoading] = useState(false);
 
   // Chat state
-  const [messages, setMessages] = useState([{ role: 'assistant', content: 'Hello! I\'m your AI Finance Assistant. Ask me anything about your money — spending habits, savings tips, budget status, or investment basics!' }]);
+  const [messages, setMessages] = useState([{
+    role: 'assistant',
+    content: 'Hi, I\'m **Mira**. I read your transactions and answer questions about them — nothing leaves your account.\n\nTry *"how much did I spend on Food last month?"* or *"can I afford a ₹40,000 laptop?"*',
+  }]);
   const [input, setInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -327,6 +337,9 @@ const AIInsightsPage = () => {
   const scoreLabel = score >= 75 ? 'Excellent' : score >= 50 ? 'Good' : score >= 30 ? 'Fair' : 'Needs work';
   const scoreColor = score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--accent)' : score >= 30 ? 'var(--yellow)' : 'var(--red)';
 
+  // What Mira understood last turn, so follow-ups can inherit it.
+  const chatMemory = React.useRef(null);
+
   const handleSendMessage = async () => {
     if (!input.trim() || chatLoading) return;
     const userMsg = { role: 'user', content: input.trim() };
@@ -334,7 +347,8 @@ const AIInsightsPage = () => {
     setInput('');
     setChatLoading(true);
     try {
-      const data = await sendChatMessage(input.trim());
+      const data = await sendChatMessage(input.trim(), chatMemory.current);
+      chatMemory.current = data.memory || null;
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
@@ -445,7 +459,7 @@ const AIInsightsPage = () => {
           <div className="ai-chat">
             <div className="ai-chat-head">
               <span className="ai-dot" />
-              <span className="ai-chat-name">AI Finance Assistant</span>
+              <span className="ai-chat-name">Mira</span>
               <span className="ai-chat-meta">&nbsp;·&nbsp;reads your own data</span>
             </div>
             <div className="ai-chat-body">

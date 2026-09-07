@@ -105,8 +105,50 @@ const KEYWORD_MAP = {
 };
 
 /**
+ * Whole-word/phrase matching for suggestCategory().
+ *
+ * Plain `String.includes()` matches ANY substring, so short keywords used to
+ * match inside unrelated longer words — 'tea' (Food) inside 'steam'
+ * (Entertainment), 'jio' (Bills) inside 'ajio' (Shopping), 'bar'
+ * (Entertainment) inside 'barbershop' (Personal). A match only counts if the
+ * characters immediately before and after it aren't alphanumeric, so a
+ * keyword must appear as its own token — bounded by a space, punctuation, or
+ * the edge of the string — never embedded inside a longer word.
+ *
+ * Character-adjacency rather than a regex `\b` on purpose: `\b` is defined in
+ * terms of `\w`, so a keyword ending in a symbol (e.g. 'disney+') has a
+ * non-word character on both sides of its own trailing boundary and `\b`
+ * never fires there at all. Checking the actual neighbouring characters
+ * sidesteps that entirely and needs no per-keyword regex escaping.
+ */
+const isAlnum = (ch) => !!ch && /[a-z0-9]/i.test(ch);
+
+/** Every valid whole-word occurrence of `keyword` in `text`, as start indices. */
+const findWholeWordMatches = (text, keyword) => {
+  const hits = [];
+  let from = 0;
+  let idx;
+  while ((idx = text.indexOf(keyword, from)) !== -1) {
+    const before = idx > 0 ? text[idx - 1] : '';
+    const after  = idx + keyword.length < text.length ? text[idx + keyword.length] : '';
+    if (!isAlnum(before) && !isAlnum(after)) hits.push(idx);
+    from = idx + 1;
+  }
+  return hits;
+};
+
+/**
  * Suggest a category from merchant name or description.
- * Returns the best matched category or null if no match.
+ *
+ * Scores every category, not just the first one with a hit: the whole
+ * KEYWORD_MAP is scanned and the LONGEST whole-word match wins, regardless of
+ * which category happens to be declared first. This is what lets 'hotel
+ * booking' (Travel, 13 chars) correctly beat the shorter, more generic
+ * 'hotel' (Food, 5 chars) that sits right next to it in the map — both are
+ * legitimate keywords (Indian English uses "hotel" for a restaurant), so the
+ * fix is choosing the more specific match, not deleting either keyword.
+ *
+ * Returns the best matched category, or null if nothing matched.
  *
  * @param {string} text - merchant name or transaction description
  * @returns {string|null} - matched category name or null
@@ -115,14 +157,38 @@ const suggestCategory = (text) => {
   if (!text) return null;
   const lower = text.toLowerCase().trim();
 
+  let bestCategory  = null;
+  let bestWordCount = 0;
+
   for (const [category, keywords] of Object.entries(KEYWORD_MAP)) {
     for (const keyword of keywords) {
-      if (lower.includes(keyword)) {
-        return category;
+      if (findWholeWordMatches(lower, keyword).length === 0) continue;
+
+      const wordCount = keyword.trim().split(/\s+/).length;
+
+      // Specificity is measured in WORDS, not characters. A first pass at
+      // this used raw keyword length, which fixed 'hotel'/'hotel booking'
+      // and 'amazon'/'amazon prime' — but also let a merely long GENERIC
+      // word beat a short but highly specific brand name: 'delivery' (8
+      // chars, Shopping) out-scored 'zomato' (6 chars, Food) for the input
+      // "Zomato delivery", a case the much simpler original code actually
+      // got right, just by the accident of Food being declared first.
+      //
+      // A multi-word phrase ('hotel booking') is a strictly stronger signal
+      // than any single word regardless of its character count, so word
+      // count alone decides that comparison. Two single-word candidates from
+      // different categories carry no such signal to arbitrate between them
+      // ('zomato' vs 'delivery' are both one word) — keeping the first one
+      // found preserves the original declaration-order behaviour for
+      // exactly that narrow case, rather than trying to invent a specificity
+      // score that doesn't actually exist.
+      if (wordCount > bestWordCount) {
+        bestCategory  = category;
+        bestWordCount = wordCount;
       }
     }
   }
-  return null;
+  return bestCategory;
 };
 
 /**

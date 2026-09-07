@@ -218,10 +218,17 @@ const JournalPage = () => {
       <AnimatePresence>
         {showForm && (
           <>
+            {/* Same fix as InvestmentsPage's Add/Edit modal: a static `transform`
+                in `style` cannot coexist with Framer Motion's own animated
+                `scale` on the same element — FM owns `transform` outright once
+                any motion value touches it, and silently drops the manual
+                centring offset. Flexbox centring on a plain wrapper needs no
+                transform at all, so there's nothing left to clash. */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }} />
+            <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '560px', maxWidth: 'calc(100vw - 32px)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
+              style={{ pointerEvents: 'auto', width: '560px', maxWidth: '100%', maxHeight: '100%', overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-float)' }}>
               <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <BookOpen size={15} weight="fill" style={{ color: 'var(--brand)' }} />
                 <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>New Journal Entry</span>
@@ -260,6 +267,7 @@ const JournalPage = () => {
                 </div>
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

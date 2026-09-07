@@ -45,7 +45,7 @@ Everything runs **without any paid AI API** — all intelligence is local, rule-
 
 ### UI/UX &nbsp;·&nbsp; Front‑End &nbsp;·&nbsp; Brand
 
-**Design & front‑end by [Abhinay](https://github.com/Abhinay)**
+**Design & front‑end by [Abhinay](https://github.com/Abrockyt)**
 
 <img src="https://img.shields.io/badge/Design_System-Clario-E85002?style=for-the-badge" />
 <img src="https://img.shields.io/badge/Motion-Framer_Motion_+_Lenis-0055FF?style=for-the-badge&logo=framer&logoColor=white" />
@@ -284,7 +284,6 @@ Everything respects `prefers-reduced-motion`, `prefers-reduced-transparency` and
 
 ## 📖 Table of Contents
 
-- [Overview](#-overview)
 - [What's New](#-whats-new)
 - [Features](#-features)
 - [Tech Stack](#️-tech-stack)
@@ -870,7 +869,7 @@ Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
 | Area | Owner |
 |------|-------|
 | **Product · Backend · API · Database · Auth · SMS pipeline · Deployment** | **[Kadiam Yeshwanth](https://github.com/kadiamyeshwanth)** — built the entire full‑stack platform and shipped it |
-| **UI/UX · Front‑end · Brand ("Clario") · Design system · Motion** | **[Abhinay](https://github.com/Abhinay)** — the redesign documented earlier in this README ("🎨 The Clario Redesign"); UI‑only, backend untouched |
+| **UI/UX · Front‑end · Brand ("Clario") · Design system · Motion** | **[Abhinay](https://github.com/Abrockyt)** — the redesign documented earlier in this README ("🎨 The Clario Redesign"); UI‑only, backend untouched |
 
 > The backend in this fork is intentionally **identical** to the deployed version —
 > the redesign changed only what you see, never how it works.

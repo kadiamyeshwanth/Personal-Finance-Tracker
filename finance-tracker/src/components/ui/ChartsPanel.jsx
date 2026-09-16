@@ -56,7 +56,7 @@ export default function ChartsPanel({ transactions = [], investments = [], incom
             className={active === key ? 'is-on' : ''}
             onClick={() => pick(key)}
           >
-            <Icon size={14} weight={active === key ? 'fill' : 'regular'} />
+            <Icon size={14} weight="fill" />
             <span>{label}</span>
           </button>
         ))}

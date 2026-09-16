@@ -1,0 +1,362 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   INSTRUMENT — the dashboard's data-card language
+   ──────────────────────────────────────────────────────────────────────────
+   Modelled on a measurement readout rather than a marketing card:
+     · a breadcrumb title ("Financial health / Score") over a hairline
+     · a small square-cornered mono tag for status, never a coloured pill
+     · mono uppercase labels, large light numerals
+     · meters: one solid fill, the remainder drawn as fine ticks, with a
+       0–100 scale when the number is a score
+   Loads after mobile-compact.css (main.jsx). Uses the app's theme tokens, so
+   it follows light and dark.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.ins, .ins-head, .bud-row {
+  --ins-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ins-line: color-mix(in srgb, var(--text, #111) 10%, transparent);
+  --ins-tick: color-mix(in srgb, var(--text, #111) 22%, transparent);
+}
+
+/* ── header ───────────────────────────────────────────────────────────── */
+.ins-head {
+  display: flex !important; align-items: center !important; justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 0 0 12px !important; margin: 0 0 16px !important;
+  border-bottom: 1px solid var(--ins-line);
+}
+.ins-crumb {
+  margin: 0 !important; min-width: 0;
+  font-size: 13px !important; font-weight: 400 !important; letter-spacing: -0.005em !important;
+  color: var(--text-3) !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ins-crumb i { font-style: normal; margin: 0 5px; opacity: 0.55; }
+.ins-crumb b { font-weight: 500; color: var(--text); }
+
+/* status tag — square corners, mono, a hairline in its own colour */
+.ins-tag {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  font-family: var(--ins-mono, 'Geist Mono', ui-monospace, monospace); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.25;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.ins-tag--green  { color: var(--green, #2E9E63); }
+.ins-tag--yellow { color: var(--yellow, #C98A12); }
+.ins-tag--red    { color: var(--red, #D64545); }
+
+.ins-link {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-2); text-decoration: none;
+  transition: color 0.15s ease;
+}
+.ins-link:hover { color: var(--brand); }
+
+/* ── read-outs ────────────────────────────────────────────────────────── */
+.ins-k {
+  display: block;
+  font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-3);
+}
+.ins-metrics { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.ins-metrics > :last-child { text-align: right; }
+.ins-v {
+  display: block; margin-top: 8px;
+  font-size: clamp(34px, 3.4vw, 44px); font-weight: 400; line-height: 0.95;
+  letter-spacing: -0.045em; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.ins-v small { margin-left: 3px; font-size: 14px; letter-spacing: 0; color: var(--text-3); }
+
+/* ── meters ───────────────────────────────────────────────────────────── */
+.ins-meter {
+  position: relative; display: block;
+  height: 10px; margin-top: 18px;
+  background: repeating-linear-gradient(90deg, var(--ins-tick) 0 1px, transparent 1px 5px);
+  overflow: hidden;
+}
+.ins-meter > i { position: absolute; left: 0; top: 0; bottom: 0; display: block; background: var(--brand); }
+.ins-meter--thin { height: 5px; margin-top: 0; }
+.ins-scale {
+  display: flex; justify-content: space-between; margin-top: 8px;
+  font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.ins-rows { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 14px; }
+.ins-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 7px 12px; }
+.ins-row .ins-meter { grid-column: 1 / -1; }
+.ins-row-v { font-size: 13px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ins-row-v em { margin-left: 8px; font-style: normal; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 400; color: var(--text-3); }
+
+.ins-foot {
+  display: flex; gap: 12px; align-items: baseline;
+  margin: 18px 0 0; padding-top: 12px;
+  border-top: 1px solid var(--ins-line);
+  font-size: 12.5px; line-height: 1.5; color: var(--text-2);
+}
+.ins-foot .ins-k { flex-shrink: 0; }
+
+/* empty state: a quiet ruled row, not a dashed box with a big orange plus */
+.ins-empty {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 0 2px;
+  text-decoration: none;
+}
+.ins-empty:hover .ins-link { color: var(--brand); }
+
+.hs.ins { gap: 0 !important; }
+
+/* ── Budgets list (BudgetsPage) ───────────────────────────────────────── */
+.bud-row {
+  display: grid; gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--ins-line);
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.bud-row:last-child { border-bottom: 0; }
+.bud-row:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+.bud-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.bud-name { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bud-del { flex-shrink: 0; width: 32px !important; height: 32px !important; padding: 0 !important; color: var(--text-3) !important; justify-content: center; }
+.bud-fig { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+.bud-spent { font-size: 22px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; color: var(--text); }
+.bud-limit { font-size: 13px; color: var(--text-3); }
+.bud-pct { margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-2); }
+.bud-row.is-over .bud-spent, .bud-row.is-over .bud-pct { color: var(--red, #D64545); }
+
+/* ── every tag in the app speaks the same way ─────────────────────────── */
+:root .n-tag {
+  border-radius: 4px !important;
+  padding: 3px 7px !important;
+  font-family: 'Geist Mono', ui-monospace, monospace !important;
+  font-size: 10.5px !important; font-weight: 500 !important;
+  letter-spacing: 0.06em !important; text-transform: uppercase !important;
+  box-shadow: none !important;
+}
+
+/* smaller read-outs for money figures (goals, accounts) */
+.ins-v--md { font-size: 24px; letter-spacing: -0.03em; }
+.ins-v--dim { color: var(--text-3); }
+.gm-name-ins { min-width: 0; font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* "Last 30 days": a ruled 2×2 read-out grid, not four rounded boxes */
+:root .dash-insight .dash-insight-list {
+  display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0 !important; border-top: 0;
+}
+:root .dash-insight .dash-insight-list > li {
+  background: transparent !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  padding: 14px 0 14px 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent) !important;
+}
+:root .dash-insight .dash-insight-list > li:nth-child(odd) { padding-right: 14px !important; border-right: 1px solid color-mix(in srgb, var(--text) 10%, transparent) !important; }
+:root .dash-insight .dash-insight-list > li:nth-child(even) { padding-left: 14px !important; }
+:root .dash-insight .dash-insight-list > li:nth-last-child(-n+2) { border-bottom: 0 !important; }
+:root .dash-insight .dash-insight-k {
+  font-family: 'Geist Mono', ui-monospace, monospace !important; font-size: 10.5px !important;
+  letter-spacing: 0.08em !important; text-transform: uppercase !important; color: var(--text-3) !important;
+}
+:root .dash-insight .dash-insight-v { font-size: 20px !important; font-weight: 400 !important; letter-spacing: -0.03em !important; }
+
+
+/* ══════════════ FILLED GREY CARDS — skeuomorphic depth ════════════════════
+   The data cards, settings cards and the profile menu share one moulded
+   surface: a soft top-lit grey fill, a highlight along the top edge, a
+   shadow under the bottom edge. Light and dark each get their own grey. */
+:root {
+  /* light theme: solid white cards standing on the grey page */
+  --card-fill: #FFFFFF;
+  --card-edge: rgba(0, 0, 0, 0.07);
+  --card-depth: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(20, 18, 14, 0.06), 0 14px 26px -20px rgba(20, 18, 14, 0.35);
+  --well: rgba(0, 0, 0, 0.05);
+  --well-depth: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+  --ins-fill: #1C1C1E;
+}
+:root[data-theme="dark"] {
+  /* dark theme: a solid filled grey that reads clearly against the black page */
+  --card-fill: #29292C;
+  --card-edge: rgba(255, 255, 255, 0.07);
+  --card-depth: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 16px 30px -20px rgba(0, 0, 0, 0.85);
+  --well: rgba(0, 0, 0, 0.28);
+  --well-depth: inset 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.04);
+  --ins-fill: #EDEDED;
+}
+/* `:not(.x)` only adds specificity — clario.css paints `.hs` white with
+   `:root:not([data-theme="dark"]) .hs` (0,3,0), which a plain `html:root` loses to */
+html:root:not(.x) :is(.hs, .wal, .gm, .dash-insight, .dash-journal, .pg-list, .st-card, .topbar-menu) {
+  background: var(--card-fill) !important;
+  border: 1px solid var(--card-edge) !important;
+  box-shadow: var(--card-depth) !important;
+}
+
+/* ── meters: neutral fill in a recessed groove; red is the only colour ── */
+.ins-meter { background-color: var(--well); box-shadow: var(--well-depth); border-radius: 3px; }
+.ins-meter > i { background: var(--ins-fill); border-radius: 3px; }
+/* every other progress bar in the app follows suit: green, amber and orange
+   fills go neutral, an explicit red (over budget, overdue) stays red */
+:root .n-progress-fill:not([style*="red"]) { background: var(--ins-fill) !important; }
+:root .n-progress-track { background: var(--well) !important; box-shadow: var(--well-depth) !important; }
+
+/* ── goal reached: a light sweeps along the full bar, the tag pops in ── */
+.ins-tag--reached { color: var(--text); animation: ins-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.ins-row.is-done .ins-meter > i,
+.goal-card.is-done .n-progress-fill {
+  background: linear-gradient(100deg, var(--ins-fill) 0%, var(--ins-fill) 38%, #FFFFFF 50%, var(--ins-fill) 62%, var(--ins-fill) 100%) !important;
+  background-size: 250% 100% !important;
+  animation: ins-sweep 2.6s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+:root:not([data-theme="dark"]) .ins-row.is-done .ins-meter > i,
+:root:not([data-theme="dark"]) .goal-card.is-done .n-progress-fill {
+  background-image: linear-gradient(100deg, #1C1C1E 0%, #1C1C1E 38%, #8A8A8E 50%, #1C1C1E 62%, #1C1C1E 100%) !important;
+}
+.goal-card.is-done { animation: ins-lift 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes ins-sweep { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@keyframes ins-pop   { 0% { transform: scale(0.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes ins-lift  { 0% { transform: translateY(6px) scale(0.98); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .ins-tag--reached, .ins-row.is-done .ins-meter > i, .goal-card.is-done, .goal-card.is-done .n-progress-fill { animation: none !important; }
+}
+
+
+/* ══════════════ SETTINGS — a plain settings list ══════════════════════════ */
+.st { max-width: 760px; margin: 0 auto; }
+.st-head { margin: 4px 0 18px; }
+.st-head h1 { margin: 0; font-size: clamp(24px, 3vw, 30px); font-weight: 600; letter-spacing: -0.03em; color: var(--text); }
+.st-head p { margin: 4px 0 0; font-size: 14px; color: var(--text-3); }
+
+.st-tabs {
+  display: inline-flex; gap: 2px; margin-bottom: 22px; padding: 3px;
+  border-radius: 12px; background: var(--well); box-shadow: var(--well-depth);
+  max-width: 100%; overflow-x: auto; scrollbar-width: none;
+}
+.st-tabs::-webkit-scrollbar { display: none; }
+.st-tabs button {
+  flex-shrink: 0; min-height: 36px; padding: 0 16px;
+  border: 0; border-radius: 9px; background: transparent; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--text-3);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.st-tabs button:hover { color: var(--text); }
+.st-tabs button.is-on { color: var(--text); background: var(--card-fill); box-shadow: var(--card-depth); }
+
+.st-sec { margin-bottom: 22px; }
+.st-sec-head { margin: 0 4px 8px; }
+.st-sec-head h2 {
+  margin: 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3);
+}
+.st-sec-head p { margin: 3px 0 0; font-size: 12.5px; color: var(--text-3); }
+.st-card { border-radius: 16px; padding: 4px 18px; }
+.st-card > * + * { border-top: 1px solid var(--card-edge); }
+
+.st-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; min-width: 0; flex-wrap: wrap; }
+.st-row-main { flex: 1 1 200px; min-width: 0; display: grid; gap: 2px; }
+.st-row-main b { font-size: 14px; font-weight: 600; color: var(--text); }
+.st-row-main span { font-size: 12.5px; line-height: 1.45; color: var(--text-3); }
+.st-row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.st-danger { color: var(--red) !important; }
+
+.st-form { padding: 14px 0; }
+.st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.st-grid .n-label { display: block; margin-bottom: 6px; }
+.st-grid input:disabled { opacity: 0.6; cursor: not-allowed; }
+.st-form-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+.st-pw { position: relative; }
+.st-pw .n-input { padding-right: 44px !important; }
+.st-pw button {
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border: 0; background: none; color: var(--text-3); cursor: pointer;
+}
+.st-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 14px 0; }
+.st-stats > div + div { padding-left: 14px; border-left: 1px solid var(--card-edge); }
+.st-stats strong { display: block; margin-top: 6px; font-size: 26px; font-weight: 400; letter-spacing: -0.03em; color: var(--text); font-variant-numeric: tabular-nums; }
+.st .a11y-list { padding: 4px 0; }
+.st .a11y-row { padding: 12px 0; }
+@media (max-width: 640px) {
+  .st-grid { grid-template-columns: 1fr; }
+  .st-card { padding: 2px 14px; }
+  .st-tabs { display: flex; }
+  .st-tabs button { flex: 1 0 auto; }
+}
+
+
+/* ══════════════ PROFILE MENU ══════════════════════════════════════════════ */
+html:root .topbar-menu { width: 260px !important; padding: 8px !important; border-radius: 18px !important; }
+.pm-id { display: flex; align-items: center; gap: 12px; padding: 8px 8px 12px; min-width: 0; }
+.pm-id > div { min-width: 0; display: grid; gap: 1px; }
+.pm-id b { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-id span { font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-theme {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin: 0 4px 8px; padding: 3px;
+  border-radius: 10px; background: var(--well); box-shadow: var(--well-depth);
+}
+.pm-theme button {
+  display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px;
+  border: 0; border-radius: 8px; background: transparent; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text-3);
+}
+.pm-theme button.is-on { color: var(--text); background: var(--card-fill); box-shadow: var(--card-depth); }
+.pm-list { display: grid; gap: 1px; padding: 6px 0; border-top: 1px solid var(--card-edge); border-bottom: 1px solid var(--card-edge); }
+.pm-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px;
+  border: 0; border-radius: 10px; background: none; cursor: pointer; text-align: left;
+  font: inherit; font-size: 13.5px; font-weight: 500; color: var(--text); text-decoration: none;
+}
+.pm-item span { flex: 1; }
+.pm-item svg { color: var(--text-3); flex-shrink: 0; }
+.pm-item:hover { background: var(--well); }
+.pm-item--out { margin-top: 6px; color: var(--red); }
+.pm-item--out svg { color: var(--red); }
+
+
+/* ══════════════ CARDS — grey and orange, like the landing page ═════════════
+   Every card is filled grey (the landing page paper grey in light, a solid
+   grey in dark); one card per page carries the orange fill as its accent.
+   Inside the orange card the colour tokens flip to white, so everything in
+   it — labels, numbers, meters, tags — follows without per-element rules. */
+:root { --card-fill: #E9E7E3; --card-edge: rgba(0, 0, 0, 0.06); --card-depth: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 1px 2px rgba(20, 18, 14, 0.05), 0 14px 26px -20px rgba(20, 18, 14, 0.3); }
+:root[data-theme="dark"] { --card-fill: #29292C; --card-edge: rgba(255, 255, 255, 0.07); }
+
+/* `.app-main` matches clario.css `:root:not([data-theme="dark"]) .app-main .n-card`
+   (0,4,0), which paints light-theme cards white; this is (0,4,1) */
+html:root:not(.x) .app-main .n-card,
+html:root:not(.x) .n-card {
+  background: var(--card-fill) !important;
+  border: 1px solid var(--card-edge) !important;
+  box-shadow: var(--card-depth) !important;
+}
+
+html:root:not(.x) .card-accent.card-accent {
+  background: linear-gradient(165deg, #DE5A0E 0%, #C94700 52%, #A63A00 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(0, 0, 0, 0.2), 0 18px 34px -20px rgba(201, 71, 0, 0.75) !important;
+  color: #FFFFFF;
+  --text: #FFFFFF; --text-2: rgba(255, 255, 255, 0.92); --text-3: rgba(255, 255, 255, 0.82);
+  --ins-fill: #FFFFFF; --ins-tick: rgba(255, 255, 255, 0.4); --ins-line: rgba(255, 255, 255, 0.22);
+  --well: rgba(0, 0, 0, 0.22); --well-depth: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  --card-edge: rgba(255, 255, 255, 0.2); --border: rgba(255, 255, 255, 0.2);
+}
+/* status colours set inline (green income, red expenses) read as white on orange */
+.card-accent :is([style*="var(--green)"], [style*="var(--red)"], [style*="var(--brand)"], [style*="var(--accent)"]) { color: #FFFFFF !important; }
+.card-accent .ins-tag { border-color: rgba(255, 255, 255, 0.55); background: rgba(255, 255, 255, 0.12); }
+.card-accent .ins-tag--red { color: #FFFFFF; background: rgba(0, 0, 0, 0.2); }
+.card-accent svg { color: rgba(255, 255, 255, 0.9) !important; }
+.card-accent .ins-row.is-done .ins-meter > i { background-image: linear-gradient(100deg, #FFF 0%, #FFF 38%, #FFD7BD 50%, #FFF 62%, #FFF 100%) !important; }
+
+/* the dashboard's chart panel and recent-transactions table join the grey cards */
+html:root:not(.x) :is(.charts-panel, .rec) {
+  background: var(--card-fill) !important;
+  border: 1px solid var(--card-edge) !important;
+  box-shadow: var(--card-depth) !important;
+}

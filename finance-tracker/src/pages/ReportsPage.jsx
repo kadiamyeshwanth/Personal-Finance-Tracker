@@ -417,8 +417,8 @@ const ReportsPage = () => {
 
         {/* Sidebar: summary + export */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Monthly summary */}
-          <div className="n-card" style={{ padding: '16px 18px' }}>
+          {/* Monthly summary — the page's orange accent card (instrument.css) */}
+          <div className="n-card card-accent" style={{ padding: '16px 18px' }}>
             <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
               {MONTH_NAMES[selectedMonth]} Summary
             </div>

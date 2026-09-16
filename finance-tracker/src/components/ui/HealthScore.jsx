@@ -12,16 +12,10 @@
  */
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { TrendUp } from '@phosphor-icons/react';
 import { prefersReducedMotion } from '../../lib/motion';
 
-const SIZE = 132;
-const STROKE = 9;
-const R = (SIZE - STROKE) / 2;
-const C = 2 * Math.PI * R;
-
-/* The ring is always brand orange — it is data, and data is orange in this
-   system. Only the word carries the verdict's colour. */
+/* The meter is always brand orange — it is data, and data is orange in this
+   system. Only the verdict tag carries the band's colour. */
 const band = (score) => {
   if (score >= 75) return { label: 'Excellent',  text: 'var(--green)' };
   if (score >= 50) return { label: 'Good',       text: 'var(--brand)' };
@@ -75,61 +69,62 @@ export default function HealthScore({ transactions = [], budgets = [], goals = [
     [transactions, budgets, goals],
   );
   const cfg = band(score);
-  const offset = C - (score / 100) * C;
 
   const tip = weakest.pts / weakest.max < 0.75
     ? `Focus next on ${weakest.label.toLowerCase()} — it's holding the score back most.`
     : `Every area is in good shape. Keep it steady.`;
 
+  // right-hand read-out: goals funded (savings rate already has its own row)
+  const goalPct = (parts.find(p => p.key === 'goal').hint.match(/^(\d+)%/) || [])[1];
+
+  /* Instrument layout (styles/instrument.css): breadcrumb + verdict tag, two
+     big read-outs, a ticked meter with a 0–100 scale, then each component as
+     a labelled read-out over its own thin meter. No ring, no pill. */
   return (
-    <section className="hs" aria-label={`Financial health score ${score} of 100`}>
-      <div className="hs-label">Financial health</div>
+    <section className="hs ins card-accent" aria-label={`Financial health score ${score} of 100`}>
+      <header className="ins-head">
+        <span className="ins-crumb">Financial health <i>/</i> <b>Score</b></span>
+        {/* neutral unless the score is in trouble */}
+        <span className={`ins-tag${cfg.label === 'Needs work' ? ' ins-tag--red' : ''}`}>{cfg.label}</span>
+      </header>
 
-      <div className="hs-body">
-        {/* Ring */}
-        <div className="hs-ring">
-          <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="var(--border-strong)" strokeWidth={STROKE} />
-            <motion.circle
-              cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
-              stroke="var(--brand)" strokeWidth={STROKE} strokeLinecap="round"
-              strokeDasharray={C}
-              initial={reduced ? false : { strokeDashoffset: C }}
-              animate={{ strokeDashoffset: offset }}
-              transition={{ duration: 1.1, ease: [0.4, 0, 0.2, 1] }}
-            />
-          </svg>
-          <div className="hs-ring-num">
-            <strong style={{ color: 'var(--brand)' }}>{score}</strong>
-            <span>/ 100</span>
-          </div>
+      <div className="ins-metrics">
+        <div>
+          <span className="ins-k">Score</span>
+          <strong className="ins-v">{score}<small>/100</small></strong>
         </div>
-
-        {/* Breakdown */}
-        <div className="hs-parts">
-          <span className="hs-band" style={{ color: cfg.text, background: 'color-mix(in srgb, currentColor 12%, transparent)' }}>
-            {cfg.label}
-          </span>
-          {parts.map((p, i) => (
-            <div key={p.key} className="hs-part">
-              <div className="hs-part-top">
-                <span className="hs-part-label">{p.label}</span>
-                <span className="hs-part-hint">{p.hint}</span>
-              </div>
-              <span className="hs-part-track">
-                <motion.span
-                  className="hs-part-fill"
-                  initial={reduced ? false : { width: 0 }}
-                  animate={{ width: `${(p.pts / p.max) * 100}%` }}
-                  transition={{ duration: 0.6, delay: 0.15 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                />
-              </span>
-            </div>
-          ))}
+        <div>
+          <span className="ins-k">Goals funded</span>
+          <strong className="ins-v">{goalPct != null ? `${goalPct}%` : '—'}</strong>
         </div>
       </div>
 
-      <p className="hs-tip"><TrendUp size={13} weight="bold" /> {tip}</p>
+      <div className="ins-meter" aria-hidden="true">
+        <motion.i
+          initial={reduced ? false : { width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+      <div className="ins-scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+
+      <ul className="ins-rows">
+        {parts.map((p, i) => (
+          <li key={p.key} className="ins-row">
+            <span className="ins-k">{p.label}</span>
+            <span className="ins-row-v">{p.hint}<em>{p.pts}/{p.max}</em></span>
+            <span className="ins-meter ins-meter--thin" aria-hidden="true">
+              <motion.i
+                initial={reduced ? false : { width: 0 }}
+                animate={{ width: `${(p.pts / p.max) * 100}%` }}
+                transition={{ duration: 0.6, delay: 0.15 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="ins-foot"><span className="ins-k">Next</span><span>{tip}</span></p>
     </section>
   );
 }

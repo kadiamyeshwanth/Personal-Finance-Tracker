@@ -147,8 +147,9 @@
 .mr-label--flame { color: var(--flame); }
 
 /* per-line mask reveal — the reference wraps each title line in its own div */
-.mr-line { display: block;  padding-bottom: 0.14em; margin-bottom: -0.14em; }
-.mr-line > span { display: block; will-change: transform, filter, opacity; }
+/* the mask: lines slide up out of it (no fade), so it has to clip */
+.mr-line { display: block; overflow: hidden; padding-bottom: 0.14em; margin-bottom: -0.14em; }
+.mr-line > span { display: block; will-change: transform; }
 
 /* word-level masked reveal for body copy (<Reveal>) */
 .mr-reveal { word-spacing: normal; }

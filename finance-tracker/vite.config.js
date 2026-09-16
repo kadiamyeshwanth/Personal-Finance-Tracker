@@ -42,7 +42,7 @@ export default defineConfig({
           'vendor-xlsx': ['xlsx', 'papaparse'],
           'vendor-pdf': ['jspdf', 'html2canvas'],
           // Icons & UI
-          'vendor-ui': ['lucide-react', 'react-hot-toast'],
+          'vendor-ui': ['@phosphor-icons/react', 'react-hot-toast'],
           'vendor-heroui': ['@heroui/react'],
         },
       },

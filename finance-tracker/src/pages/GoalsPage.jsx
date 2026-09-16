@@ -128,13 +128,13 @@ const GoalsPage = () => {
           {goals.map(goal => {
             const pct  = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
             const done = pct >= 100;
-            const barColor = done ? 'var(--green)' : pct >= 75 ? 'var(--yellow)' : 'var(--accent)';
+            // bars are neutral (instrument.css); a funded goal gets the "reached" treatment
 
             return (
               <motion.div
                 key={goal.id}
                 whileHover={{ borderColor: 'var(--border-strong)' }}
-                className="n-card"
+                className={`n-card goal-card${done ? ' is-done' : ''}`}
                 style={{ padding: '18px' }}
               >
                 {/* Header */}
@@ -167,7 +167,6 @@ const GoalsPage = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${pct}%` }}
                     transition={{ duration: 0.8, ease: [0.4,0,0.2,1] }}
-                    style={{ background: barColor }}
                   />
                 </div>
 

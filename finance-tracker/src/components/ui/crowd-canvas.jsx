@@ -11,7 +11,11 @@
 import { gsap } from 'gsap';
 import { useEffect, useRef } from 'react';
 
-export function CrowdCanvas({ src, rows = 15, cols = 7, className }) {
+/* `scale` draws the people smaller (0.4 = 40% of sprite size) by widening the
+   scene instead of the canvas — so a phone gets a street of small figures
+   with a pixel buffer sized to the screen, not a 2.5×-oversized canvas
+   shrunk with a CSS transform. `maxDpr` caps the backing store on phones. */
+export function CrowdCanvas({ src, rows = 15, cols = 7, className, scale = 1, maxDpr = 2, fps = 60 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -164,20 +168,25 @@ export function CrowdCanvas({ src, rows = 15, cols = 7, className }) {
     let onScreen = true;
     let peepsBuilt = false;
 
-    const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = () => Math.min(window.devicePixelRatio || 1, maxDpr);
+    const k = scale > 0 ? scale : 1;
 
     const render = () => {
       const d = dpr();
-      canvas.width = canvas.width;          // clear + reset transform
-      ctx.save();
-      ctx.scale(d, d);
+      // clearRect, not `canvas.width = canvas.width` — reassigning the width
+      // reallocates the whole backing store every frame
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(d * k, 0, 0, d * k, 0, 0);   // scene units → canvas pixels
       for (let i = 0; i < crowd.length; i++) crowd[i].render(ctx);
-      ctx.restore();
     };
 
-    const loop = () => {
+    // a walking crowd reads the same at 30fps; phones pass fps={30}
+    const frameGap = 1000 / Math.max(1, fps);
+    let lastPaint = 0;
+    const loop = (t) => {
       if (killed) return;
-      if (onScreen) render();
+      if (onScreen && (!t || t - lastPaint >= frameGap - 1)) { lastPaint = t || 0; render(); }
       raf = requestAnimationFrame(loop);
     };
 
@@ -187,8 +196,8 @@ export function CrowdCanvas({ src, rows = 15, cols = 7, className }) {
       const h = canvas.clientHeight;
       if (!w || !h) return;                 // no layout yet — RO will call again
       const d = dpr();
-      stage.width = w;
-      stage.height = h;
+      stage.width = w / k;                  // the scene is wider when figures are smaller
+      stage.height = h / k;
       canvas.width = Math.round(w * d);
       canvas.height = Math.round(h * d);
 

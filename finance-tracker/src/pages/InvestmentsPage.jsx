@@ -121,7 +121,8 @@ const InvestmentsPage = () => {
             { label: 'Total P&L',     value: `${summary.totalPnL >= 0 ? '+' : ''}${fmt(summary.totalPnL)}`, color: pnlColor(summary.totalPnL), icon: summary.totalPnL >= 0 ? ArrowUpRight : ArrowDownRight },
             { label: 'Returns',       value: `${summary.totalPnL >= 0 ? '+' : ''}${summary.totalPnLPct}%`, color: pnlColor(summary.totalPnL), icon: TrendingUp },
           ].map(({ label, value, color, icon: Icon }) => (
-            <div key={label} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)' }}>
+            // filled cards (instrument.css); "Current Value" is the page's orange accent card
+            <div key={label} className={`n-card inv-stat${label === 'Current Value' ? ' card-accent' : ''}`} style={{ padding: '16px', borderRadius: 'var(--r-md)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 <Icon size={13} style={{ color: 'var(--text-3)' }} />
                 <span style={{ fontSize: '11px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>{label}</span>
@@ -164,8 +165,8 @@ const InvestmentsPage = () => {
                 const pnl = (inv.currentValue || inv.investedAmount) - inv.investedAmount;
                 const pct = inv.investedAmount > 0 ? ((pnl / inv.investedAmount) * 100).toFixed(1) : 0;
                 return (
-                  <motion.div key={inv._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <motion.div key={inv._id} className="n-card" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                    style={{ padding: '14px 16px', borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <BrandLogo name={inv.name} symbol={inv.symbol} type={inv.type} size={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -196,8 +197,8 @@ const InvestmentsPage = () => {
 
         {/* Portfolio breakdown */}
         {typeBreakdown.length > 0 && (
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+          <div className="n-card" style={{ padding: 0, borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--card-edge)' }}>
               <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Portfolio Breakdown</span>
             </div>
             <div style={{ padding: '8px' }}>
@@ -211,7 +212,7 @@ const InvestmentsPage = () => {
                       <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>{pct}%</span>
                     </div>
                     <div style={{ height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden', marginBottom: '4px' }}>
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7 }} style={{ height: '100%', background: 'var(--accent)', borderRadius: '2px' }} />
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7 }} style={{ height: '100%', background: 'var(--ins-fill)', borderRadius: '2px' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{fmt(t.invested)}</span>

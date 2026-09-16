@@ -126,49 +126,36 @@ const BudgetsPage = () => {
             const statusColor = over ? 'var(--red)' : warn ? 'var(--yellow)' : 'var(--green)';
             const statusTag = over ? 'red' : warn ? 'yellow' : 'green';
 
+            /* instrument row (styles/instrument.css): name + mono status tag,
+               the figures as a read-out, a ticked meter underneath */
             return (
-              <motion.div
-                key={b.id}
-                whileHover={{ backgroundColor: 'var(--bg-hover)' }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '20px',
-                  padding: '14px 16px',
-                  borderBottom: idx < enriched.length - 1 ? '1px solid var(--border)' : 'none',
-                  background: 'var(--bg)',
-                  transition: 'background 0.12s',
-                }}
-              >
-                <div style={{ width: '130px', flexShrink: 0 }}>
-                  <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--text)', marginBottom: '1px' }}>{b.category}</div>
-                  <span className={`n-tag n-tag-${statusTag}`} style={{ fontSize: '11px' }}>{statusText}</span>
+              <div key={b.id} className={`bud-row${over ? ' is-over' : warn ? ' is-warn' : ''}`}>
+                <div className="bud-top">
+                  <span className="bud-name">{b.category}</span>
+                  {/* only "over" carries colour — near-limit and on-track read neutral */}
+                  <span className={`ins-tag${over ? ' ins-tag--red' : ''}`}>{statusText}</span>
+                  <motion.button whileHover={{ backgroundColor: 'var(--red-bg)', color: 'var(--red)' }}
+                    onClick={() => { if (confirm(`Delete budget for "${b.category}"?`)) deleteMut.mutate(b.id); }}
+                    className="n-btn n-btn-ghost n-btn-sm bud-del" aria-label={`Delete budget for ${b.category}`}>
+                    <Trash2 size={13} />
+                  </motion.button>
                 </div>
 
-                <div style={{ flex: 1 }}>
-                  <div className="n-progress-track">
-                    <motion.div
-                      className="n-progress-fill"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(b.pct, 100)}%` }}
-                      transition={{ duration: 0.7, ease: [0.4,0,0.2,1] }}
-                      style={{ background: barColor }}
-                    />
-                  </div>
+                <div className="bud-fig">
+                  <span className="bud-spent">₹{b.spent.toLocaleString('en-IN')}</span>
+                  <span className="bud-limit">/ ₹{b.limit.toLocaleString('en-IN')}</span>
+                  <span className="bud-pct">{b.pct.toFixed(0)}%</span>
                 </div>
 
-                <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '160px' }}>
-                  <div style={{ fontSize: '13px', color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
-                    <span style={{ fontWeight: 600, color: over ? 'var(--red)' : 'var(--text)' }}>₹{b.spent.toLocaleString('en-IN')}</span>
-                    <span style={{ color: 'var(--text-3)' }}> / ₹{b.limit.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>{b.pct.toFixed(0)}% used</div>
+                <div className="ins-meter ins-meter--thin" aria-hidden="true">
+                  <motion.i
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(b.pct, 100)}%` }}
+                    transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+                    style={over ? { background: 'var(--red)' } : undefined}
+                  />
                 </div>
-
-                <motion.button whileHover={{ backgroundColor: 'var(--red-bg)', color: 'var(--red)' }}
-                  onClick={() => { if (confirm(`Delete budget for "${b.category}"?`)) deleteMut.mutate(b.id); }}
-                  className="n-btn n-btn-ghost n-btn-sm" style={{ color: 'var(--text-3)', padding: '4px', flexShrink: 0 }}>
-                  <Trash2 size={13} />
-                </motion.button>
-              </motion.div>
+              </div>
             );
           })}
         </div>

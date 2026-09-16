@@ -13,7 +13,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import {
-  motion, AnimatePresence, useMotionValue, useTransform, useMotionTemplate, useSpring,
+  motion, AnimatePresence, useMotionValue, useTransform, useSpring,
 } from 'framer-motion';
 import {
   ArrowRight, ArrowLeft, DeviceMobile, FileCsv, Receipt, PencilSimple,
@@ -139,17 +139,42 @@ const TESTI = [
 /* One soft ease everywhere. Durations are deliberately long — the brief was
    "butter smooth", and a 0.6s reveal on a section this large reads as a snap. */
 const SOFT = [0.33, 1, 0.42, 1];
+/* No fades. Everything arrives fully opaque and is *uncovered*:
+   · blocks — a wipe that opens from the bottom edge while the block rises
+     into place (the mask is released afterwards so shadows aren't cut)
+   · text lines / words — slide up out of an overflow mask
+   · the orbit — an iris that opens from the centre
+   The wipe is a CSS mask, not clip-path: Chrome's IntersectionObserver
+   measures a clip-path'd target as 0% visible, so a clipped element would
+   never trigger its own whileInView. A mask doesn't affect that measurement. */
+const EXPO = [0.16, 1, 0.3, 1];
+const SOLID = 'linear-gradient(#000, #000)';
+const WIPE_BASE = {
+  maskImage: SOLID, WebkitMaskImage: SOLID,
+  maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat',
+  maskPosition: '50% 100%', WebkitMaskPosition: '50% 100%',
+};
+const IRIS = (p) => `radial-gradient(circle at 50% 50%, #000 ${p}%, transparent ${p}%)`;
+/* Animating a mask repaints on the main thread every frame — measured at
+   ~50ms frames on a 4×-throttled phone while sections revealed. In lite
+   mode the wipe drops out and blocks just rise into place (transform only,
+   composited); the `y` each preset adds still gives them their motion. */
+const WIPE_HIDDEN = () => (LITE ? {} : { ...WIPE_BASE, maskSize: '100% 0%', WebkitMaskSize: '100% 0%' });
+const WIPE_SHOWN = () => (LITE ? {} : {
+  ...WIPE_BASE, maskSize: '100% 100%', WebkitMaskSize: '100% 100%',
+  transitionEnd: { maskImage: 'none', WebkitMaskImage: 'none' },
+});
 const rise = (i = 0) => ({
-  initial: { opacity: 0, y: 30, filter: 'blur(7px)' },
-  whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
+  initial: { ...WIPE_HIDDEN(), y: 28 },
+  whileInView: { ...WIPE_SHOWN(), y: 0 },
   viewport: { once: true, amount: 0.2 },
-  transition: { duration: 1.15, delay: i * 0.11, ease: SOFT },
+  transition: { duration: 0.95, delay: i * 0.1, ease: EXPO },
 });
 const pop = (i = 0) => ({
-  initial: { opacity: 0, y: 50, filter: 'blur(14px)' },
-  whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
+  initial: { ...WIPE_HIDDEN(), y: 48 },
+  whileInView: { ...WIPE_SHOWN(), y: 0 },
   viewport: { once: true, amount: 0.15 },
-  transition: { duration: 1.05, delay: i * 0.1, ease: SOFT },
+  transition: { duration: 1.05, delay: i * 0.08, ease: EXPO },
 });
 
 /**
@@ -164,11 +189,23 @@ const pop = (i = 0) => ({
  *   'exit'    — 0 at rest, 1 once a full element height has scrolled past
  *   'cover'   — 0 as the bottom enters, 1 as the top leaves (parallax range)
  */
+/* Phones and touch tablets get a lighter page: native momentum scroll (no
+   Lenis), no per-frame scroll-linked transforms, no WebGL globe. Every scroll
+   hook below was a rAF loop reading getBoundingClientRect — six of them
+   running at once is what made the page stutter on mid-range phones.
+   Read once at load; `.mr--lite` on the root lets CSS follow suit. */
+const LITE = typeof window !== 'undefined' && !!window.matchMedia?.(
+  '(max-width: 640px), (max-width: 1024px) and (pointer: coarse)'
+).matches;
+const PHONE = typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 640px)').matches;
+
 function useScrollProgress(ref, mode = 'through') {
-  const progress = useMotionValue(mode === 'cover' ? 0.5 : 0);
+  // lite: park every scroll-linked value at rest — parallax neutral, the
+  // gathered headline already assembled, the hero not lifted
+  const progress = useMotionValue(LITE ? (mode === 'through' ? 1 : mode === 'cover' ? 0.5 : 0) : (mode === 'cover' ? 0.5 : 0));
   useEffect(() => {
     const el = ref.current;
-    if (!el) return undefined;
+    if (!el || LITE) return undefined;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       progress.set(mode === 'through' ? 0.5 : mode === 'cover' ? 0.5 : 0);
       return undefined;
@@ -207,11 +244,8 @@ const REVEAL_PARENT = {
   shown: { transition: { staggerChildren: 0.14, delayChildren: 0 } },
 };
 const REVEAL_CHILD = {
-  hidden: { y: '0.42em', opacity: 0, filter: 'blur(12px)' },
-  shown: {
-    y: '0em', opacity: 1, filter: 'blur(0px)',
-    transition: { duration: 1.25, ease: SOFT },
-  },
+  hidden: { y: '108%' },
+  shown: { y: '0%', transition: { duration: 1, ease: EXPO } },
 };
 
 /* per-card copy: label → title → body rise in sequence when the card enters */
@@ -220,8 +254,8 @@ const FEAT_COPY_PARENT = {
   shown: { transition: { staggerChildren: 0.18, delayChildren: 0.05 } },
 };
 const FEAT_COPY_CHILD = {
-  hidden: { opacity: 0, y: 30, filter: 'blur(10px)' },
-  shown: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 1.05, ease: SOFT } },
+  hidden: { ...WIPE_HIDDEN(), y: 18 },
+  shown: { ...WIPE_SHOWN(), y: 0, transition: { duration: 0.9, ease: EXPO } },
 };
 
 function Lines({ lines, className = 'mr-t2', delay = 0, as: Tag = motion.h2 }) {
@@ -256,8 +290,8 @@ function Reveal({ parts, className = 'mr-body', delay = 0, as: Tag = motion.p })
           <motion.span
             className={p.u ? 'mr-reveal-i mr-reveal-u' : 'mr-reveal-i'}
             variants={{
-              hidden: { y: '0.42em', opacity: 0, filter: 'blur(12px)' },
-              shown: { y: '0%', opacity: 1, filter: 'blur(0px)', transition: { duration: 1.05, ease: SOFT } },
+              hidden: { y: '108%' },
+              shown: { y: '0%', transition: { duration: 0.9, ease: EXPO } },
             }}
           >{p.t}</motion.span>
         </span>
@@ -269,16 +303,17 @@ function Reveal({ parts, className = 'mr-body', delay = 0, as: Tag = motion.p })
 /* one strong headline, each line blur-ups in on load — no cycling (a phrase
    caught mid-transition just reads as broken) */
 const HERO_HEADLINE = ['Where the month', 'actually went.'];
-function CyclingHeadline() {
+/* phone hero's big type: the three ways in, then done */
+const HERO_WORDS = ['SMS.', 'CSV.', 'Snap.', 'Done.'];function CyclingHeadline() {
   return (
     <h1 className="mr-t2 mr-hero-h1">
       <span className="mr-hero-h1-inner">
         {HERO_HEADLINE.map((line, k) => (
           <span className="mr-line" key={line}>
             <motion.span
-              initial={{ opacity: 0, y: '112%', filter: 'blur(12px)' }}
-              animate={{ opacity: 1, y: '0%', filter: 'blur(0px)' }}
-              transition={{ duration: 1.6, delay: 0.12 + k * 0.1, ease: SOFT }}
+              initial={{ y: '112%' }}
+              animate={{ y: '0%' }}
+              transition={{ duration: 1.1, delay: 0.12 + k * 0.1, ease: EXPO }}
             >{line}</motion.span>
           </span>
         ))}
@@ -435,8 +470,8 @@ const ChatBoxMock = () => (
     </div>
     <div className="mr-chatbox-sug">
       <span className="lbl">Suggested</span>
-      <button type="button">Which subscription have I not used since June?</button>
-      <button type="button">Am I on track to save ₹2L this year?</button>
+      <span className="mr-chatbox-q">Which subscription have I not used since June?</span>
+      <span className="mr-chatbox-q">Am I on track to save ₹2L this year?</span>
     </div>
   </div>
 );
@@ -512,7 +547,9 @@ function CaptureSection() {
   const p = useScrollProgress(ref, 'cover');
   const headY = useTransform(p, [0, 1], [28, -28]);
   const rollY = useTransform(p, [0, 1], [-36, 36]);
-  const footY = useTransform(p, [0, 1], [56, -24]);
+  // the button rides the same offset as the cards — driven in opposite
+  // directions they closed a 60px gap and the button landed on the cards
+  const footY = rollY;
   const reel = [...SLIDES, ...SLIDES];
   return (
     <section className="mr-section mr-cap-sec" id="capture" ref={ref}>
@@ -555,7 +592,7 @@ function CaptureSection() {
         </motion.div>
 
         <motion.div className="mr-slider-foot" style={{ y: footY }}>
-          <Link to="/login" className="mr-btn mr-btn--light">
+          <Link to="/login?mode=signup" className="mr-btn mr-btn--light">
             Try it with your data <ArrowRight size={14} weight="bold" />
           </Link>
         </motion.div>
@@ -591,10 +628,13 @@ function OrbitChip({ i, item, count, spin }) {
       className="mr-orbit-slot"
       style={{ transform: `rotate(${a}deg) translate(0, -${radius}px)` }}
     >
+      {/* lite: the counter-rotation is a CSS animation (compositor) instead of
+          nine JS-driven transforms written every frame */}
       <motion.div
         className={`mr-orbit-card mr-orbit-card--${item.type}`}
-        initial={{ rotate: -a }}
-        animate={spin ? { rotate: -a - 360 } : { rotate: -a }}
+        style={LITE ? { '--orbit-a': `${-a}deg` } : undefined}
+        initial={LITE ? false : { rotate: -a }}
+        animate={LITE ? undefined : (spin ? { rotate: -a - 360 } : { rotate: -a })}
         transition={spin ? { duration: 46, repeat: Infinity, ease: 'linear' } : { duration: 0 }}
       >
       {item.type === 'stat' && (
@@ -665,17 +705,17 @@ function Scatter() {
       <div className="mr-container">
         <motion.div
           className="mr-revolve-stage"
-          initial={{ opacity: 0, scale: 0.92 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={LITE ? { scale: 0.86 } : { maskImage: IRIS(0), WebkitMaskImage: IRIS(0), scale: 0.94 }}
+          whileInView={LITE ? { scale: 1 } : { maskImage: IRIS(75), WebkitMaskImage: IRIS(75), scale: 1, transitionEnd: { maskImage: 'none', WebkitMaskImage: 'none' } }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 1.1, ease: SOFT }}
+          transition={{ duration: 1.2, ease: EXPO }}
         >
           <span className="mr-orbit-ring" aria-hidden="true" />
           <span className="mr-orbit-ring mr-orbit-ring--in" aria-hidden="true" />
 
           <motion.div
-            className="mr-orbit-spin"
-            animate={spin ? { rotate: 360 } : { rotate: 0 }}
+            className={`mr-orbit-spin${spin ? '' : ' is-paused'}`}
+            animate={LITE ? undefined : (spin ? { rotate: 360 } : { rotate: 0 })}
             transition={spin ? { duration: 46, repeat: Infinity, ease: 'linear' } : { duration: 0 }}
           >
             {ORBIT.map((o, k) => (
@@ -685,7 +725,7 @@ function Scatter() {
 
           <div className="mr-revolve-content">
             <h2 className="mr-scatter-h">One screen. The whole month.</h2>
-            <Link to="/login" className="mr-btn mr-btn--primary">
+            <Link to="/login?mode=signup" className="mr-btn mr-btn--primary">
               Start free <ArrowRight size={14} weight="bold" />
             </Link>
             <a href="#platform" onClick={onNavClick('platform')} className="mr-scatter-link">Explore the platform</a>
@@ -716,16 +756,17 @@ function FeatCard({ progress, depth, tall, row, id, label, icon: Icon, title, bo
         viewport={{ once: true, amount: 0.5 }}
       >
         <motion.p className="mr-label mr-label--flame" variants={FEAT_COPY_CHILD}>
-          {Icon ? <Icon size={15} weight="regular" /> : null}{label}
+          {Icon ? <Icon size={15} weight="fill" /> : null}{label}
         </motion.p>
         <motion.h3 className="mr-t3" variants={FEAT_COPY_CHILD}>{title}</motion.h3>
         <motion.p variants={FEAT_COPY_CHILD}>{body}</motion.p>
       </motion.div>
+      {/* the art rides a parallax `y`, so its entrance is the wipe alone */}
       <motion.div
         className="mr-feat-art" style={{ y: artY }}
-        initial={{ opacity: 0, y: 26 }} whileInView={{ opacity: 1, y: 0 }}
+        initial={WIPE_HIDDEN()} whileInView={WIPE_SHOWN()}
         viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.8, delay: 0.15, ease: SOFT }}
+        transition={{ duration: 1, delay: 0.15, ease: EXPO }}
       >{children}</motion.div>
     </motion.article>
   );
@@ -842,18 +883,17 @@ function StepPanel({ progress, i, n, k, p: body, Visual, count }) {
   const near = useTransform(progress, [centre - 0.42 / count, centre, centre + 0.42 / count], [0, 1, 0]);
   const visScale = useTransform(near, [0, 1], [0.86, 1]);
   const visRot = useTransform(near, [0, 1], [7, 0]);
-  const visOp = useTransform(near, [0, 1], [0.35, 1]);
   const numY = useTransform(near, [0, 1], [60, 0]);
   return (
     <div className="mr-step-panel">
-      <motion.p className="mr-step-num" style={{ y: numY, opacity: visOp }} aria-hidden="true">{n}</motion.p>
+      <motion.p className="mr-step-num" style={{ y: numY }} aria-hidden="true">{n}</motion.p>
       <div className="mr-step-copy">
         <p className="mr-label mr-label--flame">{n} · {k}</p>
         <p className="mr-step-body">{body}</p>
       </div>
       <motion.div
         className="mr-step-visual"
-        style={{ scale: visScale, rotateY: visRot, opacity: visOp }}
+        style={{ scale: visScale, rotateY: visRot }}
       >
         <Visual />
       </motion.div>
@@ -869,15 +909,14 @@ const GATHER_LINES = ['One month.', 'One honest picture.'];
 
 function GatherChar({ ch, offset, progress }) {
   // convergence finishes by ~62% of the pin; the rest is the held, settled
-  // headline before the section releases. Only transform + opacity here \u2014
-  // both composite cheaply. Blur lives on the line (2 filters, not ~30).
+  // headline before the section releases. Transform only \u2014 the letters are
+  // solid the whole time and simply fly home (no fade, no blur).
   const x = useTransform(progress, [0.06, 0.6], [offset * 46, 0]);
   const rotateX = useTransform(progress, [0.06, 0.6], [offset * 42, 0]);
-  const opacity = useTransform(progress, [0.04, 0.44], [0.12, 1]);
   return (
     <motion.span
       className={ch === ' ' ? 'mr-gather-ch mr-gather-sp' : 'mr-gather-ch'}
-      style={{ x, rotateX, opacity }}
+      style={{ x, rotateX }}
     >
       {ch === ' ' ? '\u00A0' : ch}
     </motion.span>
@@ -887,10 +926,8 @@ function GatherChar({ ch, offset, progress }) {
 function GatherLine({ text, progress }) {
   const chars = [...text];
   const centre = (chars.length - 1) / 2;
-  const blurVal = useTransform(progress, [0.04, 0.44], [4, 0]);
-  const filter = useMotionTemplate`blur(${blurVal}px)`;
   return (
-    <motion.span className="mr-gather-line" style={{ filter }}>
+    <motion.span className="mr-gather-line">
       {chars.map((ch, i) => (
         <GatherChar key={i} ch={ch} offset={i - centre} progress={progress} />
       ))}
@@ -933,10 +970,10 @@ function HowStep({ n, k, p, i }) {
   return (
     <motion.li
       className="mr-how-step"
-      initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
-      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      initial={{ ...WIPE_HIDDEN(), y: 24 }}
+      whileInView={{ ...WIPE_SHOWN(), y: 0 }}
       viewport={{ once: true, amount: 0.6 }}
-      transition={{ duration: 1.4, delay: i * 0.12, ease: SOFT }}
+      transition={{ duration: 0.95, delay: i * 0.12, ease: EXPO }}
     >
       <span className="mr-how-n" aria-hidden="true">{n}</span>
       <div className="mr-how-copy">
@@ -969,10 +1006,10 @@ function HowSection() {
 /* ── testimonials grid — per-line blur-up reveal, staggered down the grid
    (adapted from the reference's "Trusted by" grid; our copy + palette) ─── */
 const TESTI_REVEAL = {
-  hidden: { opacity: 0, y: -30, filter: 'blur(14px)' },
+  hidden: { ...WIPE_HIDDEN(), y: 36 },
   shown: (i = 0) => ({
-    opacity: 1, y: 0, filter: 'blur(0px)',
-    transition: { delay: i * 0.14, duration: 1.25, ease: SOFT },
+    ...WIPE_SHOWN(), y: 0,
+    transition: { delay: i * 0.1, duration: 1, ease: EXPO },
   }),
 };
 
@@ -1011,10 +1048,10 @@ function TestiFeature() {
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={i} className="mr-tg-feature-inner"
-          initial={{ opacity: 0, y: 12, filter: 'blur(7px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: -10, filter: 'blur(7px)' }}
-          transition={{ duration: 0.55, ease: SOFT }}
+          initial={{ clipPath: 'inset(0% 0% 0% 100%)', x: 18 }}
+          animate={{ clipPath: 'inset(0% 0% 0% 0%)', x: 0 }}
+          exit={{ clipPath: 'inset(0% 100% 0% 0%)', x: -18 }}
+          transition={{ duration: 0.6, ease: EXPO }}
         >
           <blockquote className="mr-tg-feature-q">{T.q}</blockquote>
           <figcaption className="mr-tg-feature-by">
@@ -1118,7 +1155,7 @@ function Faq() {
           </div>
           <motion.div className="mr-head-aside" {...rise(1)}>
             <p className="mr-body">
-              Still unsure? <Link to="/login">Start free</Link> — nothing is charged
+              Still unsure? <Link to="/login?mode=signup">Start free</Link> — nothing is charged
               and nothing is connected.
             </p>
           </motion.div>
@@ -1150,7 +1187,7 @@ function Footer() {
           <h2 className="mr-foot-h">
             The month is already happening.<br />See where it’s going.
           </h2>
-          <Link to="/login" className="mr-btn mr-btn--primary mr-foot-cta">
+          <Link to="/login?mode=signup" className="mr-btn mr-btn--primary mr-foot-cta">
             Start free <ArrowRight size={14} weight="bold" />
           </Link>
         </motion.div>
@@ -1163,17 +1200,17 @@ function Footer() {
             <p>The picture, without surrendering the keys.</p>
           </div>
           <div className="mr-foot-col">
-            <h4>Product</h4>
+            <h3>Product</h3>
             {NAV.map(n => <a key={n.id} href={`#${n.id}`} onClick={onNavClick(n.id)}>{n.label}</a>)}
           </div>
           <div className="mr-foot-col">
-            <h4>Get data in</h4>
+            <h3>Get data in</h3>
             {SLIDES.map(s => <a key={s.k} href="#capture" onClick={onNavClick('capture')}>{s.k}</a>)}
           </div>
           <div className="mr-foot-col">
-            <h4>Account</h4>
+            <h3>Account</h3>
             <Link to="/login">Log in</Link>
-            <Link to="/login">Create an account</Link>
+            <Link to="/login?mode=signup">Create an account</Link>
             <a href="#proof" onClick={onNavClick('proof')}>Proof</a>
           </div>
         </motion.div>
@@ -1233,6 +1270,8 @@ export default function PrelandingPage() {
     // so every scroll-driven transform on the page moves smoothly instead of
     // jumping between wheel notches. Disabled for reduced-motion.
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    // touch devices: the OS's own momentum scroll is smoother than any JS glide
+    if (LITE) return undefined;
     const lenis = new Lenis({
       // matched to trymeridian.com — Lenis' canonical easeOutExpo glide
       duration: 1.2,
@@ -1251,18 +1290,17 @@ export default function PrelandingPage() {
   const heroRef = useRef(null);
   const heroProgress = useScrollProgress(heroRef, 'exit');
   const heroLift = useTransform(heroProgress, [0, 1], ['0%', '-18%']);
-  const heroFade = useTransform(heroProgress, [0, 0.75], [1, 0]);
   const stageLift = useTransform(heroProgress, [0, 1], ['0%', '-6%']);
 
   if (isLoggedIn) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="mr">
-      <motion.header 
+    <div className={LITE ? 'mr mr--lite' : 'mr'}>
+      <motion.header
         className={`mr-nav${navTight ? ' is-tight' : ''}`}
-        initial={{ opacity: 0, x: '-50%', y: '-100%' }}
-        animate={{ opacity: 1, x: '-50%', y: '0%' }}
-        transition={{ duration: 1.1, delay: 0.1, ease: SOFT }}
+        initial={{ x: '-50%', y: '-180%' }}
+        animate={{ x: '-50%', y: '0%' }}
+        transition={{ duration: 1, delay: 0.1, ease: EXPO }}
       >
         <div className="mr-nav-pill">
           <Link to="/" className="mr-nav-brand" aria-label="Clario — reload" onClick={(e) => { e.preventDefault(); window.location.assign('/'); }}>
@@ -1273,7 +1311,7 @@ export default function PrelandingPage() {
           </nav>
           <div className="mr-nav-cta">
             <Link to="/login" className="mr-btn mr-btn--dark">Log in</Link>
-            <Link to="/login" className="mr-btn mr-btn--primary">
+            <Link to="/login?mode=signup" className="mr-btn mr-btn--primary">
               Start free <ArrowRight size={14} weight="bold" />
             </Link>
           </div>
@@ -1286,11 +1324,11 @@ export default function PrelandingPage() {
         <span className="mr-hero-noise" aria-hidden="true" />
         <div className="mr-container">
           <div className="mr-hero-layout">
-            <motion.div className="mr-hero-col" style={{ y: heroLift, opacity: heroFade }}>
+            <motion.div className="mr-hero-col" style={{ y: heroLift }}>
               <div className="mr-hero-copy">
                 <motion.p className="mr-hero-eyebrow"
-                  initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  transition={{ duration: 1.4, delay: 0.05, ease: SOFT }}>
+                  initial={{ ...WIPE_HIDDEN(), y: 14 }} animate={{ ...WIPE_SHOWN(), y: 0 }}
+                  transition={{ duration: 0.9, delay: 0.05, ease: EXPO }}>
                   <span className="mr-hero-dot" aria-hidden="true" />
                   No bank login. Not now, not ever.
                 </motion.p>
@@ -1307,16 +1345,16 @@ export default function PrelandingPage() {
                 />
 
                 <motion.div className="mr-hero-cta"
-                  initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  transition={{ duration: 1.1, delay: 0.74, ease: SOFT }}>
-                  <Link to="/login" className="mr-btn mr-btn--light">
+                  initial={{ ...WIPE_HIDDEN(), y: 16 }} animate={{ ...WIPE_SHOWN(), y: 0 }}
+                  transition={{ duration: 0.9, delay: 0.6, ease: EXPO }}>
+                  <Link to="/login?mode=signup" className="mr-btn mr-btn--light">
                     Start free <ArrowRight size={14} weight="bold" />
                   </Link>
                   <a href="#platform" onClick={onNavClick('platform')} className="mr-btn mr-btn--outline">See how it works</a>
                 </motion.div>
                 <motion.ul className="mr-hero-tags"
-                  initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  transition={{ duration: 1, delay: 0.95, ease: SOFT }}>
+                  initial={WIPE_HIDDEN()} animate={WIPE_SHOWN()}
+                  transition={{ duration: 0.9, delay: 0.8, ease: EXPO }}>
                   <li>₹0 to start</li>
                   <li>4-tap import</li>
                   <li>Your data stays yours</li>
@@ -1324,10 +1362,36 @@ export default function PrelandingPage() {
               </div>
             </motion.div>
 
-            <motion.div className="mr-hero-sphere" style={{ y: stageLift }}>
-              <GlobePolaroids className="!absolute inset-0" />
-            </motion.div>
+            {/* phones never show the globe (mobile-compact.css), so don't pay
+                for a WebGL context and its textures there */}
+            {!PHONE && (
+              <motion.div className="mr-hero-sphere" style={{ y: stageLift }}>
+                <GlobePolaroids className="!absolute inset-0" />
+              </motion.div>
+            )}
           </div>
+        </div>
+        {/* phones only (mobile-compact.css): the globe gives way to big bold type —
+            the whole product in four words: the three ways in, then done */}
+        <div className="mr-hero-band">
+          <p className="mr-hero-band-word" aria-label="SMS. CSV. Snap. Done.">
+            {HERO_WORDS.map((w, wi) => (
+              <span key={w} className={wi === HERO_WORDS.length - 1 ? 'is-ink' : undefined} aria-hidden="true">
+                {[...w].map((ch, ci) => {
+                  const n = wi * 5 + ci;          // stable per-letter seed
+                  return (
+                    <span
+                      key={ci} className="mr-flip"
+                      style={{ '--flip-dur': `${6 + ((n * 37) % 50) / 10}s`, '--flip-delay': `${((n * 53) % 90) / 10}s` }}
+                    >
+                      <span className="mr-flip-in"><span>{ch}</span><span>{ch}</span></span>
+                    </span>
+                  );
+                })}
+              </span>
+            ))}
+          </p>
+          <span className="mr-hero-band-k">No bank login · ₹0 to start</span>
         </div>
         <span className="mr-hero-seam" aria-hidden="true" />
       </section>
@@ -1351,6 +1415,9 @@ export default function PrelandingPage() {
           src="/images/peeps/all-peeps.png"
           rows={15}
           cols={7}
+          scale={PHONE ? 0.4 : 1}
+          maxDpr={LITE ? 1.5 : 2}
+          fps={LITE ? 30 : 60}
           className="mr-crowd-canvas"
         />
       </section>
@@ -1399,7 +1466,7 @@ export default function PrelandingPage() {
               Add a single transaction and the dashboard already has something to tell you.
             </p>
             <div className="mr-cta-btns">
-              <Link to="/login" className="mr-btn mr-btn--light">
+              <Link to="/login?mode=signup" className="mr-btn mr-btn--light">
                 Create a free account <ArrowRight size={14} weight="bold" />
               </Link>
             </div>

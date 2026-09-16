@@ -11,8 +11,13 @@ import {
   SignOut,
   SlidersHorizontal,
   Lifebuoy,
+  Sun,
+  Moon,
+  CaretRight,
 } from '@phosphor-icons/react';
 import Sidebar from './Sidebar';
+import MobileTabBar from './MobileTabBar';
+import { LogoMark, LogoWordmark } from '../ui/Logo';
 import Avatar from '../ui/Avatar';
 import PageBoot from '../ui/PageBoot';
 import { AnimatedThemeToggler } from '../ui/animated-theme-toggler';
@@ -127,6 +132,12 @@ const AppLayout = () => {
           <ConnectionBanner />
 
           <div className="topbar">
+            {/* phones only (≤640px): the sidebar and its brand are off-screen there */}
+            <Link to="/dashboard" className="topbar-logo" aria-label="Clario home">
+              <LogoMark size={26} />
+              <LogoWordmark height={18} />
+            </Link>
+
             <button
               type="button"
               className="topbar-hamburger topbar-btn"
@@ -196,26 +207,37 @@ const AppLayout = () => {
                     exit={{ opacity: 0, y: -6, scale: 0.97 }}
                     transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <div className="topbar-menu-head">
-                      <Avatar name={currentUser?.username} size={34} radius={10} className="topbar-menu-avatar" />
-
+                    {/* profile card (styles/instrument.css `.pm-*`): who you are,
+                        the theme switch, three places to go, sign out */}
+                    <div className="pm-id">
+                      <Avatar name={currentUser?.username} size={40} radius={12} className="topbar-menu-avatar" />
                       <div>
                         <b>{currentUser?.username || 'Account'}</b>
                         <span>{currentUser?.email || 'Signed in'}</span>
                       </div>
                     </div>
-                    <Link to="/settings" role="menuitem" className="topbar-menu-item" onClick={() => setProfileOpen(false)}>
-                      <User size={15} /> Profile &amp; account
-                    </Link>
-                    <Link to="/settings" role="menuitem" className="topbar-menu-item" onClick={() => setProfileOpen(false)}>
-                      <SlidersHorizontal size={15} /> Preferences
-                    </Link>
-                    <Link to="/help" role="menuitem" className="topbar-menu-item" onClick={() => setProfileOpen(false)}>
-                      <Lifebuoy size={15} /> Help &amp; edge cases
-                    </Link>
-                    <div className="topbar-menu-sep" />
-                    <button type="button" role="menuitem" className="topbar-menu-item topbar-menu-item--danger" onClick={() => { setProfileOpen(false); logout(); }}>
-                      <SignOut size={15} /> Log out
+                    <div className="pm-theme" role="group" aria-label="Theme">
+                      {[['light', 'Light', Sun], ['dark', 'Dark', Moon]].map(([value, label, Icon]) => (
+                        <button key={value} type="button" aria-pressed={theme === value}
+                          className={theme === value ? 'is-on' : ''}
+                          onClick={() => theme !== value && toggleTheme()}>
+                          <Icon size={14} weight="fill" /> {label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="pm-list">
+                      <Link to="/settings?tab=account" role="menuitem" className="pm-item" onClick={() => setProfileOpen(false)}>
+                        <User size={16} weight="fill" /><span>Account</span><CaretRight size={12} weight="bold" />
+                      </Link>
+                      <Link to="/settings?tab=preferences" role="menuitem" className="pm-item" onClick={() => setProfileOpen(false)}>
+                        <SlidersHorizontal size={16} weight="fill" /><span>Preferences</span><CaretRight size={12} weight="bold" />
+                      </Link>
+                      <Link to="/help" role="menuitem" className="pm-item" onClick={() => setProfileOpen(false)}>
+                        <Lifebuoy size={16} weight="fill" /><span>Help</span><CaretRight size={12} weight="bold" />
+                      </Link>
+                    </div>
+                    <button type="button" role="menuitem" className="pm-item pm-item--out" onClick={() => { setProfileOpen(false); logout(); }}>
+                      <SignOut size={16} weight="fill" /><span>Log out</span>
                     </button>
                   </motion.div>
                 )}
@@ -245,6 +267,8 @@ const AppLayout = () => {
 
         <CommandPalette open={paletteOpen} initialQuery={searchDraft} onClose={() => { setPaletteOpen(false); setSearchDraft(''); }} />
         <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+        {/* phones only (≤640px): primary tabs; "Menu" opens the drawer above */}
+        <MobileTabBar onMenu={() => setMobileSidebarOpen(true)} />
       </div>
     </div>
     </MotionConfig>

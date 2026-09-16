@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -132,28 +133,18 @@ const ConfirmModal = ({ open, title, description, confirmText, onConfirm, onClos
 );
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
-const Section = ({ icon: Icon, title, subtitle, children, accentColor }) => (
-  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden', marginBottom: '24px' }}>
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '12px',
-      padding: '16px 20px', borderBottom: '1px solid var(--border)',
-      background: 'var(--bg-secondary)',
-    }}>
-      <div style={{
-        width: '32px', height: '32px', borderRadius: 'var(--r)',
-        background: accentColor ? `${accentColor}15` : 'var(--bg)',
-        border: `1px solid ${accentColor ? `${accentColor}30` : 'var(--border)'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>
-        <Icon size={15} style={{ color: accentColor || 'var(--text-2)' }} strokeWidth={1.5} />
-      </div>
-      <div>
-        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{title}</div>
-        {subtitle && <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>{subtitle}</div>}
-      </div>
+/* A plain settings group: a small title, an optional line under it, and one
+   filled card holding the rows (styles/instrument.css `.st-*`). The old icon
+   plate + accent colour props are still accepted and ignored. */
+// eslint-disable-next-line no-unused-vars
+const Section = ({ icon, accentColor, title, subtitle, children }) => (
+  <section className="st-sec">
+    <div className="st-sec-head">
+      <h2>{title}</h2>
+      {subtitle && <p>{subtitle}</p>}
     </div>
-    <div style={{ padding: '20px' }}>{children}</div>
-  </div>
+    <div className="st-card">{children}</div>
+  </section>
 );
 
 // ── Finance Avatar Section ────────────────────────────────────────────────────
@@ -502,171 +493,132 @@ const SettingsPage = () => {
     passwordMut.mutate(pwForm);
   };
 
-  const initials = currentUser?.username?.[0]?.toUpperCase() || 'U';
+  // Sections live in tabs; the profile menu links straight to one (?tab=…)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const TABS = [['account', 'Account'], ['preferences', 'Preferences'], ['import', 'Import'], ['data', 'Data']];
+  const tab = TABS.some(([k]) => k === searchParams.get('tab')) ? searchParams.get('tab') : 'account';
+  const setTab = (k) => setSearchParams(k === 'account' ? {} : { tab: k }, { replace: true });
 
   return (
-    <div>
-      <PageHeader
-        icon={Settings}
-        title="Settings"
-        subtitle="Manage your account, preferences, and data."
-      />
+    <div className="st">
+      <header className="st-head">
+        <h1>Settings</h1>
+        <p>Your account, how Clario looks, and your data.</p>
+      </header>
 
-      {/* Account overview card */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '16px',
-        padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
-        marginBottom: '32px', background: 'var(--bg)',
-      }}>
-        <Avatar name={currentUser?.username} size={52} radius={14} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)' }}>{currentUser?.username}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>{currentUser?.email}</div>
-          {stats?.memberSince && (
-            <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' }}>
-              Member since {new Date(stats.memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
-            </div>
-          )}
-        </div>
-        {/* Stats */}
-        {stats && (
-          <div style={{ display: 'flex', gap: '24px' }}>
-            {[
-              { icon: CreditCard, label: 'Transactions', value: stats.transactions },
-              { icon: Target,     label: 'Goals',        value: stats.goals },
-              { icon: Wallet,     label: 'Budgets',      value: stats.budgets },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="st-tabs" role="tablist" aria-label="Settings sections">
+        {TABS.map(([k, label]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k}
+            className={tab === k ? 'is-on' : ''} onClick={() => setTab(k)}>{label}</button>
+        ))}
       </div>
 
-      {/* Profile */}
-      <Section icon={User} title="Profile" subtitle="Your photo and display name">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-          <Avatar name={currentUser?.username} size={64} radius={16} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input ref={fileRef} type="file" accept="image/*" onChange={pickAvatar} style={{ display: 'none' }} />
-              <button type="button" className="n-btn n-btn-default n-btn-sm" disabled={avatarBusy} onClick={() => fileRef.current?.click()}>
-                {avatarBusy ? 'Processing…' : avatar ? 'Change photo' : 'Upload photo'}
-              </button>
-              {avatar && (
-                <button type="button" className="n-btn n-btn-danger-ghost n-btn-sm" onClick={removeAvatar}>Remove</button>
-              )}
-            </div>
-            <span style={{ fontSize: '11.5px', color: 'var(--text-3)' }}>JPG or PNG. Square works best — it's cropped to a circle and stored on this device.</span>
+      {tab === 'account' && (
+      <>
+      <Section title="Profile">
+        <div className="st-row">
+          <Avatar name={currentUser?.username} size={48} radius={14} />
+          <div className="st-row-main">
+            <b>{currentUser?.username}</b>
+            <span>{stats?.memberSince
+              ? `Member since ${new Date(stats.memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}`
+              : currentUser?.email}</span>
+          </div>
+          <div className="st-row-actions">
+            <input ref={fileRef} type="file" accept="image/*" onChange={pickAvatar} style={{ display: 'none' }} />
+            <button type="button" className="n-btn n-btn-default n-btn-sm" disabled={avatarBusy} onClick={() => fileRef.current?.click()}>
+              {avatarBusy ? 'Processing…' : avatar ? 'Change photo' : 'Add photo'}
+            </button>
+            {avatar && <button type="button" className="n-btn n-btn-ghost n-btn-sm" onClick={removeAvatar}>Remove</button>}
           </div>
         </div>
-        <form onSubmit={handleProfileSave} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label className="n-label">Username</label>
-            <input
-              className="n-input"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="Your username"
-              maxLength={20}
-            />
+        <form onSubmit={handleProfileSave} className="st-form">
+          <div className="st-grid">
+            <div>
+              <label className="n-label" htmlFor="st-username">Username</label>
+              <input id="st-username" className="n-input" value={username}
+                onChange={e => setUsername(e.target.value)} placeholder="Your username" maxLength={20} />
+            </div>
+            <div>
+              <label className="n-label" htmlFor="st-email">Email</label>
+              <input id="st-email" className="n-input" value={currentUser?.email || ''} disabled />
+            </div>
           </div>
-          <div>
-            <label className="n-label">Email</label>
-            <input
-              className="n-input"
-              value={currentUser?.email || ''}
-              disabled
-              style={{ opacity: 0.5, cursor: 'not-allowed' }}
-            />
+          <div className="st-form-foot">
+            <button type="submit" disabled={profileMut.isPending} className="n-btn n-btn-primary n-btn-sm">
+              {profileMut.isPending ? 'Saving…' : 'Save'}
+            </button>
           </div>
-          <button type="submit" disabled={profileMut.isPending} className="n-btn n-btn-primary n-btn-sm" style={{ height: '36px' }}>
-            {profileMut.isPending ? 'Saving…' : 'Save'}
-          </button>
         </form>
       </Section>
 
-      {/* Finance Avatar */}
-      <AvatarSection />
-
-      {/* Password */}
-      <Section icon={Lock} title="Password" subtitle="Requires your current password">
-        <form onSubmit={handlePasswordChange}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+      <Section title="Password" subtitle="You'll need your current password.">
+        <form onSubmit={handlePasswordChange} className="st-form">
+          <div className="st-grid">
             <div>
-              <label className="n-label">Current password</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  className="n-input"
-                  type={showCurrent ? 'text' : 'password'}
-                  value={pwForm.currentPassword}
-                  onChange={e => setPwForm({ ...pwForm, currentPassword: e.target.value })}
-                  placeholder="Enter current password"
-                  style={{ paddingRight: '36px' }}
-                />
-                <button type="button" onClick={() => setShowCurrent(p => !p)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: '2px' }}>
-                  {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
+              <label className="n-label" htmlFor="st-pw-current">Current password</label>
+              <div className="st-pw">
+                <input id="st-pw-current" className="n-input" type={showCurrent ? 'text' : 'password'}
+                  value={pwForm.currentPassword} autoComplete="current-password"
+                  onChange={e => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
+                <button type="button" onClick={() => setShowCurrent(p => !p)} aria-label={showCurrent ? 'Hide password' : 'Show password'}>
+                  {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="n-label">New password</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  className="n-input"
-                  type={showNew ? 'text' : 'password'}
-                  value={pwForm.newPassword}
-                  onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })}
-                  placeholder="At least 8 characters"
-                  style={{ paddingRight: '36px' }}
-                />
-                <button type="button" onClick={() => setShowNew(p => !p)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: '2px' }}>
-                  {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
+              <label className="n-label" htmlFor="st-pw-new">New password</label>
+              <div className="st-pw">
+                <input id="st-pw-new" className="n-input" type={showNew ? 'text' : 'password'}
+                  value={pwForm.newPassword} placeholder="At least 8 characters" autoComplete="new-password"
+                  onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })} />
+                <button type="button" onClick={() => setShowNew(p => !p)} aria-label={showNew ? 'Hide password' : 'Show password'}>
+                  {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
               <PasswordStrength password={pwForm.newPassword} />
             </div>
           </div>
-          <button type="submit" disabled={passwordMut.isPending} className="n-btn n-btn-primary n-btn-sm">
-            {passwordMut.isPending ? 'Updating…' : 'Change password'}
-          </button>
+          <div className="st-form-foot">
+            <button type="submit" disabled={passwordMut.isPending} className="n-btn n-btn-primary n-btn-sm">
+              {passwordMut.isPending ? 'Updating…' : 'Change password'}
+            </button>
+          </div>
         </form>
       </Section>
 
-      {/* Appearance */}
-      <Section icon={theme === 'dark' ? Moon : Sun} title="Appearance" subtitle="Choose your preferred color scheme">
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {[
-            { label: 'Light', value: 'light', icon: Sun },
-            { label: 'Dark',  value: 'dark',  icon: Moon },
-          ].map(({ label, value, icon: Icon }) => (
-            <motion.button
-              key={value}
-              whileHover={{ borderColor: 'var(--accent)' }}
-              onClick={() => theme !== value && toggleTheme()}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                padding: '16px 24px', border: `1.5px solid ${theme === value ? 'var(--accent)' : 'var(--border-strong)'}`,
-                borderRadius: 'var(--r-md)', background: 'var(--bg)', cursor: 'pointer',
-                color: theme === value ? 'var(--accent)' : 'var(--text-2)',
-                transition: 'border-color 0.15s, color 0.15s',
-                width: '100px',
-              }}
-            >
-              <Icon size={20} strokeWidth={1.5} />
-              <span style={{ fontSize: '13px', fontWeight: 500 }}>{label}</span>
-              {theme === value && <CheckCircle2 size={12} style={{ color: 'var(--accent)' }} />}
-            </motion.button>
-          ))}
+      {stats && (
+        <Section title="At a glance">
+          <div className="st-stats">
+            {[['Transactions', stats.transactions], ['Goals', stats.goals], ['Budgets', stats.budgets]].map(([label, value]) => (
+              <div key={label}><span className="ins-k">{label}</span><strong>{value ?? 0}</strong></div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      <AvatarSection />
+      </>
+      )}
+
+      {tab === 'preferences' && (
+      <>
+      <Section title="Appearance">
+        <div className="st-row">
+          <div className="st-row-main"><b>Theme</b><span>Applies across the whole app.</span></div>
+          <div className="a11y-seg" role="group" aria-label="Theme">
+            {[['light', 'Light', Sun], ['dark', 'Dark', Moon]].map(([value, label, Icon]) => (
+              <button key={value} type="button" aria-pressed={theme === value}
+                className={theme === value ? 'is-on' : ''}
+                onClick={() => theme !== value && toggleTheme()}>
+                <Icon size={13} weight="fill" style={{ verticalAlign: '-2px', marginRight: 5 }} />{label}
+              </button>
+            ))}
+          </div>
         </div>
       </Section>
 
-      {/* Accessibility */}
-      <Section icon={PersonArmsSpread} title="Accessibility" subtitle="Adjust motion, text size and contrast. Applied instantly and remembered on this device.">
+      <Section title="Accessibility" subtitle="Applied instantly and remembered on this device.">
         <div className="a11y-list">
           <label className="a11y-row">
             <div>
@@ -713,56 +665,23 @@ const SettingsPage = () => {
           </label>
         </div>
       </Section>
+      </>
+      )}
 
-      {/* Security Info */}
-      <Section icon={Shield} title="Security" subtitle="Account security information" accentColor="var(--brand)">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {[
-            { label: 'Authentication', value: 'JWT (7-day tokens)' },
-            { label: 'Password hashing', value: 'bcrypt (salt rounds: 10)' },
-            { label: 'Data isolation', value: 'All data scoped to your account' },
-            { label: 'Rate limiting', value: 'Auth: 20 req/15min · API: 300 req/min' },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>{label}</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-3)', fontFamily: 'monospace' }}>{value}</span>
-            </div>
-          ))}
-        </div>
-      </Section>
+      {tab === 'import' && <SMSSetupSection />}
 
-      {/* Danger Zone */}
-      <Section icon={AlertTriangle} title="Danger Zone" subtitle="Irreversible actions — proceed with caution" accentColor="var(--red)">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
-          }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>Clear all data</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>Delete all transactions, goals, and budgets. Keep your account.</div>
-            </div>
-            <button className="n-btn n-btn-danger n-btn-sm" onClick={() => setClearModal(true)}>
-              <Database size={13} /> Clear data
-            </button>
+      {tab === 'data' && (
+        <Section title="Your data" subtitle="These can't be undone.">
+          <div className="st-row">
+            <div className="st-row-main"><b>Clear all data</b><span>Delete every transaction, goal and budget. Your account stays.</span></div>
+            <button className="n-btn n-btn-default n-btn-sm" onClick={() => setClearModal(true)}>Clear data</button>
           </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 16px', border: '1px solid rgba(196,85,77,0.3)', borderRadius: 'var(--r-md)',
-            background: 'rgba(196,85,77,0.03)',
-          }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--red)' }}>Delete account</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>Permanently delete your account and all associated data. This cannot be undone.</div>
-            </div>
-            <button className="n-btn n-btn-danger n-btn-sm" onClick={() => setDeleteModal(true)}>
-              <Trash2 size={13} /> Delete account
-            </button>
+          <div className="st-row">
+            <div className="st-row-main"><b className="st-danger">Delete account</b><span>Remove your account and everything in it, permanently.</span></div>
+            <button className="n-btn n-btn-danger n-btn-sm" onClick={() => setDeleteModal(true)}>Delete account</button>
           </div>
-        </div>
-      </Section>
-
-      <SMSSetupSection />
+        </Section>
+      )}
 
       {/* Modals */}
       <ConfirmModal

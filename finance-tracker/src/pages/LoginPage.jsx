@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye as Eye,
@@ -49,9 +49,11 @@ const PasswordStrength = ({ password }) => {
   );
 };
 
-const Field = ({ label, children }) => (
+/* `id` ties the visible label to its input (WCAG 1.3.1 / 4.1.2) — without it a
+   screen reader announced each field as an unnamed text box */
+const Field = ({ label, id, children }) => (
   <div>
-    <label className="n-label" style={{ display: 'block', marginBottom: '6px' }}>{label}</label>
+    <label className="n-label" htmlFor={id} style={{ display: 'block', marginBottom: '6px' }}>{label}</label>
     {children}
   </div>
 );
@@ -66,7 +68,12 @@ const PROMISES = [
 const LoginPage = () => {
   const { isLoggedIn, login, register } = useAuth();
   const navigate = useNavigate();
-  const [isSignup, setIsSignup]     = useState(false);
+  // "Start free" links arrive as /login?mode=signup and open straight on sign-up
+  const [searchParams] = useSearchParams();
+  const [isSignup, setIsSignup]     = useState(() => searchParams.get('mode') === 'signup');
+  // phones get a CSS gradient instead of the three.js shader (a whole WebGL
+  // scene behind a form was the heaviest thing on the page)
+  const [isPhone] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 640px)').matches);
   const [showPass, setShowPass]     = useState(false);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
@@ -206,11 +213,20 @@ const LoginPage = () => {
       <main className="auth-main">
         <div className="auth-right-frame">
           {/* animated ShaderGradient water-plane behind the card — dark only */}
-          <ShaderBg
-            props={AUTH_SHADER_DARK}
-            className="auth-shader-bg"
-            opacity={0.95}
-          />
+          {isPhone
+            ? <div className="auth-shader-bg auth-shader-lite" aria-hidden="true" />
+            : <ShaderBg props={AUTH_SHADER_DARK} className="auth-shader-bg" opacity={0.95} />}
+          {/* phones only (≤640px): the aside carrying the brand is hidden there, so
+              the space above the sheet carries the logo (top right) and a line */}
+          <div className="auth-mobile-top">
+            <div className="auth-mobile-brand" aria-hidden="true">
+              <LogoMark size={24} />
+              <LogoWordmark height={17} />
+            </div>
+            <p className="auth-mobile-display" key={isSignup ? 'signup' : 'login'}>
+              {isSignup ? <>Start with<br />one number.</> : <>Know where<br />it went.</>}
+            </p>
+          </div>
           <motion.div
             className="auth-panel"
             initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
@@ -258,8 +274,8 @@ const LoginPage = () => {
           <div className="auth-divider"><span>or</span></div>
 
           <form onSubmit={submit} className="auth-form">
-            <Field label={isSignup ? 'Username' : 'Username or email'}>
-              <input className="n-input" type="text" value={form.username} onChange={upd('username')}
+            <Field label={isSignup ? 'Username' : 'Username or email'} id="auth-username">
+              <input id="auth-username" className="n-input" type="text" value={form.username} onChange={upd('username')}
                 placeholder={isSignup ? 'e.g. yeshwanth' : 'Enter username or email'}
                 autoComplete="username" autoFocus required
               />
@@ -275,8 +291,8 @@ const LoginPage = () => {
                   transition={springFast}
                   style={{ overflow: 'hidden' }}
                 >
-                  <Field label="Email address">
-                    <input className="n-input" type="email" value={form.email} onChange={upd('email')}
+                  <Field label="Email address" id="auth-email">
+                    <input id="auth-email" className="n-input" type="email" value={form.email} onChange={upd('email')}
                       placeholder="you@example.com" autoComplete="email" required
                     />
                   </Field>
@@ -284,9 +300,9 @@ const LoginPage = () => {
               )}
             </AnimatePresence>
 
-            <Field label="Password">
+            <Field label="Password" id="auth-password">
               <div style={{ position: 'relative' }}>
-                <input className="n-input" type={showPass ? 'text' : 'password'} value={form.password}
+                <input id="auth-password" className="n-input" type={showPass ? 'text' : 'password'} value={form.password}
                   onChange={upd('password')} placeholder={isSignup ? 'At least 8 characters' : 'Your password'}
                   autoComplete={isSignup ? 'new-password' : 'current-password'}
                   style={{ paddingRight: '40px' }} required

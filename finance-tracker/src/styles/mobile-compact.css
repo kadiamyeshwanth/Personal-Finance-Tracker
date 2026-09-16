@@ -1,0 +1,1124 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — tablet (641–1024px) and phone (≤640px)
+   ──────────────────────────────────────────────────────────────────────────
+   Loads last (main.jsx). skeuo.css writes its shell rules as selector lists
+   that include `.app-sidebar[data-collapsed]`, and that attribute is always
+   present — so those rules carry an extra attribute of specificity. Loading
+   later is not enough to beat them. Every shell rule here is therefore
+   prefixed with `:root` (one more pseudo-class) so it wins on specificity,
+   not just source order.
+
+   Phone  → the existing slide-out drawer stays the full menu; a bottom tab
+            bar (MobileTabBar.jsx) carries the five primary destinations.
+   Tablet → a permanent icon rail, like the laptop sidebar collapsed.
+   Neither size uses `zoom`: each gets its own layout at readable sizes.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Phone-only pieces: the tab bar, the top-bar logo, the login brand */
+.mtab, .topbar-logo, .auth-mobile-top { display: none; }
+
+/* Mobile metrics — Apple HIG (44pt targets, 17pt body, 20pt margins, 49pt tab
+   bar with 10–11pt labels) and Material 3 (64dp top bar, 16sp body) */
+
+
+/* ══════════════ TABLET · 641–1024px — resting icon rail ══════════════════ */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root { --rail-w: 76px; }
+
+  :root .app-frame .app-sidebar,
+  :root .app-frame .app-sidebar[data-collapsed],
+  :root .app-frame .app-sidebar.open {
+    position: relative !important;
+    inset: auto !important;
+    width: var(--rail-w) !important;
+    flex: 0 0 var(--rail-w) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    z-index: 40;
+  }
+  :root .app-frame .app-sidebar[data-collapsed] .rail {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important; bottom: 0 !important;
+    width: var(--rail-w) !important;
+    height: 100dvh !important;
+    padding: 14px 12px 12px !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  :root .app-frame .app-sidebar[data-collapsed] .rail-label,
+  :root .app-frame .app-sidebar[data-collapsed] .rail-group-label,
+  :root .app-frame .app-sidebar[data-collapsed] .rail-wordmark,
+  :root .app-frame .app-sidebar[data-collapsed] .rail-more-caret,
+  :root .app-frame .app-sidebar[data-collapsed] .rail-collapse { display: none !important; }
+  :root .app-frame .app-sidebar[data-collapsed] .rail-top { justify-content: center !important; }
+  :root .app-frame .app-sidebar[data-collapsed] .rail-btn {
+    justify-content: center !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    height: 44px !important;
+  }
+  :root .app-frame .app-sidebar[data-collapsed] .rail-badge {
+    position: absolute !important; top: 4px !important; right: 6px !important;
+    min-width: 16px !important; height: 16px !important; font-size: 10px !important;
+  }
+  :root .topbar-hamburger { display: none !important; }
+
+  /* the top bar sits beside the rail, not over it */
+  :root .app-main > .topbar { left: var(--rail-w) !important; }
+
+  /* ── Dashboard: the laptop's rows, re-flowed for ~700px of content ── */
+  :root .tile-row                { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  :root .tile-row > :first-child { grid-column: auto !important; }
+  :root .tile-row--4             { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  /* the context rail moves under the chart as a two-up grid instead of
+     three full-width cards; an odd last card takes the whole row */
+  :root .dash-grid  { grid-template-columns: minmax(0, 1fr) !important; }
+  :root .dash-aside {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    position: static !important;
+  }
+  :root .dash-aside > *                        { min-width: 0; flex: none !important; }
+  :root .dash-aside > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  :root .dash-pair,
+  :root .dash-insight-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* ── Analytics: charts pair up again, as on laptop ── */
+  :root .an-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* ── Transactions: 7 columns need ~790px. Type is already carried by the
+     amount's sign and colour, and tags are secondary, so both drop here. ── */
+  :root .tx-card .n-table { min-width: 0 !important; width: 100% !important; }
+  :root .tx-card .n-table th:nth-child(2), :root .tx-card .n-table td:nth-child(2),
+  :root .tx-card .n-table th:nth-child(5), :root .tx-card .n-table td:nth-child(5) { display: none; }
+}
+
+
+/* ══════════════ PHONE · ≤640px — drawer + bottom tab bar ═════════════════ */
+@media (max-width: 640px) {
+  :root { --mtab-h: 64px; --page-pad-x: 18px; }
+
+  /* the drawer's trigger moves into the tab bar's "Menu" tab */
+  :root .topbar-hamburger { display: none !important; }
+
+  /* ── Top bar: logo on the left; search · alerts · account on the right ──
+     One clean row. Before this it had no logo, an empty search pill (its
+     label is hidden below 1000px) and five controls fighting for 375px. */
+  :root .app-main > .topbar {
+    height: 60px !important; min-height: 60px !important;
+    padding: 0 12px 0 18px !important;
+    gap: 6px !important;
+    align-items: center !important;
+    background: color-mix(in srgb, var(--well-bg, #F4F2EE) 88%, transparent) !important;
+    -webkit-backdrop-filter: saturate(1.4) blur(14px);
+            backdrop-filter: saturate(1.4) blur(14px);
+    box-shadow: 0 1px 0 var(--hairline, rgba(0, 0, 0, 0.06)) !important;
+  }
+  :root .topbar-logo {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-right: auto;
+    color: var(--text); text-decoration: none;
+  }
+  :root .topbar-logo .clario-wordmark { font-size: 17px !important; }
+  /* the flexible spacer is replaced by the logo's auto margin */
+  :root .app-main > .topbar > div[style*="flex: 1"] { display: none !important; }
+  /* theme and settings leave the bar: both live in Settings, which the
+     account menu and the drawer already open */
+  :root .app-main > .topbar > .topbar-btn:not(.topbar-hamburger) { display: none !important; }
+  /* search becomes an icon button like its neighbours */
+  :root .app-main > .topbar > .topbar-search {
+    flex: 0 0 40px !important; width: 40px !important; height: 40px !important; min-height: 40px !important;
+    padding: 0 !important; justify-content: center !important; border-radius: 50% !important;
+  }
+  :root .topbar-search span, :root .topbar-search kbd { display: none !important; }
+  /* same raised surface as the alert button beside it (was a grey well) */
+  :root .app-main > .topbar > .topbar-search {
+    background: #FFFFFF !important;
+    color: rgba(16, 18, 22, 0.88) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(30, 26, 20, 0.05) !important;
+  }
+  [data-theme="dark"] .app-main > .topbar > .topbar-search {
+    background: var(--surface, #1C1B1F) !important;
+    color: var(--text) !important;
+    box-shadow: none !important;
+  }
+  :root .topbar-bell .topbar-btn, :root .topbar-avatar { width: 40px !important; height: 40px !important; }
+  /* one shape for all three header controls */
+  :root .topbar-bell .topbar-btn, :root .topbar-avatar { border-radius: 50% !important; }
+
+  /* ── Tab bar ── (the earlier `font: … inherit` shorthand was invalid, so the
+     labels fell back to 16px; each property is set on its own now) */
+  .mtab {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    left: 12px; right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    height: var(--mtab-h);
+    padding: 6px;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--shell-bg, #F7F5F1) 90%, transparent);
+    -webkit-backdrop-filter: saturate(1.5) blur(18px);
+            backdrop-filter: saturate(1.5) blur(18px);
+    border: 1px solid var(--hairline, rgba(0, 0, 0, 0.07));
+    box-shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.05);
+    z-index: 1100;
+  }
+  [data-theme="dark"] .mtab {
+    background: color-mix(in srgb, #17161A 92%, transparent);
+    border-color: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.75);
+  }
+  .mtab-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    border: 0; background: none; cursor: pointer;
+    border-radius: 18px;
+    color: var(--text-3);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.16s ease, background 0.16s ease;
+  }
+  .mtab-item svg { width: 22px; height: 22px; }
+  .mtab-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .mtab-item.is-active { color: var(--brand); background: var(--brand-bg, rgba(232, 80, 2, 0.1)); }
+  .mtab-item:active { transform: scale(0.96); }
+  .mtab-item:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+
+  /* keep the last content clear of the floating bar */
+  :root .app-main > main { padding-bottom: calc(var(--mtab-h) + 28px + env(safe-area-inset-bottom, 0px)) !important; }
+
+  /* ── Charts ──
+     skeuo.css §36 sets these wells to `height: auto`; recharts' 100%-height
+     container then resolves to 0px and the chart never draws. Give it a
+     real height. */
+  :root .cf-chart,
+  :root .bo-chart { height: 220px !important; min-height: 0 !important; }
+
+  /* ── Headline tiles: a swipeable row instead of three stacked cards ──
+     Each tile is 84% wide so the next one peeks in and signals the swipe. */
+  :root .tile-row {
+    display: flex !important;
+    gap: 12px !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--page-pad-x);
+    margin-inline: calc(var(--page-pad-x) * -1);
+    padding: 2px var(--page-pad-x) 14px;
+    scrollbar-width: none;
+  }
+  :root .tile-row::-webkit-scrollbar { display: none; }
+  :root .tile-row > * {
+    flex: 0 0 84% !important;
+    min-width: 0;
+    scroll-snap-align: start;
+    grid-column: auto !important;
+  }
+  :root .tile { padding: 16px 18px 18px !important; }
+
+  /* ── Recent transactions: date · merchant · amount ──
+     the category column is dropped; the merchant line already names it */
+  :root .rec .n-table { min-width: 0 !important; width: 100% !important; table-layout: auto; }
+  :root .rec .n-table th:nth-child(3),
+  :root .rec .n-table td:nth-child(3) { display: none; }
+  :root .rec .n-table th,
+  :root .rec .n-table td { padding: 11px 10px !important; }
+  :root .rec .n-table th:first-child,
+  :root .rec .n-table td:first-child { padding-left: 16px !important; white-space: nowrap; }
+  :root .rec .n-table th:last-child,
+  :root .rec .n-table td:last-child  { padding-right: 16px !important; }
+  /* the merchant column takes only what date and amount leave, and truncates
+     — its nowrap header was forcing the table ~55px wider than the card */
+  :root .rec .n-table th:nth-child(2),
+  :root .rec .n-table td:nth-child(2) { width: 100%; max-width: 0 !important; }
+  :root .rec .n-table th:nth-child(2),
+  :root .rec .n-table td:nth-child(2) > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Last 30 days: four figures as a 2 × 2, not a list of four ── */
+  :root .dash-insight-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+
+  /* ── Charts on every page (SkeuoChart) ──
+     Each well sets its height inline; skeuo.css §36's `height: auto !important`
+     overrides that, so all four Analytics charts drew at 0px tall. */
+  :root .skc-well { height: 230px !important; min-height: 0 !important; }
+
+  /* ── Page header (PageHeader.jsx), shared by every inner page ──
+     The 40px icon plate is decoration the phone can't afford; the actions
+     become one swipeable row with the primary action first, instead of
+     wrapping into two ragged rows of buttons. */
+  :root .n-page-header { margin-bottom: 18px !important; }
+  :root .n-page-header > div:first-child:nth-last-child(3) { display: none !important; }
+  :root .n-page-header > div:nth-last-child(2) { flex-direction: column; gap: 12px !important; }
+  :root .n-page-header > div:nth-last-child(2) > div:nth-child(2) {
+    flex-wrap: nowrap !important;
+    width: calc(100% + 2 * var(--page-pad-x));
+    margin: 0 calc(var(--page-pad-x) * -1) !important;
+    padding: 2px var(--page-pad-x) 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  :root .n-page-header > div:nth-last-child(2) > div:nth-child(2)::-webkit-scrollbar { display: none; }
+  :root .n-page-header > div:nth-last-child(2) > div:nth-child(2) > * { flex-shrink: 0; }
+  :root .n-page-header > div:nth-last-child(2) > div:nth-child(2) > .n-btn-primary { order: -1; }
+  :root .n-page-header hr { margin-top: 16px !important; }
+
+  /* ── Transactions ── */
+  :root .tx-toolbar { flex-wrap: wrap !important; gap: 8px !important; }
+  :root .tx-toolbar > .tx-search { flex: 1 1 100% !important; min-width: 0 !important; }
+  :root .tx-toolbar > select { flex: 1 1 auto; }
+  /* date · merchant · amount · actions — type, category and tags drop;
+     the merchant cell's second line already names the category */
+  :root .tx-card .n-table { min-width: 0 !important; width: 100% !important; }
+  :root .tx-card .n-table th:nth-child(2), :root .tx-card .n-table td:nth-child(2),
+  :root .tx-card .n-table th:nth-child(3), :root .tx-card .n-table td:nth-child(3),
+  :root .tx-card .n-table th:nth-child(5), :root .tx-card .n-table td:nth-child(5) { display: none; }
+  :root .tx-card .n-table th:nth-child(4), :root .tx-card .n-table td:nth-child(4) { width: 100%; max-width: 0 !important; }
+  :root .tx-card .n-table td:nth-child(4) * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root .tx-card .n-table th:nth-child(4) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root .tx-card .n-table th, :root .tx-card .n-table td { padding: 11px 8px !important; }
+  :root .tx-card .n-table th:first-child, :root .tx-card .n-table td:first-child { padding-left: 14px !important; white-space: nowrap; }
+  :root .tx-card .n-table td:first-child { font-size: 12px !important; }
+
+  /* ── Inner pages lay out with inline fixed grids ──
+     (`repeat(4, 1fr)`, `280px 1fr`, `1fr 228px` …) that can never shrink, so
+     they are matched on the style attribute the browser serialises. Stat rows
+     fold to two across, the third card spanning; sidebar-plus-content splits
+     stack; the calendar's seven columns are left alone. */
+  :root .app-page-in [style*="grid-template-columns: repeat(4, 1fr)"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  :root .app-page-in [style*="grid-template-columns: repeat(3, 1fr)"],
+  :root .app-page-in [style*="grid-template-columns: repeat(3,1fr)"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  :root .app-page-in [style*="grid-template-columns: repeat(3, 1fr)"] > :nth-child(3):last-child,
+  :root .app-page-in [style*="grid-template-columns: repeat(3,1fr)"] > :nth-child(3):last-child { grid-column: 1 / -1; }
+  :root .app-page-in [style*="grid-template-columns: 280px 1fr"],
+  :root .app-page-in [style*="grid-template-columns: 1fr 220px"],
+  :root .app-page-in [style*="grid-template-columns: 1fr 228px"],
+  :root .app-page-in [style*="grid-template-columns: 190px 1fr"],
+  :root .app-page-in [style*="grid-template-columns: minmax(0px, 1.1fr) minmax(0px, 0.9fr)"],
+  :root .app-page-in [style*="grid-template-columns: minmax(0px, 1fr) minmax(0px, 300px)"] { grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; }
+  /* auto-fill cards with a 320px floor would overflow a 343px well once padded */
+  :root .app-page-in [style*="minmax(320px, 1fr)"] { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* ── Settings: the account card's stats drop beneath the name ── */
+  :root .app-page-in [style*="display: flex; align-items: center; gap: 16px; padding: 20px"] { flex-wrap: wrap !important; }
+  :root .app-page-in [style*="display: flex; align-items: center; gap: 16px; padding: 20px"] > [style="display: flex; gap: 24px;"] {
+    flex: 1 1 100%; justify-content: space-between; gap: 12px !important;
+    padding-top: 14px; border-top: 1px solid var(--border);
+  }
+
+  /* ── AI Insights: four tabs + Roast in one swipeable strip ── */
+  :root .ai-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--page-pad-x) * -1);
+    padding-inline: var(--page-pad-x);
+  }
+  :root .ai-tabs::-webkit-scrollbar { display: none; }
+  :root .ai-tabs > * { flex-shrink: 0; white-space: nowrap; }
+  /* Budgets rows are stacked by design now (styles/instrument.css `.bud-row`) */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mtab-item { transition: none; }
+  .mtab-item:active { transform: none; }
+}
+
+
+/* ══════════════ LANDING PAGE (PrelandingPage · meridian.css) ═════════════ */
+
+/* Tablet and phone */
+@media (max-width: 1024px) {
+  /* Orbit: once the ring is scaled down, the cards circle through the
+     headline ("whole" ran into the Balance card). The headline sits on its own
+     plate above the ring, so the cards pass behind a clean surface instead of
+     through the words. */
+  :root .mr-orbit-spin { z-index: 1; }
+  :root .mr-revolve-content {
+    z-index: 6 !important;
+    padding: 22px 24px 24px;
+    border-radius: 26px;
+    background: color-mix(in srgb, var(--void) 90%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+    box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--hair);
+  }
+}
+
+/* Tablet only: the crowd kept its desktop 116vh, leaving ~600px of empty
+   ground between the headline and the illustration */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root .mr-crowd        { min-height: 780px !important; }
+  :root .mr-crowd-canvas { height: 60% !important; }
+}
+
+/* Phone */
+@media (max-width: 640px) {
+  /* ── Rhythm: the desktop band is 128–224px of padding per section and the
+     section title is 50px. On a phone that is a screen of air per section. ── */
+  :root .mr {
+    --band: 64px; --pad-x: 20px;
+    --t-0: clamp(2.1rem, 9.4vw, 2.5rem);   /* display — was a 51px floor */
+    --t-2: clamp(1.75rem, 7.6vw, 2.1rem);  /* section title — was 34–50px */
+  }
+  :root .mr-t0 { line-height: 0.98 !important; letter-spacing: -0.055em !important; }
+  :root .mr-head, :root .mr-tg-head { margin-bottom: 28px !important; gap: 14px !important; }
+
+  /* ── Nav: a compact 52px bar — logo, a quiet "Log in", one small primary ── */
+  :root .mr-nav { top: 10px !important; width: calc(100vw - 20px) !important; }
+  :root .mr-nav-pill { padding: 5px 5px 5px 14px !important; gap: 4px !important; }
+  :root .mr-nav-brand { gap: 7px !important; margin-right: auto; transform: none !important; }
+  :root .mr-nav-brand > svg { width: 24px; height: 24px; }
+  :root .mr-nav-brand .clario-wordmark { font-size: 17px !important; }
+  :root .mr-nav .mr-btn { height: 38px !important; padding-inline: 14px !important; font-size: 11px !important; }
+  :root .mr-nav .mr-btn--dark { background: transparent !important; border-color: transparent !important; padding-inline: 10px !important; }
+  :root .mr-nav .mr-btn--primary svg { display: none; }
+
+  /* ── Hero ── */
+  :root .mr-hero { min-height: 0 !important; }
+  :root .mr-hero-layout { min-height: 0 !important; padding-block: 92px 0 !important; gap: 8px !important; }
+  :root .mr-hero-eyebrow { margin-bottom: 16px !important; font-size: 0.6rem !important; letter-spacing: 0.12em !important; }
+  :root .mr-hero-h1.mr-t2 { font-size: clamp(2.2rem, 10.4vw, 2.6rem) !important; line-height: 1 !important; letter-spacing: -0.045em !important; }
+  :root .mr-hero-sub { margin-top: 14px !important; font-size: 1rem !important; max-width: 34ch !important; }
+  :root .mr-hero-cta { margin-top: 22px !important; gap: 8px !important; width: 100%; flex-wrap: nowrap !important; }
+  :root .mr-hero-cta .mr-btn { flex: 1 1 0; height: 46px !important; padding-inline: 10px !important; font-size: 11.5px !important; }
+  :root .mr-hero-tags { margin-top: 18px !important; gap: 6px 16px !important; }
+  :root .mr-hero-tags li { font-size: 0.76rem !important; }
+  /* the globe: meridian.css narrows it to ~400px below 900px but keeps its
+     780px desktop height, so the 50%-radius rim drew a tall oval and left a
+     screen of empty gradient under the ball. Square it. */
+  :root .mr-hero-sphere {
+    width: min(84vw, 340px) !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;
+    margin: 10px auto 0 !important;
+  }
+  :root .mr-hero-seam { height: 72px !important; }
+  /* Globe pins: on a 330px ball the 128px cards pile up at the horizon
+     whichever pair is kept (tested: even Mumbai + New York, 147° apart,
+     collided). One card can't collide — keep Balance (child 2), hide the rest. */
+  :root .mr-hero-sphere > div > div { min-width: 112px !important; padding: 9px 12px !important; }
+  :root .mr-hero-sphere > div > div:nth-child(n+3) { display: none !important; }
+
+  /* the scroll-gathered headline pins for 260vh on desktop; on a phone that is
+     three screens of near-empty page before the words assemble */
+  :root .mr-gather { height: 180vh !important; }
+
+  /* "One month. One honest picture." — each character is its own
+     inline-block, so a line can break between any two letters ("PICTUR / E").
+     Size the type so the longest line (19 characters) fits, and forbid the
+     break outright. */
+  :root .mr-gather-text { font-size: clamp(1.3rem, 6.2vw, 2.1rem) !important; max-width: none !important; }
+  :root .mr-gather-line { white-space: nowrap; }
+
+  /* Crowd: at ≤760px meridian.css shrinks the section to 64vh while growing
+     the illustration to 66% of it, so the people climbed into the headline.
+     Give the section a real floor and the drawing less of it. */
+  :root .mr-crowd        { min-height: 620px !important; }
+  :root .mr-crowd-copy   { top: 44px !important; gap: 12px !important; }
+  :root .mr-crowd-h      { font-size: clamp(1.6rem, 7vw, 2.1rem) !important; }
+  :root .mr-crowd-canvas { height: 56% !important; }
+
+  :root .mr-revolve-content { max-width: 236px !important; padding: 20px 18px 22px; }
+  :root .mr-revolve-content .mr-scatter-h { font-size: 1.6rem !important; margin-bottom: 18px !important; }
+
+  /* Platform mock: three figure tiles in ~290px — tighten so "₹2,31,450" fits */
+  :root .mr-tiles { gap: 6px !important; }
+  :root .mr-tile { padding: 9px 9px !important; min-width: 0; }
+  :root .mr-tile span { font-size: 0.8rem !important; letter-spacing: -0.03em; white-space: nowrap; }
+  :root .mr-tile b { font-size: 0.7rem !important; }   /* 11px floor (was 0.54rem = 8.6px) */
+
+  /* Capture reel: slightly narrower cards so one reads whole with the next in view */
+  :root .mr-slide { flex-basis: 78vw !important; height: 420px !important; padding: 22px !important; }
+}
+
+
+/* ══════════════ LANDING · ACCESSIBILITY (all sizes) ══════════════════════
+   WCAG 1.4.3 — 4.5:1 for normal text, 3:1 for large. Each rule below fixes a
+   colour pair measured failing on the live page (ratio before → after). The
+   brand orange #E85002 stays for accents, dots, bars and display type; only
+   fills that carry small white text take the deeper #C94700. */
+.mr { --ink-3: #6F6F6F; }                                         /* muted grey on white 3.45 → 5.0 */
+/* …but the dark product mockups read the same token on near-black, where it
+   has to go lighter instead (#6F6F6F on #141414 was 3.67) */
+.mr .mr-mock, .mr .mr-datatable { --ink-3: #9A9A9A; }             /* → 6.5 */
+.mr-roll-track .mr-slide:nth-child(4n) .mr-cap-chips span.on { color: #FF7A28 !important; } /* 3.82 → 5.5 */
+.mr-roll-track .mr-slide:nth-child(4n) .mr-cap-save { color: #9A3A00 !important; opacity: 1 !important; } /* 1.42 → 6+ */
+.mr .mr-datatable-h span { color: rgba(255, 255, 255, 0.66) !important; }                 /* 40% white 3.81 → 9+ */
+.mr .mr-btn--primary { background: #C94700; }                     /* white label 3.76 → 4.8 */
+.mr .mr-btn--primary:hover { background: #B03E00; }
+.mr .mr-msg--me { background: #C94700; }                          /* chat bubble 3.76 → 4.8 */
+.mr .mr-msg--them { color: rgba(255, 255, 255, 0.82); }            /* #4A4A4A on #1F1F1F 1.86 → 11+ */
+.mr .mr-feat-card--glow { background-color: #C94700 !important; } /* orange feature cards */
+.mr .mr-feat-card--glow .mr-label,
+.mr .mr-feat-card--glow .mr-t3,
+.mr .mr-feat-card--glow p { color: #FFFFFF !important; }          /* tinted text 2.98 → 4.8 */
+/* the orange capture slide: tinted field labels read 1.7–3.1 on orange, and
+   its preview panel adds a 6% white wash, so the fill goes a step deeper than
+   the buttons (white on the washed panel 4.38 → 4.9) */
+.mr-roll-track .mr-slide:nth-child(4n+1) { background: #BD4200; }
+.mr-roll-track .mr-slide:nth-child(4n+1) .mr-label,
+.mr-roll-track .mr-slide:nth-child(4n+1) .mr-slide-body p,
+.mr-roll-track .mr-slide:nth-child(4n+1) .mr-cap-raw,
+.mr-roll-track .mr-slide:nth-child(4n+1) .mr-cap-parsed,
+.mr-roll-track .mr-slide:nth-child(4n+1) .mr-cap-parsed * { color: #FFFFFF !important; }
+/* dark slides (ink, graphite): muted labels up to 78% white */
+.mr-roll-track .mr-slide:nth-child(4n+2) .mr-label,
+.mr-roll-track .mr-slide:nth-child(4n+3) .mr-label,
+.mr-roll-track .mr-slide:nth-child(4n+2) .mr-cap-parsed em,
+.mr-roll-track .mr-slide:nth-child(4n+3) .mr-cap-parsed em { color: rgba(255, 255, 255, 0.78) !important; } /* 3.49 → 6+ */
+/* paper slide: its greys were tuned for a darker fill */
+.mr-roll-track .mr-slide:nth-child(4n) .mr-label,
+.mr-roll-track .mr-slide:nth-child(4n) .mr-slide-body p { color: #4E4B47 !important; }              /* 3.79 → 6.9 */
+.mr-roll-track .mr-slide:nth-child(4n) .mr-cap-field em,
+.mr-roll-track .mr-slide:nth-child(4n) .mr-cap-chips span:not(.on) { color: #3D3B38 !important; } /* 2.47 → 6+ */
+/* the globe pin label is an inline #8A8A8A (3.45) */
+.mr-hero-sphere > div > div > span:first-child { color: #6F6F6F !important; }
+.mr .mr-orbit-d.is-up { color: #1F7A4B; }                          /* green on white 3.39 → 5.4 */
+.mr .mr-tile b { color: rgba(255, 255, 255, 0.62) !important; }    /* 4.44 → 6.9 */
+.mr .mr-persp-cue { opacity: 1 !important; color: #5A5A5A !important; } /* 2.15 → 6.9 */
+/* footer column titles are <h3> now (were <h4> straight after an <h2>) */
+.mr-foot-col h3 {
+  margin: 0 0 4px; font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.72rem; font-weight: 400; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #8C8C8C;
+}
+/* the chat mock's suggestions are illustration, not controls */
+.mr-chatbox-q {
+  display: block; text-align: left; font-size: 0.8rem; color: var(--ink-2);
+  border-top: 1px solid var(--hair); padding: 8px 0 0;
+}
+
+
+/* ══════════════ LANDING · FITTS + READABILITY — phone ════════════════════
+   Measured at 390px: footer links 21px tall, "Explore the platform" 20px,
+   nav buttons 38px (WCAG 2.5.8 needs 24, Apple HIG 44); eyebrows at 9–10px;
+   card body copy at 14–15px (the rule for mobile body text is 16px). */
+@media (max-width: 640px) {
+  /* targets */
+  :root .mr-nav .mr-btn { height: 44px !important; }
+  :root .mr-nav-pill { padding: 3px 3px 3px 12px !important; }
+  :root .mr-nav-brand { min-height: 44px; }
+  :root .mr .mr-btn { min-height: 44px; }
+  :root .mr-foot-col a { display: flex; align-items: center; min-height: 44px; }
+  :root .mr-foot-col { gap: 0 !important; }
+  :root .mr-scatter-link { display: inline-flex; align-items: center; min-height: 44px; }
+
+  /* 11px floor for every label; 16px for body copy */
+  :root .mr-hero-eyebrow, :root .mr-crowd-eyebrow { font-size: 0.72rem !important; }
+  :root .mr-orbit-k { font-size: 0.7rem !important; }
+  :root .mr-hero-sphere > div > div > span:first-child { font-size: 11px !important; }
+  :root .mr-cap-note, :root .mr-cap-slip b { font-size: 0.72rem !important; }
+  :root .mr-slide-body p, :root .mr-feat-copy p { font-size: 1rem !important; line-height: 1.5 !important; }
+  /* labels inside the product mockups and the scroll cue: 9.6–10.9px → 11px+ */
+  :root .mr-mock-bar span, :root .mr-cap-parsed > span, :root .mr-chatbox-sug .lbl,
+  :root .mr-persp-cue, :root .mr-datatable span { font-size: 0.7rem !important; }
+}
+
+
+/* ══════════════ LOGIN (LoginPage) — phone ════════════════════════════════
+   The desktop layout is a framed card floating on an inset shader panel.
+   On a phone that read as a busy box inside a box, with no brand (the aside
+   holding the logo is hidden). Here the shader runs full-bleed, the logo sits
+   on it, and the form rises from the bottom as a sheet — the native pattern
+   for sign-in. */
+@media (max-width: 640px) {
+  /* `.auth-main` carries 24px of padding that framed everything in black */
+  :root .auth-main { padding: 0 !important; }
+  :root .auth-right-frame {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    background: #0A0A0B !important;
+  }
+  :root .auth-shader-bg { inset: 0 !important; border-radius: 0 !important; }
+  /* the phone backdrop: a static orange-into-black field (no WebGL) */
+  :root .auth-shader-lite {
+    position: absolute; z-index: 0;
+    background:
+      radial-gradient(120% 70% at 100% 0%, #FF7A1A 0%, #E85002 32%, rgba(232, 80, 2, 0) 64%),
+      radial-gradient(90% 60% at 0% 30%, rgba(120, 36, 0, 0.9) 0%, rgba(10, 10, 11, 0) 70%),
+      #0A0A0B;
+  }
+
+  /* the space above the sheet: logo top-right, one bold line bottom-left */
+  :root .auth-mobile-top {
+    display: flex; flex-direction: column; justify-content: flex-end;
+    position: relative; z-index: 2;
+    flex: 1 1 auto; min-height: 180px;
+    padding: 20px 22px 22px;
+  }
+  :root .auth-mobile-brand {
+    position: absolute; top: calc(18px + env(safe-area-inset-top, 0px)); right: 20px;
+    display: flex; align-items: center; gap: 8px;
+    color: #FFFFFF;
+  }
+  :root .auth-mobile-brand .clario-wordmark { font-size: 17px !important; }
+  /* the orange mark disappears into the orange field — white on the gradient */
+  :root .auth-mobile-brand svg path { fill: #FFFFFF !important; }
+  :root .auth-mobile-display {
+    margin: 0;
+    font-family: 'Unbounded', 'Satoshi', system-ui, sans-serif;
+    font-weight: 800; text-transform: uppercase;
+    font-size: min(9.2vw, 5.2svh); line-height: 1.02; letter-spacing: 0;
+    color: #FFFFFF;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.25);
+  }
+  :root .auth-panel {
+    position: relative; z-index: 2;
+    width: 100% !important; max-width: none !important;
+    margin: 0 !important;
+    max-height: 86vh !important;
+    overflow-y: auto !important;
+    border-radius: 28px 28px 0 0 !important;
+    padding: 20px 22px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+    box-shadow: 0 -20px 44px -24px rgba(0, 0, 0, 0.55) !important;
+  }
+  /* a grabber, so the sheet reads as a sheet */
+  :root .auth-panel::before {
+    content: '';
+    display: block;
+    width: 40px; height: 4px; border-radius: 999px;
+    margin: 0 auto 14px;
+    background: rgba(0, 0, 0, 0.12);
+  }
+  :root .auth-panel .auth-head h1 { font-size: 24px !important; }
+
+  /* ── measured at 390px ── */
+  /* iOS Safari zooms the page on focus when a field's text is under 16px (was 14px) */
+  :root .auth-panel input.n-input { font-size: 16px !important; height: 48px !important; }
+  :root .auth-panel .n-label { font-size: 12px !important; }                        /* was 10.5px */
+  /* Fitts: every control ≥ 44px tall */
+  :root .auth-panel .n-btn { min-height: 48px !important; }
+  :root .auth-panel .auth-back { min-height: 44px !important; }
+  :root .auth-panel .auth-link { display: inline-flex !important; align-items: center; min-height: 44px; }
+  /* the show-password eye was a 19×19 target — 44×44 now, icon unchanged */
+  :root .auth-panel .auth-eye {
+    position: absolute !important; right: 2px !important; top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 44px !important; height: 44px !important;
+    display: grid !important; place-items: center !important;
+  }
+  :root .auth-panel input[type="password"].n-input,
+  :root .auth-panel input#auth-password.n-input { padding-right: 50px !important; }
+}
+
+/* Login contrast — all sizes (orange text and fills measured 3.76; placeholders 2.4–2.6) */
+.auth-panel .auth-link { color: #C94700 !important; }                     /* → 4.8 */
+.auth-panel .n-btn-primary { background: #C94700 !important; }            /* white label → 4.8 */
+.auth-panel .n-btn-primary:hover { background: #B03E00 !important; }
+/* placeholders: skeuo.css pins the field's -webkit-text-fill-color, which also
+   paints the placeholder and beats plain `color`, so set both at its specificity */
+html[data-theme] .auth-shell .auth-panel input.n-input::placeholder,
+.auth-panel input.n-input::placeholder {
+  color: #6B6F76 !important; -webkit-text-fill-color: #6B6F76 !important; opacity: 1;
+}                                                                         /* 2.4 → 4.6 on the field */
+
+
+/* ══════════════ LANDING — the website's composition, at phone scale ══════
+   The original page, not a new one: the same hero arrangement as desktop —
+   copy on the left, the globe running off the right edge — shrunk to fit one
+   phone screen, with the rest of the page's type and spacing scaled down in
+   proportion. Later in the file than the earlier phone rules, so it wins. */
+@media (max-width: 640px) {
+  :root .mr {
+    --band: 48px;
+    --t-0: clamp(1.8rem, 8vw, 2.1rem);
+    --t-2: clamp(1.45rem, 6.2vw, 1.75rem);
+  }
+  :root .mr-head, :root .mr-tg-head { margin-bottom: 20px !important; }
+
+  /* hero: one screen, copy over the top, globe anchored bottom-right */
+  :root .mr-hero { min-height: 100svh !important; }
+  :root .mr-hero-layout {
+    display: block !important;
+    min-height: 100svh !important;
+    padding-block: 88px 0 !important;
+  }
+  :root .mr-hero-copy { position: relative; z-index: 8; }
+  :root .mr-hero-eyebrow { margin-bottom: 12px !important; }
+  :root .mr-hero-h1.mr-t2 { font-size: clamp(1.9rem, 8.6vw, 2.15rem) !important; }
+  :root .mr-hero-sub { margin-top: 10px !important; font-size: 0.95rem !important; max-width: 31ch !important; }
+  :root .mr-hero-cta { margin-top: 18px !important; }
+  :root .mr-hero-cta .mr-btn { height: 44px !important; font-size: 11px !important; }
+  :root .mr-hero-tags { margin-top: 14px !important; }
+  :root .mr-hero-sphere {
+    position: absolute !important;
+    top: auto !important; bottom: -60px !important; right: -100px !important; left: auto !important;
+    width: 460px !important; max-width: none !important; height: 460px !important; aspect-ratio: auto;
+    margin: 0 !important; z-index: 2 !important;
+  }
+  :root .mr-hero-seam { height: 56px !important; }
+}
+
+/* ══════════════ LANDING — below the hero, same sections at phone scale ════
+   Each section keeps its desktop arrangement and is scaled down to fit,
+   instead of being unstacked into a tall single column. */
+@media (max-width: 640px) {
+  /* gather: shorter pin, less empty scroll after the line assembles */
+  :root .mr-gather { height: 150vh !important; }
+
+  /* crowd: the canvas draws each person at sprite size, so a 390px stage held
+     three giant faces. Lay the canvas out 2.5× wider and scale it back to 40%:
+     the same street of small people the website shows. */
+  :root .mr-crowd { min-height: 430px !important; }
+  :root .mr-crowd-copy { top: 36px !important; gap: 10px !important; }
+  :root .mr-crowd-eyebrow { letter-spacing: 0.06em !important; white-space: nowrap; }
+  :root .mr-crowd-h { font-size: 1.5rem !important; }
+  /* the figures are drawn at 40% by CrowdCanvas itself (`scale` prop), so the
+     canvas stays screen-sized — no oversized buffer shrunk by a transform */
+  :root .mr-crowd-canvas { height: 60% !important; }
+
+  /* capture reel: smaller cards, more of them in view */
+  :root .mr-cap-sec .mr-head { margin-bottom: 24px !important; }
+  :root .mr-roll-track { gap: 12px !important; }
+  :root .mr-slide { flex-basis: 62vw !important; height: 372px !important; padding: 16px !important; border-radius: 16px !important; }
+  :root .mr-slide-art { margin: 12px 0 10px !important; padding: 10px !important; }
+  :root .mr-slide-metric { font-size: 1.8rem !important; }
+  :root .mr-slide-body p { font-size: 0.8rem !important; line-height: 1.45 !important; }
+  :root .mr-cap-view { font-size: 0.66rem !important; gap: 7px !important; }
+  :root .mr-slider-foot { margin-top: 22px !important; }
+
+  /* revolve: the whole orbit at website proportions (rings, radius, cards)
+     with the headline inside the inner ring — no plate */
+  :root .mr-revolve { --orbit-fit: 0.56; padding-block: 16px !important; }
+  :root .mr-revolve-stage { height: 430px !important; }
+  :root .mr-orbit-ring { width: 342px !important; height: 342px !important; margin: -171px 0 0 -171px !important; }
+  :root .mr-orbit-ring--in { width: 236px !important; height: 236px !important; margin: -118px 0 0 -118px !important; }
+  :root .mr-revolve-content {
+    max-width: 176px !important; padding: 0 !important;
+    background: radial-gradient(closest-side, var(--void) 72%, transparent) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    box-shadow: none !important; border-radius: 0 !important;
+  }
+  :root .mr-revolve-content .mr-scatter-h { font-size: 1.25rem !important; margin-bottom: 10px !important; }
+  :root .mr-revolve-content .mr-btn { height: 40px !important; min-height: 40px !important; padding-inline: 16px !important; font-size: 11px !important; }
+
+  /* platform cards: tighter frames, mockups drawn at 80% */
+  :root .mr-feat, :root .mr-feat-col { gap: 12px !important; }
+  :root .mr-feat-card, :root .mr-feat-card--tall { min-height: 0 !important; padding: 18px !important; border-radius: 18px !important; }
+  :root .mr-feat-copy { gap: 6px !important; }
+  :root .mr-feat-card .mr-label--flame { font-size: 0.68rem !important; }
+  :root .mr-feat-card .mr-t3 { font-size: 1.05rem !important; }
+  :root .mr-feat-copy p { font-size: 0.84rem !important; line-height: 1.5 !important; }
+  :root .mr-feat-card > .mr-feat-art, :root .mr-feat-art { margin-top: 14px !important; zoom: 0.8; }
+
+  /* testimonials: the website's masonry, two columns instead of one */
+  :root .mr-tg { padding-block: 48px !important; }
+  :root .mr-tg-feature { padding: 18px 18px 16px 42px !important; margin-bottom: 10px !important; border-radius: 16px !important; }
+  :root .mr-tg-feature-mark { top: 18px !important; left: 12px !important; width: 20px; }
+  :root .mr-tg-feature-mark svg { width: 20px; height: 20px; }
+  :root .mr-tg-feature-inner { gap: 14px !important; }
+  :root .mr-tg-feature-q { font-size: 0.98rem !important; }
+  :root .mr-tg-feature-by { gap: 10px !important; font-size: 0.72rem !important; }
+  :root .mr-tg-feature-by img { width: 40px !important; height: 40px !important; border-radius: 10px !important; }
+  :root .mr-tg-feature-by b { font-size: 0.82rem !important; }
+  :root .mr-tg-feature-dots { margin-top: 14px !important; }
+  :root .mr-tg-grid-wrap { display: block !important; columns: 2; column-gap: 10px; }
+  :root .mr-tg-col { display: contents !important; }
+  :root .mr-tg-card {
+    break-inside: avoid; margin-bottom: 10px;
+    min-height: 0 !important; padding: 14px !important; gap: 14px !important; border-radius: 14px !important;
+  }
+  :root .mr-tg-quote { font-size: 0.8rem !important; line-height: 1.45 !important; }
+  :root .mr-tg-by { gap: 8px !important; font-size: 0.66rem !important; line-height: 1.3; }
+  :root .mr-tg-avatar { width: 30px !important; height: 30px !important; border-radius: 8px !important; }
+
+  /* section intros and FAQ rows */
+  :root .mr-head-aside p, :root .mr-tg-head p { font-size: 0.92rem !important; line-height: 1.55 !important; }
+  :root .mr-head { gap: 12px !important; }
+  :root .mr-faq-q { padding: 16px 2px !important; min-height: 48px; font-size: 0.95rem !important; }
+  :root .mr-faq-a p { padding: 0 2px 16px !important; font-size: 0.88rem !important; }
+
+  /* footer: brand across, then the three link columns side by side */
+  :root .mr-foot { padding-block: 44px 24px !important; }
+  :root .mr-foot-lead { padding-bottom: 26px !important; margin-bottom: 44px !important; gap: 16px !important; }
+  :root .mr-foot-h { font-size: 1.4rem !important; }
+  :root .mr-foot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 18px 12px !important; }
+  :root .mr-foot-brand { grid-column: 1 / -1; }
+  :root .mr-foot-brand p { margin-top: 8px !important; font-size: 0.8rem !important; }
+  :root .mr-foot-col h3 { font-size: 0.6rem !important; letter-spacing: 0.08em !important; margin: 0 0 2px !important; }
+  :root .mr-foot-col a { min-height: 34px !important; font-size: 0.8rem !important; line-height: 1.2; }
+  /* the link grid rides a parallax offset, so leave room above the rule */
+  :root .mr-foot-bottom { margin-top: 44px !important; }
+}
+
+
+/* ══════════════ APP NAV — follows the theme (all sizes) ═══════════
+   The sidebar rail (laptop panel, tablet icon rail, phone drawer) and the
+   phone tab bar are one flat panel: white in the light theme, black in the
+   dark theme. No bevels, no glow, no coloured borders. Muted labels clear
+   4.5:1 on both grounds; the active row is a tinted slab with full-ink text.
+   `html:root … [data-collapsed]` outranks skeuo.css's shell lists and the
+   light-theme rail rules in clario.css. */
+/* theme-aware: a light panel in the light theme, black in the dark theme */
+:root {
+  --nav-fill: #FFFFFF; --nav-line: rgba(0, 0, 0, 0.07);
+  --nav-ink: rgba(20, 20, 22, 0.66); --nav-ink-2: rgba(20, 20, 22, 0.52);
+  --nav-ink-on: #111113; --nav-hover: rgba(0, 0, 0, 0.04); --nav-key: rgba(0, 0, 0, 0.07);
+  --nav-shadow: 0 14px 30px -16px rgba(0, 0, 0, 0.25);
+}
+:root[data-theme="dark"] {
+  --nav-fill: #0E0E0F; --nav-line: rgba(255, 255, 255, 0.06);
+  --nav-ink: rgba(255, 255, 255, 0.64); --nav-ink-2: rgba(255, 255, 255, 0.5);
+  --nav-ink-on: #FFFFFF; --nav-hover: rgba(255, 255, 255, 0.06); --nav-key: rgba(255, 255, 255, 0.11);
+  --nav-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.55);
+}
+
+/* the panel */
+html:root .app-frame .app-sidebar[data-collapsed] .rail,
+html:root .app-frame .app-sidebar[data-collapsed].is-peek .rail {
+  background: var(--nav-fill) !important;
+  border: 1px solid var(--nav-line) !important;
+  box-shadow: none !important;
+  /* the scroll fades under the pinned rows are painted from --well-bg */
+  --well-bg: var(--nav-fill);
+}
+/* pinned rows (brand, bottom group) are opaque so rows scroll under them */
+html:root .app-sidebar[data-collapsed] .rail-top,
+html:root .app-sidebar[data-collapsed] .rail > .rail-group:last-child {
+  background: var(--nav-fill) !important;
+  box-shadow: none !important;
+}
+html:root .app-sidebar[data-collapsed] .rail > .rail-group:last-child { border-top: 1px solid var(--nav-line); }
+html:root .app-sidebar[data-collapsed] .rail-brand,
+html:root .app-sidebar[data-collapsed] .rail-brand .clario-wordmark { color: var(--nav-ink-on) !important; }
+
+/* labels */
+html:root .app-sidebar[data-collapsed] .rail-group-label { color: var(--nav-ink-2) !important; opacity: 1 !important; }
+
+/* resting rows */
+html:root .app-sidebar[data-collapsed] .rail-btn,
+html:root .app-sidebar[data-collapsed] .rail-btn svg { color: var(--nav-ink) !important; }
+html:root .app-sidebar[data-collapsed] .rail-btn { box-shadow: none !important; }
+html:root .app-sidebar[data-collapsed] .rail-more-caret { opacity: 0.7 !important; }
+
+html:root .app-sidebar[data-collapsed] .rail-item:hover .rail-btn:not(.is-active) {
+  background: var(--nav-hover) !important;
+  box-shadow: none !important;
+  color: var(--nav-ink-on) !important;
+}
+html:root .app-sidebar[data-collapsed] .rail-item:hover .rail-btn:not(.is-active) svg { color: var(--nav-ink-on) !important; }
+
+/* active */
+html:root .app-sidebar[data-collapsed] .rail-btn.is-active {
+  background: var(--nav-key) !important;
+  color: var(--nav-ink-on) !important;
+  box-shadow: none !important;
+}
+html:root .app-sidebar[data-collapsed] .rail-btn.is-active svg { color: var(--nav-ink-on) !important; }
+html:root .app-sidebar[data-collapsed] .rail-btn.is-active::before { display: none !important; }
+html:root .app-sidebar[data-collapsed] .rail-item:focus-visible { outline: 2px solid var(--nav-ink-on); outline-offset: 1px; }
+
+/* badges */
+html:root .app-sidebar[data-collapsed] .rail-badge,
+html:root .app-sidebar[data-collapsed] .rail-btn.is-active .rail-badge {
+  background: #C94700 !important; color: #FFFFFF !important;   /* white on brand orange is 3.76; this is 4.8 */
+  box-shadow: none !important;
+}
+
+/* phone tab bar — the same panel, floating */
+@media (max-width: 640px) {
+  html:root .mtab,
+  html:root[data-theme="dark"] .mtab {
+    background: var(--nav-fill);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border: 1px solid var(--nav-line);
+    box-shadow: var(--nav-shadow);
+  }
+  html:root .mtab-item { color: var(--nav-ink); }
+  html:root .mtab-item.is-active { color: var(--nav-ink-on); background: var(--nav-key); box-shadow: none; }
+  html:root .mtab-item:focus-visible { outline-color: var(--nav-ink-on); }
+}
+
+
+/* ══════════════ LANDING HERO · phone — editorial, monochrome ═════════════
+   Replaces the globe composition. Big stacked headline, one short caption,
+   one button; a grey "skyline" of the month's daily spend anchors the bottom
+   of the screen with a single standing rule crossing its horizon. No colour
+   in the hero — the only orange left above the fold is the nav's button. */
+.mr-hero-band, .mr-hero-rule { display: none; }
+
+@media (max-width: 640px) {
+  /* nav — inset from the screen edges, lighter */
+  :root .mr-nav, :root .mr-nav.is-tight { top: 14px !important; width: calc(100vw - 32px) !important; }
+  :root .mr-nav-pill, :root .mr-nav.is-tight .mr-nav-pill {
+    padding: 4px 4px 4px 14px !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 8px 22px -14px rgba(0, 0, 0, 0.35) !important;
+  }
+  :root .mr-nav-brand > svg { width: 22px; height: 22px; }
+  :root .mr-nav-brand .clario-wordmark { font-size: 16px !important; }
+  :root .mr-nav .mr-btn { height: 40px !important; min-height: 40px !important; font-size: 10.5px !important; }
+  :root .mr-nav .mr-btn--primary { box-shadow: none !important; padding-inline: 14px !important; }
+
+  /* hero ground: flat paper grey, no glow, no globe — at least one full screen;
+     on short phones it grows instead of overlapping */
+  :root .mr-hero {
+    display: flex !important; flex-direction: column !important;
+    background: #F2F1EE !important;
+    min-height: 100svh !important;
+    overflow: hidden !important;
+  }
+  :root .mr-hero > .mr-container { flex: 0 0 auto; width: 100%; }
+  :root .mr-hero-sphere,
+  :root .mr-hero-light,
+  :root .mr-hero-seam { display: none !important; }
+  :root .mr-hero-layout { display: block !important; min-height: 0 !important; padding-block: 96px 0 !important; }
+
+  /* copy — less of it */
+  :root .mr-hero-eyebrow,
+  :root .mr-hero-tags,
+  :root .mr-hero-cta .mr-btn--outline { display: none !important; }
+  :root .mr-hero-h1.mr-t2 {
+    font-size: clamp(2.45rem, 11.4vw, 2.9rem) !important;
+    line-height: 0.98 !important;
+    letter-spacing: -0.06em !important;
+    color: #1A1A1A !important;
+  }
+  :root .mr-hero-sub {
+    margin-top: 22px !important;
+    max-width: 25ch !important;
+    font-size: 0.84rem !important; line-height: 1.45 !important;
+    color: #3C3C3C !important;
+  }
+  :root .mr-hero-cta { margin-top: 22px !important; width: auto !important; }
+  :root .mr-hero-cta .mr-btn--light {
+    flex: 0 0 auto !important;
+    height: 44px !important; min-height: 44px !important;
+    padding-inline: 20px !important;
+    font-size: 11px !important;
+    background: #161616 !important; color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  /* big bold type — the three ways in, then done. In the flow right under the
+     button (so it can never sit below the fold); the band takes whatever
+     height is left and the caption drops to the bottom of the screen.
+     Unbounded is already loaded (index.css). Size is the smaller of a width
+     fit (widest line "SNAP." at 21vw ≈ 88% of the width) and a height fit. */
+  :root .mr-hero-band {
+    flex: 1 0 auto;
+    align-self: stretch;            /* .mr-hero centres its children */
+    display: flex; flex-direction: column;
+    justify-content: center;        /* words + caption sit in the middle of what's left */
+    position: relative; z-index: 3;
+    padding: clamp(26px, 4.5svh, 44px) var(--pad-x, 20px) 20px;
+  }
+  :root .mr-hero-band-word {
+    margin: 0;
+    font-family: 'Unbounded', 'Satoshi', system-ui, sans-serif;
+    font-size: min(21vw, 9.6svh); font-weight: 800;
+    line-height: 0.94; letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--brand, #E85002);
+  }
+  :root .mr-hero-band-word > span { display: block; white-space: nowrap; }
+  :root .mr-hero-band-word .is-ink { color: #161616; }
+  :root .mr-hero-band-k {
+    padding-top: 18px;
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #5E5E5E;
+  }
+}
+
+
+/* ══════════════ ICONS — bare (all sizes, whole site) ═══════════════════════
+   An icon is just the icon: no tile, no tint, no border, no ring, no glow
+   behind it. Named plates first; then any element whose only child is an
+   icon (the inline-styled boxes in page components). Buttons, links and
+   switches keep their surfaces — those are controls, not decoration. The box
+   keeps its size so nothing around it reflows. */
+:root :is(
+  .tile-icon, .tile-out, .dc-ai-glyph, .dc-chip, .dc-card-chip, .bo-chip, .cf-chip, .mm-chip,
+  .dc-out, .bo-out, .dc-acc-icon, .state-icon, .notif-empty-icon, .notif-row-icon,
+  .n-page-head-icon, .page-head-icon, .auth-promise-icon, .pre-card-icon, .n-empty-icon,
+  .help-hero-ic, .help-card-ic, .help-signal-ic, .help-keys-ic, .activity-row-icon, .wal-icon,
+  .mr-orbit-chip-i, .mr-slide-ic
+),
+:root .n-page-header > div:first-child,
+:root :is(div, span, i):not([role="switch"]):not([class*="toggle"]):not([class*="switch"]):not([class*="thumb"]):not([class*="knob"]):not([class*="avatar"]):has(> svg:only-child) {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+:root :is(
+  .tile-icon, .dc-ai-glyph, .dc-chip, .dc-card-chip, .bo-chip, .mm-chip, .state-icon,
+  .notif-empty-icon, .n-page-head-icon, .page-head-icon, .n-empty-icon, .help-card-ic
+)::before,
+:root :is(
+  .tile-icon, .dc-ai-glyph, .dc-chip, .dc-card-chip, .bo-chip, .mm-chip, .state-icon,
+  .notif-empty-icon, .n-page-head-icon, .page-head-icon, .n-empty-icon, .help-card-ic
+)::after { display: none !important; }
+
+
+/* ══════════════ HERO BIG TYPE — letters that turn like pages ═════════════
+   Each letter is a one-line window over two stacked copies of itself. Every
+   so often it rolls up to the copy — a slow page-turn — then snaps back
+   invisibly (the copies are identical), so the loop never shows a seam.
+   Every letter has its own duration and delay (set inline), so the words
+   keep shifting in a loose, uneven rhythm. Transform-only: composited, cheap. */
+.mr-flip {
+  display: inline-block;
+  height: 0.94em;              /* one line of the band's line-height */
+  overflow: hidden;
+  vertical-align: top;
+}
+.mr-flip-in {
+  display: flex; flex-direction: column;
+  animation: mr-flip var(--flip-dur, 7s) cubic-bezier(0.7, 0, 0.2, 1) var(--flip-delay, 0s) infinite;
+  will-change: transform;
+}
+.mr-flip-in > span { display: block; height: 0.94em; line-height: 0.94; }
+@keyframes mr-flip {
+  0%, 62%   { transform: translateY(0); }
+  82%, 100% { transform: translateY(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mr-flip-in { animation: none; }
+}
+
+
+/* ══════════════ LANDING · LITE (phones + touch tablets) ══════════════════
+   PrelandingPage adds `.mr--lite` and stops every scroll-linked rAF loop
+   there. CSS does its part: no backdrop blur over scrolling content (the
+   single most expensive effect on mobile GPUs), and the pinned 150–260vh
+   gathered headline becomes a normal block, already assembled. */
+.mr--lite, .mr--lite * {
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+}
+.mr--lite .mr-nav-pill { background: rgba(255, 255, 255, 0.96) !important; }
+[data-theme="dark"] .mr--lite .mr-nav-pill { background: rgba(20, 20, 20, 0.96) !important; }
+:root .mr--lite .mr-gather { height: auto !important; }
+:root .mr--lite .mr-gather-stage {
+  position: static !important; min-height: 0 !important;
+  padding: calc(var(--band) * 1.2) var(--pad-x) !important;
+  perspective: none !important;
+}
+:root .mr--lite .mr-gather-ch { transform: none !important; }
+/* the "scroll to bring it together" cue has nothing to bring together */
+:root .mr--lite .mr-persp-cue { display: none !important; }
+/* the orbit keeps turning, but on the compositor only */
+.mr--lite .mr-orbit-card, .mr--lite .mr-slide, .mr--lite .mr-feat-card { will-change: auto; }
+/* lite orbit: ring + upright cards turn as CSS animations (compositor thread) */
+.mr--lite .mr-orbit-spin { animation: mr-orbit-turn 46s linear infinite; }
+.mr--lite .mr-orbit-card { animation: mr-orbit-counter 46s linear infinite; transform: rotate(var(--orbit-a, 0deg)); }
+.mr--lite .mr-orbit-spin.is-paused,
+.mr--lite .mr-orbit-spin.is-paused .mr-orbit-card { animation-play-state: paused; }
+@keyframes mr-orbit-turn    { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes mr-orbit-counter { from { transform: rotate(var(--orbit-a, 0deg)); } to { transform: rotate(calc(var(--orbit-a, 0deg) - 360deg)); } }
+@media (prefers-reduced-motion: reduce) {
+  .mr--lite .mr-orbit-spin, .mr--lite .mr-orbit-card { animation: none; }
+}
+
+
+/* ══════════════ PHONE MENU SHEET (MobileTabBar) ═══════════════════════════
+   Every page, grouped like the sidebar, in a sheet that rises just above the
+   tab bar (so the Menu tab stays tappable as the close control). */
+.nav-sheet, .nav-sheet-scrim { display: none; }
+@media (max-width: 640px) {
+  .nav-sheet-scrim {
+    display: block; position: fixed; inset: 0; z-index: 1080;
+    background: rgba(0, 0, 0, 0.36);
+  }
+  .nav-sheet {
+    display: block;
+    position: fixed; left: 12px; right: 12px; z-index: 1090;
+    bottom: calc(var(--mtab-h, 64px) + 20px + env(safe-area-inset-bottom, 0px));
+    max-height: min(72vh, 620px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 8px 14px 14px;
+    border-radius: 24px;
+    background: var(--nav-fill);
+    border: 1px solid var(--nav-line);
+    box-shadow: var(--nav-shadow), 0 -2px 0 rgba(255, 255, 255, 0.02) inset;
+    scrollbar-width: none;
+  }
+  .nav-sheet::-webkit-scrollbar { display: none; }
+  .nav-sheet-grabber { display: block; width: 36px; height: 4px; margin: 4px auto 6px; border-radius: 999px; background: var(--nav-key); }
+  .nav-sheet-group { padding: 10px 0 4px; }
+  .nav-sheet-group + .nav-sheet-group { border-top: 1px solid var(--nav-line); }
+  .nav-sheet-label {
+    margin: 0 4px 8px;
+    font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--nav-ink-2);
+  }
+  .nav-sheet-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .nav-sheet-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    min-height: 68px; padding: 8px 4px;
+    border-radius: 14px;
+    color: var(--nav-ink); text-decoration: none;
+    font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-sheet-item span { max-width: 100%; overflow-wrap: anywhere; }
+  .nav-sheet-item:active { background: var(--nav-hover); }
+  .nav-sheet-item.is-active { color: var(--nav-ink-on); background: var(--nav-key); }
+  .nav-sheet-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--nav-line); }
+  .nav-sheet-row {
+    display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
+    border-radius: 12px; background: var(--nav-hover);
+    color: var(--nav-ink-on); text-decoration: none; font-size: 13px; font-weight: 600;
+  }
+  .nav-sheet-row.is-active { background: var(--nav-key); }
+}
+
+/* the full grouped nav (17 rows) has to fit a 900px-tall laptop without scrolling */
+@media (min-width: 1025px) {
+  html:root .app-sidebar[data-collapsed] .rail-btn { height: 34px !important; margin: 0 !important; font-size: 13px !important; }
+  html:root .app-sidebar[data-collapsed] .rail-group-label { padding: 12px 10px 4px !important; font-size: 10px !important; }
+  html:root .app-sidebar[data-collapsed] .rail-group { gap: 1px !important; }
+  html:root .app-sidebar[data-collapsed] .rail-top { padding-bottom: 6px !important; margin-bottom: 2px !important; }
+}
+
+
+/* ══════════════ SIDEBAR — collapsible groups + pinned brand ═════════════════
+   Only the section holding the current page (plus any the user opened) shows
+   its rows; the rest fold to a heading with a caret. The brand row is pinned
+   and covers the rail padding, so rows never scroll into view behind the logo. */
+html:root .app-frame .app-sidebar[data-collapsed] .rail { padding-top: 0 !important; }
+html:root .app-sidebar[data-collapsed] .rail-top {
+  position: sticky !important; top: 0 !important; z-index: 3 !important;
+  padding-top: 16px !important;
+  background: var(--nav-fill) !important;
+}
+.rail-group-toggle {
+  display: flex !important; align-items: center; gap: 6px; width: 100%;
+  border: 0; background: none; cursor: pointer; text-align: left;
+  font-family: inherit;
+}
+.rail-group-toggle:disabled { cursor: default; }
+.rail-group-toggle span:first-child { flex: 1; }
+.rail-group-caret { opacity: 0.6; transition: transform 0.2s ease; }
+.rail-group-toggle.is-open .rail-group-caret { transform: rotate(90deg); }
+.rail-group-toggle:disabled .rail-group-caret { opacity: 0.25; }
+.rail-group-toggle:not(:disabled):hover { color: var(--nav-ink-on) !important; }
+.rail-group-dot { width: 6px; height: 6px; border-radius: 50%; background: #C94700; }
+.rail-group-wrap { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.22s ease; }
+.rail-group-wrap > .rail-group { min-height: 0; overflow: hidden; }
+.rail-group-wrap.is-closed { grid-template-rows: 0fr; }
+@media (prefers-reduced-motion: reduce) { .rail-group-wrap, .rail-group-caret { transition: none; } }
+/* the tablet icon rail has no headings to click, so every group stays open */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .rail-group-wrap.is-closed { grid-template-rows: 1fr; }
+}
+/* skeuo.css forces `.rail-group-label` to display:block at (0,4,0) — the toggle
+   heading needs to stay one row: label · alert dot · caret */
+html:root .app-frame .app-sidebar[data-collapsed] .rail-group-toggle {
+  display: flex !important; align-items: center !important; gap: 6px !important;
+  width: 100% !important; min-height: 30px;
+}
+html:root .app-frame .app-sidebar[data-collapsed] .rail-group-toggle .rail-group-caret { flex-shrink: 0; margin-right: 4px; }

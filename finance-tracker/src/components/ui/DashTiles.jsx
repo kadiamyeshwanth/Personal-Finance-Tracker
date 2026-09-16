@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowUpRight, Wallet as WalletIcon, ChartLineUp, PiggyBank,
-  Bank, CreditCard, Money, TrendUp, TrendDown,
+  Bank, CreditCard, Money, TrendUp, TrendDown, ArrowRight,
 } from '@phosphor-icons/react';
 import AnimatedCounter from './AnimatedCounter';
 import ShaderBg, { DASH_SHADER } from './shader-bg';
@@ -85,18 +85,18 @@ export function WalletCard({ wallets = [] }) {
       animate={{ opacity: 1, y: 0 }}
       transition={spring}
     >
-      <header className="wal-head">
-        <div>
-          <h2 className="wal-title">Accounts</h2>
-          <p className="wal-sub">{rows.length} linked</p>
-        </div>
-        <Link to="/wallets" className="n-btn n-btn-default n-btn-sm">Manage</Link>
+      <header className="wal-head ins-head">
+        <h2 className="ins-crumb">Accounts <i>/</i> <b>Balances</b></h2>
+        {rows.length > 0
+          ? <Link to="/wallets" className="ins-link">Manage <ArrowRight size={12} weight="bold" /></Link>
+          : <span className="ins-tag">0 linked</span>}
       </header>
 
       {rows.length === 0 ? (
-        <div className="wal-empty">
-          <Link to="/wallets" className="n-btn n-btn-primary n-btn-sm">Add an account</Link>
-        </div>
+        <Link to="/wallets" className="ins-empty">
+          <span className="ins-k">No accounts yet</span>
+          <span className="ins-link">Add an account <ArrowRight size={12} weight="bold" /></span>
+        </Link>
       ) : (
         <ul className="wal-grid">
           {rows.map((w, i) => {

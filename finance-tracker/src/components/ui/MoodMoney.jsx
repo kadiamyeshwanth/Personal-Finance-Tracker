@@ -107,7 +107,7 @@ export default function MoodMoney() {
                 aria-pressed={active}
                 title={label}
               >
-                <Icon size={20} weight={active ? 'fill' : 'regular'} />
+                <Icon size={20} weight="fill" />
               </button>
             );
           })}

@@ -43,8 +43,10 @@ export default function Illustration({ name, className = '', style }) {
     <div className={`pl-illo ${className}`.trim()} style={style}>
       <motion.div
         className="pl-illo-fig"
-        initial={{ opacity: 0, y: 26, filter: 'blur(8px)' }}
-        whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        /* a bottom-up mask wipe, not a fade (mask, not clip-path, so the
+           IntersectionObserver still sees the element) */
+        initial={{ WebkitMaskImage: 'linear-gradient(#000,#000)', maskImage: 'linear-gradient(#000,#000)', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat', maskPosition: '50% 100%', WebkitMaskPosition: '50% 100%', maskSize: '100% 0%', WebkitMaskSize: '100% 0%', y: 26 }}
+        whileInView={{ maskSize: '100% 100%', WebkitMaskSize: '100% 100%', y: 0, transitionEnd: { maskImage: 'none', WebkitMaskImage: 'none' } }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         dangerouslySetInnerHTML={{ __html: raw }}

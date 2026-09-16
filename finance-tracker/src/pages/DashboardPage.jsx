@@ -552,10 +552,9 @@ const DashboardPage = () => {
           {!isLoading && (
             <div className="dash-pair">
               <section className="dash-insight">
-                <header className="dash-insight-head">
-                  <span className="dc-chip"><Sparkles size={15} weight="fill" /></span>
-                  <h2>Last 30 days</h2>
-                  <Link to="/ai-insights" className="dash-insight-cta">Analyse <ArrowRight size={12} weight="bold" /></Link>
+                <header className="dash-insight-head ins-head">
+                  <h2 className="ins-crumb">Insights <i>/</i> <b>Last 30 days</b></h2>
+                  <Link to="/ai-insights" className="ins-link">Analyse <ArrowRight size={12} weight="bold" /></Link>
                 </header>
                 <ul className="dash-insight-list">
                   <li>
@@ -586,17 +585,14 @@ const DashboardPage = () => {
               </section>
 
               <section className="dash-journal">
-                <header className="dash-journal-head">
-                  <span className="dc-chip"><BookOpen size={15} weight="fill" /></span>
-                  <div>
-                    <h2>Financial Journal</h2>
-                    <p>{journalStreak > 0 ? `${journalStreak}-day streak · ${journal.length} entries` : `${journal.length} entries`}</p>
-                  </div>
-                  <Link to="/journal" className="dash-insight-cta">Open <ArrowRight size={12} weight="bold" /></Link>
+                <header className="dash-journal-head ins-head">
+                  <h2 className="ins-crumb">Journal <i>/</i> <b>{journalStreak > 0 ? `${journalStreak}-day streak` : 'Entries'}</b></h2>
+                  <span className="ins-tag">{journal.length} {journal.length === 1 ? 'entry' : 'entries'}</span>
                 </header>
                 {journalSorted.length === 0 ? (
-                  <Link to="/journal" className="dash-journal-empty">
-                    <Plus size={13} weight="bold" /> Write your first entry
+                  <Link to="/journal" className="ins-empty">
+                    <span className="ins-k">Nothing written yet</span>
+                    <span className="ins-link">Write the first entry <ArrowRight size={12} weight="bold" /></span>
                   </Link>
                 ) : (
                   <ul className="dash-journal-list">
